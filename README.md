@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 基于RBAC的权限管理系统
 ![image](https://github.com/user-attachments/assets/01e71378-2d39-4323-81eb-1a8ef185e8fd)
 
@@ -73,3 +74,6 @@
 ![首页](./static/dashboard.png)
 
 ![系统管理](./static/system.png)
+=======
+# truck
+>>>>>>> 8348a0238756a15576404908188dc5bd47b72248

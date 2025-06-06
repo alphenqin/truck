@@ -1,0 +1,33 @@
+package ioRecordResponsiesModules
+
+import "time"
+
+type IoRecord struct {
+	AssetId    int64      `json:"assetId"`
+	ActionType int        `json:"actionType"`
+	ActionTime *time.Time `json:"actionTime"`
+	StoreTo    int64      `json:"storeTo"`
+	StoreFrom  int64      `json:"storeFrom"`
+}
+type Buzzer struct {
+	BuzzerId   int64  `gorm:"primaryKey;autoIncrement" json:"buzzerId"`
+	BuzzerRule string `json:"buzzerRule"`
+}
+
+type QueryFlowParams struct {
+	AssetCode string `json:"assetCode"`
+	StartTime string `json:"startTime"` // e.g. "2025-06-01 00:00:00"
+	EndTime   string `json:"endTime"`
+
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
+type FlowVO struct {
+	AssetId    int64      `json:"assetId"`
+	AssetCode  string     `json:"assetCode"`
+	ActionType int        `json:"actionType"` // 1: 入库，2: 出库
+	ActionTime *time.Time `json:"actionTime"`
+	StoreTo    int64      `json:"storeTo"`
+	StoreFrom  int64      `json:"storeFrom"`
+}

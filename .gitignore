@@ -1,0 +1,87 @@
+# 数据库数据文件
+/micro/sql/data_master/
+/micro/sql/data_slave/
+
+# 前端依赖和构建产物
+/web/node_modules/
+/web/dist/
+/web/build/
+
+# 后端依赖和构建产物
+/server/node_modules/
+/server/dist/
+/server/build/
+/server/bin/
+/server/cms
+/server/myapp
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 环境配置文件
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE 和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# 包管理器文件
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 缓存文件
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# 测试覆盖率报告
+coverage/
+.nyc_output/
+
+# 其他
+*.pid
+*.seed
+*.pid.lock
+.npm
+.eslintcache
+.stylelintcache
+
+# Docker 相关
+.dockerignore
+
+# 授权文件（包含敏感信息）
+license.json
+*.license
+
+# 上传文件目录
+/uploadFile/
+/uploads/
+
+node_modules

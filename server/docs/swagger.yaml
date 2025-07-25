@@ -1,0 +1,690 @@
+info:
+  contact: {}
+paths:
+  /auth/captcha:
+    get:
+      consumes:
+      - application/json
+      description: 获取验证码
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取验证码
+      tags:
+      - 登录
+  /auth/cookie:
+    get:
+      consumes:
+      - application/json
+      description: 获取一个短期的 Cookie 文件下载需要用到
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取一个短期的 Cookie
+      tags:
+      - 登录
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 登录
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 登录
+      tags:
+      - 登录
+  /department:
+    get:
+      consumes:
+      - application/json
+      description: 获取部门
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取部门
+      tags:
+      - 部门管理
+    post:
+      consumes:
+      - application/json
+      description: 创建部门
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 创建部门
+      tags:
+      - 部门管理
+  /department/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除部门
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 删除部门
+      tags:
+      - 部门管理
+    patch:
+      consumes:
+      - application/json
+      description: 修改部门
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 修改部门
+      tags:
+      - 部门管理
+  /interface:
+    get:
+      consumes:
+      - application/json
+      description: 获取接口（所有页面）
+      produces:
+      - application/json
+      responses: {}
+      summary: 获取接口（所有页面）
+      tags:
+      - 接口管理
+    post:
+      consumes:
+      - application/json
+      description: 创建接口
+      produces:
+      - application/json
+      responses: {}
+      summary: 创建接口
+      tags:
+      - 接口管理
+  /interface/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除接口
+      produces:
+      - application/json
+      responses: {}
+      summary: 删除接口
+      tags:
+      - 接口管理
+    patch:
+      consumes:
+      - application/json
+      description: 更新接口
+      produces:
+      - application/json
+      responses: {}
+      summary: 更新接口
+      tags:
+      - 接口管理
+  /interface/page/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取接口（根据页面ID）
+      produces:
+      - application/json
+      responses: {}
+      summary: 获取接口（根据页面ID）
+      tags:
+      - 接口管理
+  /interface/role/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取接口（根据角色ID）
+      produces:
+      - application/json
+      responses: {}
+      summary: 获取接口（根据角色ID）
+      tags:
+      - 接口管理
+  /log/commits:
+    get:
+      consumes:
+      - application/json
+      description: 获取Git提交记录
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取Git提交记录
+      tags:
+      - 日志管理
+  /log/commits/count:
+    get:
+      consumes:
+      - application/json
+      description: 获取Git提交次数
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取Git提交次数
+      tags:
+      - 日志管理
+  /log/system:
+    get:
+      consumes:
+      - application/json
+      description: 获取系统日志
+      produces:
+      - application/json
+      responses: {}
+      summary: 获取系统日志
+      tags:
+      - 日志管理
+  /pages:
+    get:
+      consumes:
+      - application/json
+      description: 获取菜单
+      produces:
+      - application/json
+      responses: {}
+      summary: 获取菜单
+      tags:
+      - 菜单管理
+    post:
+      consumes:
+      - application/json
+      description: 创建菜单
+      produces:
+      - application/json
+      responses: {}
+      summary: 创建菜单
+      tags:
+      - 菜单管理
+  /pages/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除菜单
+      produces:
+      - application/json
+      responses: {}
+      summary: 删除菜单
+      tags:
+      - 菜单管理
+    patch:
+      consumes:
+      - application/json
+      description: 更新菜单
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 更新菜单
+      tags:
+      - 菜单管理
+  /pages/role/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取角色菜单
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取角色菜单
+      tags:
+      - 获取角色菜单
+  /pages/user:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户菜单
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取用户菜单
+      tags:
+      - 菜单管理
+  /roles:
+    post:
+      consumes:
+      - application/json
+      description: 创建角色
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 创建角色
+      tags:
+      - 角色管理
+  /roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除角色
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 删除角色
+      tags:
+      - 角色管理
+    patch:
+      consumes:
+      - application/json
+      description: 更新角色
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 更新角色
+      tags:
+      - 角色管理
+  /roles/bindUser:
+    post:
+      consumes:
+      - application/json
+      description: 绑定用户
+      produces:
+      - application/json
+      responses: {}
+      summary: 绑定用户
+      tags:
+      - 角色管理
+  /roles/deBindUser:
+    post:
+      consumes:
+      - application/json
+      description: 解绑用户
+      produces:
+      - application/json
+      responses: {}
+      summary: 解绑用户
+      tags:
+      - 角色管理
+  /roles/export:
+    post:
+      consumes:
+      - application/json
+      description: 导出角色
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: 导出角色
+      tags:
+      - 角色管理
+  /roles/query:
+    post:
+      consumes:
+      - application/json
+      description: 获取角色
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取角色
+      tags:
+      - 角色管理
+  /system:
+    get:
+      consumes:
+      - application/json
+      description: 获取系统运行信息
+      produces:
+      - application/json
+      responses: {}
+      summary: 获取系统运行信息
+      tags:
+      - 系统管理
+  /template:
+    post:
+      consumes:
+      - application/json
+      description: 创建模板
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 创建模板
+      tags:
+      - 代码生成器
+  /template/download:
+    post:
+      consumes:
+      - application/json
+      description: 下载模板
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 下载模板
+      tags:
+      - 代码生成器
+  /timeTask:
+    get:
+      consumes:
+      - application/json
+      description: 获取定时任务
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取定时任务
+      tags:
+      - 定时任务
+  /timeTask/start/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 开启定时任务
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 开启定时任务
+      tags:
+      - 定时任务
+  /timeTask/stop/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 停止定时任务
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 停止定时任务
+      tags:
+      - 定时任务
+  /timeTask/update/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: 更新定时任务
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 更新定时任务
+      tags:
+      - 定时任务
+  /upload:
+    get:
+      consumes:
+      - application/json
+      description: 获取文件
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 获取文件
+      tags:
+      - 文件管理
+    post:
+      consumes:
+      - application/json
+      description: 上传文件
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 上传文件
+      tags:
+      - 文件管理
+  /upload/aHref/download:
+    post:
+      consumes:
+      - application/json
+      description: 文件下载
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 文件下载
+      tags:
+      - 文件管理
+  /upload/check:
+    post:
+      consumes:
+      - application/json
+      description: 检查文件状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 检查文件状态
+      tags:
+      - 文件管理
+  /upload/del/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除文件
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 删除文件
+      tags:
+      - 文件管理
+  /upload/finish:
+    post:
+      consumes:
+      - application/json
+      description: 完成上传
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 完成上传
+      tags:
+      - 文件管理
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: 创建新用户并将其添加到系统中
+      produces:
+      - application/json
+      responses: {}
+      summary: 创建新用户
+      tags:
+      - 用户管理
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据用户ID删除用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: 删除用户
+      tags:
+      - 用户管理
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取用户信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"ok"}'
+          schema:
+            type: string
+      summary: 根据ID获取用户信息
+      tags:
+      - 用户管理
+    patch:
+      consumes:
+      - application/json
+      description: 更新现有用户的信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: 更新用户信息
+      tags:
+      - 用户管理
+  /users/export:
+    post:
+      consumes:
+      - application/json
+      description: 导出用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: 导出用户
+      tags:
+      - 用户管理
+  /users/query:
+    post:
+      consumes:
+      - application/json
+      description: 根据查询参数查询用户信息
+      produces:
+      - application/json
+      responses: {}
+      summary: 查询用户
+      tags:
+      - 用户管理
+  /users/query/role/:id:
+    post:
+      consumes:
+      - application/json
+      description: 查询角色以外的用户
+      produces:
+      - application/json
+      responses: {}
+      summary: 查询角色以外的用户
+      tags:
+      - 用户管理
+  /users/role/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 查询用户（查询某个角色下的所有用户）
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: 查询用户（查询某个角色下的所有用户）
+      tags:
+      - 用户管理
+swagger: "2.0"

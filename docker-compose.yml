@@ -29,8 +29,8 @@ services:
     environment:
       DB_HOST: db
       DB_USER: root
-      DB_PASSWORD: your_password
-      DB_NAME: truck
+      DB_PASSWORD: 123456
+      DB_NAME: cms
     depends_on:
       - db
     restart: always
@@ -46,7 +46,7 @@ services:
 
   # nginx 反向代理
   nginx:
-    image: nginx:alpine
+    image: nginx:latest
     container_name: truck-nginx
     ports:
       - "80:80"

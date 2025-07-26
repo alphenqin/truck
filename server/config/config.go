@@ -1,5 +1,9 @@
 package config
 
+import (
+	"os"
+)
+
 var Config = config{
 	APP: APP{
 		PORT:          ":8081",
@@ -11,12 +15,19 @@ var Config = config{
 		DOMAIN:        "localhost",
 	},
 	DB: DB{
-		NAME:     "root",
-		PASSWORD: "123456",
-		HOST:     "localhost",
-		DB:       "cms",
-		PORT:     "3306",
+		NAME:     getEnv("DB_USER", "root"),
+		PASSWORD: getEnv("DB_PASSWORD", "123456"),
+		HOST:     getEnv("DB_HOST", "localhost"),
+		DB:       getEnv("DB_NAME", "cms"),
+		PORT:     getEnv("DB_PORT", "3306"),
 	},
+}
+
+func getEnv(key, defaultVal string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultVal
 }
 
 type config struct {

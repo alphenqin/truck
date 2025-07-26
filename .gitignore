@@ -85,3 +85,6 @@ license.json
 /uploads/
 
 node_modules
+
+mysql.tar
+nginx.tar

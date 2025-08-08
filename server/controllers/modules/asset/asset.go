@@ -548,6 +548,65 @@ func (a *assetController) AssetList(c *gin.Context) {
 	utils.Response.Success(c, result)
 }
 
+func (a *assetController) QueryFlow(ctx *gin.Context) {
+	var params dto.QueryExceptionParams
+	if err := ctx.ShouldBindJSON(&params); err != nil {
+		utils.Response.ParameterTypeError(ctx, err.Error())
+		return
+	}
+
+	// 校验分页参数
+	if params.Limit <= 0 || params.Limit > 100 {
+		params.Limit = 10
+	}
+	if params.Offset < 0 {
+		params.Offset = 0
+	}
+
+	dbQuery := db.GormDB.Table("exception_records")
+
+	// 查询条件
+	if params.ExceptionType != nil {
+		dbQuery = dbQuery.Where("exception_type = ?", *params.ExceptionType)
+	}
+	if params.Status != nil {
+		dbQuery = dbQuery.Where("status = ?", *params.Status)
+	}
+	if params.AssetID != nil {
+		dbQuery = dbQuery.Where("asset_id = ?", *params.AssetID)
+	}
+	if params.StartTime != "" && params.EndTime != "" {
+		dbQuery = dbQuery.Where("detection_time BETWEEN ? AND ?", params.StartTime, params.EndTime)
+	} else if params.StartTime != "" {
+		dbQuery = dbQuery.Where("detection_time >= ?", params.StartTime)
+	} else if params.EndTime != "" {
+		dbQuery = dbQuery.Where("detection_time <= ?", params.EndTime)
+	}
+
+	// 查询总数
+	var total int64
+	if err := dbQuery.Count(&total).Error; err != nil {
+		utils.Response.ServerError(ctx, err.Error())
+		return
+	}
+
+	// 查询数据
+	var list []dto.ExceptionRecord
+	if err := dbQuery.Order("detection_time DESC").
+		Limit(params.Limit).
+		Offset(params.Offset).
+		Find(&list).Error; err != nil {
+		utils.Response.ServerError(ctx, err.Error())
+		return
+	}
+
+	// 返回
+	utils.Response.Success(ctx, gin.H{
+		"list":  list,
+		"total": total,
+	})
+}
+
 func parseTimeRange(input string) (time.Time, time.Time) {
 	parts := strings.Split(input, ",")
 	if len(parts) != 2 {

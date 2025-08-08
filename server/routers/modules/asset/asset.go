@@ -17,6 +17,7 @@ func AssetRoutes(r *gin.RouterGroup) {
 		groupAsset.POST("/update/type", controllers.AssetController.UpdateType)
 
 		groupAsset.POST("/exception/lost", controllers.AssetController.QueryLost)
+		groupAsset.POST("/exception/flow/list", controllers.AssetController.QueryFlow)
 	}
 	groupMonitor := r.Group("/monitor")
 	{

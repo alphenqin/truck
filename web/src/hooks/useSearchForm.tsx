@@ -46,11 +46,9 @@ export const useSearchFrom = <T extends Record<string, any>>(props: SearchFormPr
                 {t('search')}
               </Button>
               {showAddBtn && (
-                <Auth permission={[constants.permissionDicMap.ADD_USER, constants.permissionDicMap.ADD_ROLE]}>
-                  <Button type='primary' className='mx-2' htmlType='button' icon={<PlusOutlined />} onClick={() => onNewRecordFn()}>
-                    {t('add')}
-                  </Button>
-                </Auth>
+                <Button type='primary' className='mx-2' htmlType='button' icon={<PlusOutlined />} onClick={() => onNewRecordFn()}>
+                  {t('add')}
+                </Button>
               )}
               {operateComponent}
             </div>

@@ -36,6 +36,7 @@ const AnalysisFlow = lazy(() => import('@/pages/Analysis/flow/index.tsx'));
 const AnalysisStatus = lazy(() => import('@/pages/Analysis/status/index.tsx'));
 
 const ExceptionLost = lazy(() => import('@/pages/Exception/Lost/index.tsx'));
+const ExceptionFlow = lazy(() => import('@/pages/Exception/Flow/index.tsx'));
 
 const MonitorMonitor = lazy(() => import('@/pages/Monitor/Monitor/index.tsx'));
 const MonitorVehicle = lazy(() => import('@/pages/Monitor/Vehicle/index.tsx'));
@@ -75,7 +76,9 @@ const pagesMap: Record<string, React.ReactNode | null> = {
   '/analysis/asset': <AnalysisAsset/>,
   '/analysis/flow': <AnalysisFlow/>,
   '/analysis/status': <AnalysisStatus/>,
+
   '/exception/lost': <ExceptionLost/>,
+  '/exception/flow': <ExceptionFlow/>,
 
 
   // 监控

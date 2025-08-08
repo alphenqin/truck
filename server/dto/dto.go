@@ -186,6 +186,11 @@ type QueryGroupParams = assetResponsiesModules.QueryGroupParams
 type AssetGroup = assetResponsiesModules.AssetGroup
 type GroupStore = assetResponsiesModules.GroupStore
 
+// 异常流转
+
+type QueryExceptionParams = assetResponsiesModules.QueryExceptionParams
+type ExceptionRecord = assetResponsiesModules.ExceptionRecord
+
 type Garden = siteLibraryRespModules.Gardens
 type GardenVO = siteLibraryRespModules.GardenVO
 type Store = siteLibraryRespModules.Store

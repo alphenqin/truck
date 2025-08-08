@@ -86,5 +86,6 @@ license.json
 
 node_modules
 
+# Docker 镜像文件
 mysql.tar
 nginx.tar

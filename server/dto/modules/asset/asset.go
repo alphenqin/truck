@@ -82,6 +82,7 @@ type Group struct {
 	GroupId   int64  `json:"groupId"`
 	GroupName string `json:"groupName"`
 }
+
 type GroupVO struct {
 	GroupId   int64  `json:"groupId"`
 	GroupName string `json:"groupName"`
@@ -101,4 +102,29 @@ type AssetGroup struct {
 type GroupStore struct {
 	GroupId int64 `gorm:"primaryKey" json:"groupId"`
 	StoreId int64 `json:"storeId"`
+}
+
+// QueryExceptionParams 异常记录查询参数
+type QueryExceptionParams struct {
+	StartTime     string `json:"startTime" form:"startTime"`         // 开始时间（可选，格式：yyyy-MM-dd HH:mm:ss）
+	EndTime       string `json:"endTime" form:"endTime"`             // 结束时间（可选）
+	ExceptionType *int   `json:"exceptionType" form:"exceptionType"` // 异常类型（可选）
+	Status        *int   `json:"status" form:"status"`               // 处理状态（可选）
+	AssetID       *int   `json:"assetId" form:"assetId"`             // 资产ID（可选）
+
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
+// ExceptionRecord 异常记录表 exception_records
+type ExceptionRecord struct {
+	ID            int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`        // 自增ID
+	ExceptionType int       `gorm:"column:exception_type" json:"exceptionType"`          // 异常类型
+	AssetID       int       `gorm:"column:asset_id" json:"assetId"`                      // 相关的资产id
+	DetectionTime time.Time `gorm:"column:detection_time" json:"detectionTime"`          // 检测时间
+	Status        int       `gorm:"column:status" json:"status"`                         // 处理状态
+	ExceptionNote string    `gorm:"column:exception_note" json:"exceptionNote"`          // 异常内容
+	Remark        string    `gorm:"column:remark" json:"remark"`                         // 备注
+	CreateTime    time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"` // 创建时间
+	UpdateTime    time.Time `gorm:"column:update_time;autoUpdateTime" json:"updateTime"` // 更新时间
 }

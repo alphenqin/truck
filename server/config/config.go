@@ -13,6 +13,8 @@ var Config = config{
 		BASEURL:       "/cms",
 		FILEPATH:      "./uploadFile/",
 		DOMAIN:        "localhost",
+		TCPADDR:       getEnv("TCP_ADDR", ":9000"),
+		REMOTE_ADDRS:  getEnv("TCP_REMOTE_ADDRS", "192.168.1.168:20058"),
 	},
 	DB: DB{
 		NAME:     getEnv("DB_USER", "root"),
@@ -43,6 +45,8 @@ type APP struct {
 	BASEURL       string
 	FILEPATH      string
 	DOMAIN        string
+	TCPADDR       string
+	REMOTE_ADDRS  string
 }
 type DB struct {
 	NAME     string

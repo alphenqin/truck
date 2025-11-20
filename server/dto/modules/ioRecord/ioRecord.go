@@ -3,6 +3,8 @@ package ioRecordResponsiesModules
 import "time"
 
 type IoRecord struct {
+	ID         int64      `gorm:"primaryKey;autoIncrement" json:"id"`
+	TagCode    string     `json:"tagCode"`
 	AssetId    int64      `json:"assetId"`
 	ActionType int        `json:"actionType"`
 	ActionTime *time.Time `json:"actionTime"`

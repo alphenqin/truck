@@ -11,6 +11,7 @@ export const useAppRouter = () => {
   const { menus, token } = useAppSelector((state) => state.UserStore); // 从全局状态中获取菜单和 token
   const { pathname } = useLocation(); // 当前路由路径
   const [routesWithMenus, setRoutesWithMenus] = useState<RouteObject[]>([]); // 动态路由表（含菜单）
+  const [isLoading, setIsLoading] = useState(true); // 添加加载状态
 
   // const menus = staticMenus
   console.log(menus)
@@ -44,7 +45,21 @@ export const useAppRouter = () => {
       const firstMenuPath = getFirstMenu(menus)?.pagePath || constants.routePath.login;
       navigate(firstMenuPath); // 跳转到第一个菜单项对应的路径
     }
+
+    // 设置加载完成
+    setIsLoading(false);
   }, [menus, pathname, navigate]);
+
+  // 如果正在加载且不是登录页，显示加载状态
+  if (isLoading && pathname !== constants.routePath.login) {
+    return {
+      element: (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-lg">加载中...</div>
+        </div>
+      ),
+    };
+  }
 
   return {
     // 根据当前动态路由生成可用的路由元素（用于渲染）

@@ -32,16 +32,7 @@ services:
       - db
     restart: always
 
-  # 前端服务
-  frontend:
-    image: truck-frontend:latest
-    container_name: truck-frontend
-    restart: always
-    volumes:
-      - ./web/nginx.conf:/etc/nginx/nginx.conf
-    # 不直接暴露端口，由nginx代理
-
-  # nginx 反向代理
+  # nginx 反向代理（直接使用 dist 文件）
   nginx:
     image: nginx:latest
     container_name: truck-nginx
@@ -51,7 +42,6 @@ services:
       - ./web/dist:/usr/share/nginx/html
       - ./web/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - frontend
       - backend
     restart: always
 

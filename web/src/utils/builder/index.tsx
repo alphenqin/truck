@@ -80,7 +80,6 @@ const pagesMap: Record<string, React.ReactNode | null> = {
   '/exception/lost': <ExceptionLost/>,
   '/exception/flow': <ExceptionFlow/>,
 
-
   // 监控
   '/monitor/monitor': <MonitorMonitor/>,
   '/monitor/vehicle': <MonitorVehicle/>,
@@ -98,6 +97,22 @@ const pagesMap: Record<string, React.ReactNode | null> = {
 
   '/panel': <Panel/>,
 };
+
+// 规范化路径，去除末尾斜杠并尝试小写匹配
+function resolvePageComponent(rawPath: string): React.ReactNode | null | undefined {
+  const normalized = (rawPath || '').trim();
+  const exact = pagesMap[normalized];
+  if (exact) return exact;
+
+  const trimmed = normalized.replace(/\/$/, '');
+  if (trimmed && pagesMap[trimmed]) return pagesMap[trimmed];
+
+  const lower = normalized.toLowerCase();
+  if (pagesMap[lower]) return pagesMap[lower];
+
+  const lowerTrimmed = lower.replace(/\/$/, '');
+  return pagesMap[lowerTrimmed];
+}
 
 // 构建 Layout 主路由的子路由数组
 export const builderMenuRoutes = (menus: menuType[]) => {
@@ -117,7 +132,7 @@ export const builderMenuRoutes = (menus: menuType[]) => {
         } else {
           mainChildrenRoutes.push({
             path: item.pagePath,
-            element: pagesMap[item.pagePath] ? pagesMap[item.pagePath] : <NotFond />,
+            element: resolvePageComponent(item.pagePath) ?? <NotFond />,
           });
         }
       }

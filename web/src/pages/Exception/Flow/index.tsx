@@ -70,7 +70,7 @@ const ExceptionFlowPage: React.FC = () => {
       ),
       onOk: async () => {
         const note = (document.getElementById('handleForm') as any)?.handleNote?.value || '';
-        await handleException({ id: record.id, status: 1, handleNote: note });
+        await handleException({ id: record.id.toString(), status: 1, handleNote: note });
         message.success('处理成功');
         fetchData();
       },

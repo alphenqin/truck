@@ -419,7 +419,7 @@ const PanelPage: React.FC = () => {
   );
 
   return (
-    <div style={{ background: '#f6f8fa', minHeight: '100vh', padding: 16 }}>
+    <div style={{ background: '#fff', minHeight: '100vh', padding: 16 }}>
       <Row gutter={[8, 8]}> {/* 调整 gutter 保持紧凑 */}
         {/* 第一行 */}
         <Col span={8}>

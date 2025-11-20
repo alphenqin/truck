@@ -178,7 +178,7 @@ const Main: FC = () => {
           <Content className='h-full flex-1 flex justify-center items-start bg-gray-50 dark:bg-gray-900 p-0'>
             <div
               ref={fullscreenRef as any}
-              className={classNames('h-full w-full max-w-[1600px] mx-auto my-2 px-8 py-3 rounded-2xl shadow-lg bg-white dark:bg-gray-800 transition-all overflow-y-auto', {
+              className={classNames('h-full w-full max-w-[1700px] mx-auto my-2 px-8 py-3 rounded-2xl shadow-lg bg-white dark:bg-gray-800 transition-all overflow-y-auto', {
                 // 统一圆角、阴影、背景色
               })}>
               {/* 页面异步加载 Suspense 包裹 Outlet */}

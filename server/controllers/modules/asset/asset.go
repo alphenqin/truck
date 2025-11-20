@@ -607,6 +607,100 @@ func (a *assetController) QueryFlow(ctx *gin.Context) {
 	})
 }
 
+// HandleException 处理单个异常记录
+func (a *assetController) HandleException(ctx *gin.Context) {
+	var params struct {
+		ID         string `json:"id"`
+		Status     int    `json:"status"`
+		HandleNote string `json:"handleNote"`
+	}
+	if err := ctx.ShouldBindJSON(&params); err != nil {
+		utils.Response.ParameterTypeError(ctx, err.Error())
+		return
+	}
+
+	// 更新异常记录状态
+	if err := db.GormDB.Table("exception_records").
+		Where("id = ?", params.ID).
+		Updates(map[string]interface{}{
+			"status":         params.Status,
+			"exception_note": params.HandleNote,
+			"update_time":    time.Now(),
+		}).Error; err != nil {
+		utils.Response.ServerError(ctx, err.Error())
+		return
+	}
+
+	utils.Response.Success(ctx, nil)
+}
+
+// BatchHandleException 批量处理异常记录
+func (a *assetController) BatchHandleException(ctx *gin.Context) {
+	var params struct {
+		IDs        []string `json:"ids"`
+		Status     int      `json:"status"`
+		HandleNote string   `json:"handleNote"`
+	}
+	if err := ctx.ShouldBindJSON(&params); err != nil {
+		utils.Response.ParameterTypeError(ctx, err.Error())
+		return
+	}
+
+	// 批量更新异常记录状态
+	if err := db.GormDB.Table("exception_records").
+		Where("id IN ?", params.IDs).
+		Updates(map[string]interface{}{
+			"status":         params.Status,
+			"exception_note": params.HandleNote,
+			"update_time":    time.Now(),
+		}).Error; err != nil {
+		utils.Response.ServerError(ctx, err.Error())
+		return
+	}
+
+	utils.Response.Success(ctx, nil)
+}
+
+// ExportException 导出异常记录
+func (a *assetController) ExportException(ctx *gin.Context) {
+	var params dto.QueryExceptionParams
+	if err := ctx.ShouldBindJSON(&params); err != nil {
+		utils.Response.ParameterTypeError(ctx, err.Error())
+		return
+	}
+
+	// 查询异常记录
+	dbQuery := db.GormDB.Table("exception_records")
+
+	// 查询条件
+	if params.ExceptionType != nil {
+		dbQuery = dbQuery.Where("exception_type = ?", *params.ExceptionType)
+	}
+	if params.Status != nil {
+		dbQuery = dbQuery.Where("status = ?", *params.Status)
+	}
+	if params.AssetID != nil {
+		dbQuery = dbQuery.Where("asset_id = ?", *params.AssetID)
+	}
+	if params.StartTime != "" && params.EndTime != "" {
+		dbQuery = dbQuery.Where("detection_time BETWEEN ? AND ?", params.StartTime, params.EndTime)
+	} else if params.StartTime != "" {
+		dbQuery = dbQuery.Where("detection_time >= ?", params.StartTime)
+	} else if params.EndTime != "" {
+		dbQuery = dbQuery.Where("detection_time <= ?", params.EndTime)
+	}
+
+	var list []dto.ExceptionRecord
+	if err := dbQuery.Order("detection_time DESC").Find(&list).Error; err != nil {
+		utils.Response.ServerError(ctx, err.Error())
+		return
+	}
+
+	// 生成下载链接（这里简化处理，实际应该生成文件）
+	downloadURL := "/api/exception/export/download"
+	utils.Response.Success(ctx, downloadURL)
+}
+
 func parseTimeRange(input string) (time.Time, time.Time) {
 	parts := strings.Split(input, ",")
 	if len(parts) != 2 {

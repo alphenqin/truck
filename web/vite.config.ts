@@ -5,6 +5,7 @@ import viteCompression from 'vite-plugin-compression';
 const prefix = `monaco-editor/esm/vs`;
 
 export default defineConfig({
+  base: '/',
   plugins: [react()],
   resolve: {
     alias: {

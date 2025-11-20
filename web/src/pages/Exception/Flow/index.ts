@@ -18,6 +18,7 @@ export interface IQueryExceptionParams extends IPage {
 
 // 异常类型映射
 export const exceptionTypeMap: Record<number, string> = {
+  0: '未知异常',
   1: '工装车厂房不匹配',
   2: '牵引车厂房不匹配',
 };
@@ -30,15 +31,15 @@ export const statusMap: Record<number, string> = {
 
 // 异常记录接口
 export interface IExceptionRecord {
-  id: string;                // 异常记录ID
-  exceptionType: number;     // 异常类型
-  assetId: number;           // 相关的资产id
-  detectionTime: string;     // 检测时间
-  status: number;            // 处理状态
-  exceptionNote?: string;    // 异常内容
-  remark?: string;           // 备注
-  createTime: string;        // 创建时间
-  updateTime: string;        // 更新时间
+  id: number;                 // 异常记录ID (后端返回的是 number)
+  exceptionType: number;      // 异常类型
+  assetId: number;            // 相关的资产id
+  detectionTime: string;      // 检测时间
+  status: number;             // 处理状态
+  exceptionNote?: string;     // 异常内容
+  remark?: string;            // 备注
+  createTime: string;         // 创建时间
+  updateTime: string;         // 更新时间
 }
 
 // 异常统计接口
@@ -63,7 +64,7 @@ export const getExceptionList = (params: IQueryExceptionParams) => {
     msg: string;
     data: IHasTotalResponse<IExceptionRecord[]>;
   }>({
-    url: 'asset/exception/flow/list',
+    url: '/asset/exception/flow/list',
     data: params,
   });
 };
@@ -91,7 +92,7 @@ export const handleException = (params: {
     msg: string;
     data: null;
   }>({
-    url: '/exception/handle',
+    url: '/asset/exception/handle',
     data: params,
   });
 };
@@ -107,7 +108,7 @@ export const batchHandleException = (params: {
     msg: string;
     data: null;
   }>({
-    url: '/exception/batchHandle',
+    url: '/asset/exception/batchHandle',
     data: params,
   });
 };
@@ -119,7 +120,7 @@ export const exportExceptionList = (params: IQueryExceptionParams) => {
     msg: string;
     data: string; // 文件下载链接
   }>({
-    url: '/exception/export',
+    url: '/asset/exception/export',
     data: params,
   });
 };

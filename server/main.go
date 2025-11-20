@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Xi-Yuer/cms/bootStrap"
+	"github.com/Xi-Yuer/cms/services/tcpserver"
 )
 
 func main() {
@@ -20,6 +21,8 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	// 优雅关闭 TCP 监听
+	tcpserver.Shutdown(ctx)
 }

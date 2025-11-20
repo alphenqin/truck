@@ -18,6 +18,9 @@ func AssetRoutes(r *gin.RouterGroup) {
 
 		groupAsset.POST("/exception/lost", controllers.AssetController.QueryLost)
 		groupAsset.POST("/exception/flow/list", controllers.AssetController.QueryFlow)
+		groupAsset.POST("/exception/handle", controllers.AssetController.HandleException)
+		groupAsset.POST("/exception/batchHandle", controllers.AssetController.BatchHandleException)
+		groupAsset.POST("/exception/export", controllers.AssetController.ExportException)
 	}
 	groupMonitor := r.Group("/monitor")
 	{

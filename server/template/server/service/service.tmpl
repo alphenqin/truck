@@ -1,14 +1,14 @@
 package {{ .TableName }}Service
 
 import (
-	{{ .TableName }}Dto "{{ .Package }}/template/dto"
+	{{ .TableName }}Types "{{ .Package }}/template/types"
 	{{ .TableName }}Repository "{{ .Package }}/template/repository"
 )
 
 type ServiceInterface interface {
-	Get{{ .TableName }}ListService(params *{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO, error)
-	Create{{ .TableName }}RecordService(params *{{ .TableName }}Dto.{{ .TableName }}CreateRequestDTO) error
-	Update{{ .TableName }}ListService(id string, params *{{ .TableName }}Dto.{{ .TableName }}UpdateRequestDTO) error
+	Get{{ .TableName }}ListService(params *{{ .TableName }}Types.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Types.{{ .TableName }}FindRequestDTO, error)
+	Create{{ .TableName }}RecordService(params *{{ .TableName }}Types.{{ .TableName }}CreateRequestDTO) error
+	Update{{ .TableName }}ListService(id string, params *{{ .TableName }}Types.{{ .TableName }}UpdateRequestDTO) error
 	Delete{{ .TableName }}RecordService(id string) error
 }
 type Service struct {
@@ -21,15 +21,15 @@ func New{{ .TableName }}Service() *Service {
 	}
 }
 
-func (s Service) Get{{ .TableName }}ListService(params *{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO, error) {
+func (s Service) Get{{ .TableName }}ListService(params *{{ .TableName }}Types.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Types.{{ .TableName }}FindRequestDTO, error) {
 	return s.repo.Get{{ .TableName }}ListRepo(params)
 }
 
-func (s Service) Create{{ .TableName }}RecordService(params *{{ .TableName }}Dto.{{ .TableName }}CreateRequestDTO) error {
+func (s Service) Create{{ .TableName }}RecordService(params *{{ .TableName }}Types.{{ .TableName }}CreateRequestDTO) error {
 	return s.repo.Create{{ .TableName }}RecordRepo(params)
 }
 
-func (s Service) Update{{ .TableName }}ListService(id string, params *{{ .TableName }}Dto.{{ .TableName }}UpdateRequestDTO) error {
+func (s Service) Update{{ .TableName }}ListService(id string, params *{{ .TableName }}Types.{{ .TableName }}UpdateRequestDTO) error {
 	return s.repo.Update{{ .TableName }}RecordRepo(id, params)
 }
 

@@ -7,8 +7,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Xi-Yuer/cms/bootStrap"
-	"github.com/Xi-Yuer/cms/services/tcpserver"
+	"github.com/Xi-Yuer/cms/app/bootStrap"
+	"github.com/Xi-Yuer/cms/infra/tcpserver"
 )
 
 func main() {

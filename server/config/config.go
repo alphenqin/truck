@@ -2,56 +2,94 @@ package config
 
 import (
 	"os"
+	"path/filepath"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
-var Config = config{
-	APP: APP{
-		PORT:          ":8081",
-		SESSIONSECRET: "FUCNdjYGFg4G",
-		JWT:           "P8BkI2OpBkY",
-		SWAGPATH:      "http://localhost:8081/swagger/docs/index.html#/example",
-		BASEURL:       "/cms",
-		FILEPATH:      "./uploadFile/",
-		DOMAIN:        "localhost",
-		TCPADDR:       getEnv("TCP_ADDR", ":9000"),
-		REMOTE_ADDRS:  getEnv("TCP_REMOTE_ADDRS", "192.168.1.168:20058"),
-	},
-	DB: DB{
-		NAME:     getEnv("DB_USER", "root"),
-		PASSWORD: getEnv("DB_PASSWORD", "123456"),
-		HOST:     getEnv("DB_HOST", "localhost"),
-		DB:       getEnv("DB_NAME", "cms"),
-		PORT:     getEnv("DB_PORT", "3306"),
-	},
+var Config = loadConfig()
+
+func defaultConfig() config {
+	return config{
+		APP: APP{
+			PORT:         ":8081",
+			BASEURL:      "/cms",
+			DOMAIN:       "localhost",
+			TCPADDR:      ":9000",
+			REMOTE_ADDRS: "192.168.1.168:20058",
+			TCP_ENABLE:   true,
+		},
+		DB: DB{
+			NAME: "root",
+			HOST: "localhost",
+			DB:   "cms",
+			PORT: "3306",
+		},
+	}
 }
 
-func getEnv(key, defaultVal string) string {
-	if val := os.Getenv(key); val != "" {
-		return val
+func loadConfig() config {
+	cfg := defaultConfig()
+
+	env := "dev"
+	envPath := filepath.Join("config", "config.toml")
+	if data, err := os.ReadFile(envPath); err == nil {
+		var envCfg struct {
+			Env string `toml:"env"`
+		}
+		if err := toml.Unmarshal(data, &envCfg); err != nil {
+			panic("config file parse error: " + err.Error())
+		}
+		if envCfg.Env != "" {
+			env = envCfg.Env
+		}
 	}
-	return defaultVal
+	path := filepath.Join("config", "config."+env+".toml")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		panic("config file not found: " + path)
+	}
+	if err := toml.Unmarshal(data, &cfg); err != nil {
+		panic("config file parse error: " + err.Error())
+	}
+
+	validateConfig(cfg)
+	return cfg
+}
+
+func validateConfig(cfg config) {
+	if cfg.APP.SESSIONSECRET == "" {
+		panic("missing required config: app.session_secret")
+	}
+	if cfg.APP.JWT == "" {
+		panic("missing required config: app.jwt_secret")
+	}
+	if cfg.DB.PASSWORD == "" {
+		panic("missing required config: db.password")
+	}
 }
 
 type config struct {
-	APP
-	DB
+	APP APP `toml:"app"`
+	DB  DB  `toml:"db"`
 }
 
 type APP struct {
-	PORT          string
-	SESSIONSECRET string
-	JWT           string
-	SWAGPATH      string
-	BASEURL       string
-	FILEPATH      string
-	DOMAIN        string
-	TCPADDR       string
-	REMOTE_ADDRS  string
+	PORT          string `toml:"port"`
+	SESSIONSECRET string `toml:"session_secret"`
+	JWT           string `toml:"jwt_secret"`
+	BASEURL       string `toml:"baseurl"`
+	DOMAIN        string `toml:"domain"`
+	TCPADDR       string `toml:"tcp_addr"`
+	REMOTE_ADDRS  string `toml:"remote_addrs"`
+	TCP_ENABLE    bool   `toml:"tcp_enable"`
 }
+
 type DB struct {
-	NAME     string
-	PASSWORD string
-	HOST     string
-	DB       string
-	PORT     string
+	NAME     string `toml:"user"`
+	PASSWORD string `toml:"password"`
+	HOST     string `toml:"host"`
+	DB       string `toml:"name"`
+	PORT     string `toml:"port"`
 }

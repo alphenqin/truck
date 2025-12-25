@@ -24,7 +24,7 @@ type TableNameController struct {
 }
 
 func (t *TableNameController) GetTableNameListRepo(context *gin.Context) {
-	var params TableNameDto.TableNameFindRequestDTO
+	var params TableNameTypes.TableNameFindRequestDTO
 	if err := context.ShouldBind(&params); err != nil {
 		context.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -38,7 +38,7 @@ func (t *TableNameController) GetTableNameListRepo(context *gin.Context) {
 }
 
 func (t *TableNameController) CreateTableNameRecordRepo(context *gin.Context) {
-	var params TableNameDto.TableNameCreateRequestDTO
+	var params TableNameTypes.TableNameCreateRequestDTO
 	if err := context.ShouldBind(&params); err != nil {
 		context.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -52,7 +52,7 @@ func (t *TableNameController) CreateTableNameRecordRepo(context *gin.Context) {
 }
 
 func (t *TableNameController) UpdateTableNameRecordRepo(context *gin.Context) {
-	var params TableNameDto.TableNameUpdateRequestDTO
+	var params TableNameTypes.TableNameUpdateRequestDTO
 	id := context.Param("id")
 	if id == "" {
 		context.JSON(400, gin.H{"error": "id is null"})

@@ -14,10 +14,10 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/swaggo/files v1.0.1
-	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
 	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.23.0

@@ -35,10 +35,18 @@ const Login: FC = () => {
     });
   };
 
+  useEffect(() => {
+    return () => {
+      if (captcha) {
+        URL.revokeObjectURL(captcha);
+      }
+    };
+  }, [captcha]);
+
   // 默认表单初始值（仅供测试，生产可删）
   const form: FieldType = {
     account: '',
-    password: '123',
+    password: '',
     captcha: '',
   };
 

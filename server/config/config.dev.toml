@@ -1,0 +1,16 @@
+[app]
+port = ":8081"
+session_secret = "dev_session_secret"
+jwt_secret = "dev_jwt_secret"
+baseurl = "/cms"
+domain = "localhost"
+tcp_addr = ":9000"
+remote_addrs = ""
+tcp_enable = false
+
+[db]
+user = "root"
+password = "123456"
+host = "localhost"
+name = "cms"
+port = "3306"

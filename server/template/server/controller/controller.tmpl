@@ -1,7 +1,7 @@
 package {{ .TableName }}Controller
 
 import (
-	{{ .TableName }}Dto "{{ .Package }}/template/dto"
+	{{ .TableName }}Types "{{ .Package }}/template/types"
 	{{ .TableName }}Service "{{ .Package }}/template/service"
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +24,7 @@ type {{ .TableName }}Controller struct {
 }
 
 func (t *{{ .TableName }}Controller) Get{{ .TableName }}ListRepo(context *gin.Context) {
-	var params {{ .TableName }}Dto.{{ .TableName }}FindRequestDTO
+	var params {{ .TableName }}Types.{{ .TableName }}FindRequestDTO
 	if err := context.ShouldBind(&params); err != nil {
 		context.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -38,7 +38,7 @@ func (t *{{ .TableName }}Controller) Get{{ .TableName }}ListRepo(context *gin.Co
 }
 
 func (t *{{ .TableName }}Controller) Create{{ .TableName }}RecordRepo(context *gin.Context) {
-	var params {{ .TableName }}Dto.{{ .TableName }}CreateRequestDTO
+	var params {{ .TableName }}Types.{{ .TableName }}CreateRequestDTO
 	if err := context.ShouldBind(&params); err != nil {
 		context.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -52,7 +52,7 @@ func (t *{{ .TableName }}Controller) Create{{ .TableName }}RecordRepo(context *g
 }
 
 func (t *{{ .TableName }}Controller) Update{{ .TableName }}RecordRepo(context *gin.Context) {
-	var params {{ .TableName }}Dto.{{ .TableName }}UpdateRequestDTO
+	var params {{ .TableName }}Types.{{ .TableName }}UpdateRequestDTO
 	id := context.Param("id")
 	if id == "" {
 		context.JSON(400, gin.H{"error": "id is null"})

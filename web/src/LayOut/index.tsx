@@ -4,7 +4,7 @@ import { useMainPage } from '@/LayOut/hooks.tsx'; // 自定义 hook：处理菜�
 import { useTheme } from '@/hooks/useTheme'; // 主题切换 hook
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Image, Layout, Menu, Popover, Spin, Badge } from 'antd';
-import { AppBreadcrumb, AppHeaderTab, AppUploads, ThemeBar } from '@/components';
+import { AppBreadcrumb, AppHeaderTab, ThemeBar } from '@/components';
 // import { Translate } from '@/components';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { DownOutlined, ExpandOutlined, MenuFoldOutlined, MenuUnfoldOutlined, WarningOutlined } from '@ant-design/icons';
@@ -12,16 +12,12 @@ import { changeFold } from '@/store/UIStore'; // Redux: 控制菜单折叠
 import { cache } from '@/utils'; // 封装的缓存工具（清除用户信息等）
 import Logo from '@/assets/svg/logo.svg';
 import classNames from 'classnames';
-import { addListenerUploadFile, removeListenerUploadFile } from '@/utils/event';
-import { RcFile } from 'antd/es/upload';
-import { AppUploadsRefProps } from '@/components/AppUploads';
 import { constants } from '@/constant';
 import { useTranslation } from 'react-i18next';
 import LoadingGIF from '@/assets/image/loading.gif';
 
 const Main: FC = () => {
   const { t } = useTranslation();
-  const appUploadsRef = useRef<AppUploadsRefProps>(null); // 上传组件的 ref
   const dispatch = useAppDispatch();
   const fullscreenRef = useRef(); // 用于 ahooks 全屏挂载的 DOM 容器
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -43,19 +39,6 @@ const Main: FC = () => {
     cache.clear(); // 清空缓存（用户信息等）
     navigate(constants.routePath.login); // 跳转登录页
   };
-
-  // 上传文件事件监听回调
-  const uploadFileHandler = (file: RcFile) => {
-    appUploadsRef.current?.addUploadFile(file);
-  };
-
-  // 组件挂载时注册上传监听，卸载时移除
-  useEffect(() => {
-    addListenerUploadFile(uploadFileHandler);
-    return () => {
-      removeListenerUploadFile(uploadFileHandler);
-    };
-  }, []);
 
   // 模拟获取错误信息
   useEffect(() => {
@@ -85,7 +68,7 @@ const Main: FC = () => {
         >
           {/* Logo 区域 */}
           <div
-            className='h-16 bg-gradient-to-r from-blue-600 to-blue-800 truncate overflow-hidden dark:from-blue-800 dark:to-blue-900 animate__animated animate__backInDown text-white flex items-center justify-center text-xl font-bold cursor-pointer'
+            className='h-16 bg-gradient-to-r from-blue-600 to-blue-800 truncate overflow-hidden dark:from-blue-800 dark:to-blue-900 truck-animate truck-back-in-down text-white flex items-center justify-center text-xl font-bold cursor-pointer'
             onClick={navigateHome}>
             <Image src={Logo} width={30} preview={false} />
             {!isFold && <span>工装车管理系统</span>}
@@ -190,6 +173,7 @@ const Main: FC = () => {
                     indicator={
                       <Image
                         src={LoadingGIF}
+                        preview={false}
                         style={{
                           width: '100px',
                           height: '100px',
@@ -203,7 +187,6 @@ const Main: FC = () => {
           </Content>
 
           {/* 文件上传面板（挂载但默认不展示） */}
-          <AppUploads ref={appUploadsRef} />
         </Layout>
       </Layout>
     </>

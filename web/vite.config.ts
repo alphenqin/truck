@@ -15,9 +15,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          tsWorker: [`${prefix}/language/typescript/ts.worker`],
-          editorWorker: [`${prefix}/editor/editor.worker`],
+        manualChunks: (id) => {
+          if (id.includes(`${prefix}/language/typescript/ts.worker`)) return 'tsWorker';
+          if (id.includes(`${prefix}/editor/editor.worker`)) return 'editorWorker';
+          if (id.includes('/src/pages/Login')) return 'route-login';
+          if (id.includes('/src/LayOut')) return 'route-layout';
+          if (id.includes('/src/pages/NotFond')) return 'route-notfound';
+          return undefined;
         },
         chunkFileNames: 'js/[name]-[hash].js', // 引入文件名的名称
         entryFileNames: 'js/[name]-[hash].js', // 包的入口文件名称

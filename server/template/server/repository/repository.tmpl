@@ -2,7 +2,7 @@ package {{ .TableName }}Repository
 
 import (
 	"{{ .Package }}/db"
-	{{ .TableName }}Dto "{{ .Package }}/template/dto"
+	{{ .TableName }}Types "{{ .Package }}/template/types"
 	"log"
 )
 
@@ -11,23 +11,23 @@ func New{{ .TableName }}Repository() RepositoryInterface {
 }
 
 type RepositoryInterface interface {
-	Get{{ .TableName }}ListRepo(params *{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO, error)
-	Create{{ .TableName }}RecordRepo(params *{{ .TableName }}Dto.{{ .TableName }}CreateRequestDTO) error
-	Update{{ .TableName }}RecordRepo(id string, params *{{ .TableName }}Dto.{{ .TableName }}UpdateRequestDTO) error
+	Get{{ .TableName }}ListRepo(params *{{ .TableName }}Types.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Types.{{ .TableName }}FindRequestDTO, error)
+	Create{{ .TableName }}RecordRepo(params *{{ .TableName }}Types.{{ .TableName }}CreateRequestDTO) error
+	Update{{ .TableName }}RecordRepo(id string, params *{{ .TableName }}Types.{{ .TableName }}UpdateRequestDTO) error
 	Delete{{ .TableName }}RecordRepo(id string) error
 }
 
 type repository struct{}
 
-func (r *repository) Get{{ .TableName }}ListRepo(params *{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO, error) {
+func (r *repository) Get{{ .TableName }}ListRepo(params *{{ .TableName }}Types.{{ .TableName }}FindRequestDTO) ([]*{{ .TableName }}Types.{{ .TableName }}FindRequestDTO, error) {
 	querySQL := "SELECT * FROM {{ .TableName }} LIMIT ?,?"
 	rows, err := db.DB.Query(querySQL, params.Limit, params.Offset)
 	if err != nil {
 		return nil, err
 	}
-	var {{ .TableName }}List []*{{ .TableName }}Dto.{{ .TableName }}FindRequestDTO
+	var {{ .TableName }}List []*{{ .TableName }}Types.{{ .TableName }}FindRequestDTO
 	for rows.Next() {
-		var params {{ .TableName }}Dto.{{ .TableName }}FindRequestDTO
+		var params {{ .TableName }}Types.{{ .TableName }}FindRequestDTO
 		if err := rows.Scan({{range .Fields}} &params.{{.Name}}, {{end}}); err != nil {
 			log.Fatal(err)
 		}
@@ -36,7 +36,7 @@ func (r *repository) Get{{ .TableName }}ListRepo(params *{{ .TableName }}Dto.{{ 
 	return {{ .TableName }}List, nil
 }
 
-func (r *repository) Create{{ .TableName }}RecordRepo(params *{{ .TableName }}Dto.{{ .TableName }}CreateRequestDTO) error {
+func (r *repository) Create{{ .TableName }}RecordRepo(params *{{ .TableName }}Types.{{ .TableName }}CreateRequestDTO) error {
 	querySQL := "INSERT INTO {{ .TableName }} ({{range .Fields}} {{.Name}}, {{end}}) VALUES (?,?)"
 	if _, err := db.DB.Exec(querySQL, params.Name, params.Age); err != nil {
 		return err
@@ -44,7 +44,7 @@ func (r *repository) Create{{ .TableName }}RecordRepo(params *{{ .TableName }}Dt
 	return nil
 }
 
-func (r *repository) Update{{ .TableName }}RecordRepo(id string, params *{{ .TableName }}Dto.{{ .TableName }}UpdateRequestDTO) error {
+func (r *repository) Update{{ .TableName }}RecordRepo(id string, params *{{ .TableName }}Types.{{ .TableName }}UpdateRequestDTO) error {
 	querySQL := "UPDATE {{ .TableName }} SET {{range .Fields}} {{.Name}}=?,{{end}} WHERE id=?"
 	if _, err := db.DB.Exec(querySQL, {{range .Fields}} params.{{.Name}}, {{end}}); err != nil {
 		return err

@@ -1,6 +1,6 @@
-import { memo, useEffect } from 'react';
+import { Suspense, memo, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { ConfigProvider, message } from 'antd';
+import { ConfigProvider, Image, Spin, message } from 'antd';
 import { constants } from '@/constant';
 import { changeThemeMode } from '@/store/UIStore';
 import { useAppRouter } from '@/hooks/useAppRoutes.tsx';
@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { useTheme } from '@/theme';
 import { MESSAGE_EVENT_NAME } from '@/utils';
 import { MessageInstance } from 'antd/es/message/interface';
+import LoadingGIF from '@/assets/image/loading.gif';
 
 dayjs.locale('zh-cn');
 
@@ -40,7 +41,17 @@ const APP = () => {
     <>
       {contextHolder}
       <ConfigProvider locale={constants.langMap[langMode]} theme={theme}>
-        {element}
+        <Suspense
+          fallback={
+            <Spin
+              spinning={true}
+              fullscreen={true}
+              indicator={<Image src={LoadingGIF} preview={false} />}
+              style={{ width: '100px', height: '100px' }}
+            />
+          }>
+          {element}
+        </Suspense>
       </ConfigProvider>
     </>
   );

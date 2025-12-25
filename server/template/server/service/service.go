@@ -6,9 +6,9 @@ import (
 )
 
 type ServiceInterface interface {
-	GetTableNameListService(params *TableNameDto.TableNameFindRequestDTO) ([]*TableNameDto.TableNameFindRequestDTO, error)
-	CreateTableNameRecordService(params *TableNameDto.TableNameCreateRequestDTO) error
-	UpdateTableNameListService(id string, params *TableNameDto.TableNameUpdateRequestDTO) error
+	GetTableNameListService(params *TableNameTypes.TableNameFindRequestDTO) ([]*TableNameTypes.TableNameFindRequestDTO, error)
+	CreateTableNameRecordService(params *TableNameTypes.TableNameCreateRequestDTO) error
+	UpdateTableNameListService(id string, params *TableNameTypes.TableNameUpdateRequestDTO) error
 	DeleteTableNameRecordService(id string) error
 }
 type Service struct {
@@ -21,15 +21,15 @@ func NewTableNameService() *Service {
 	}
 }
 
-func (s Service) GetTableNameListService(params *TableNameDto.TableNameFindRequestDTO) ([]*TableNameDto.TableNameFindRequestDTO, error) {
+func (s Service) GetTableNameListService(params *TableNameTypes.TableNameFindRequestDTO) ([]*TableNameTypes.TableNameFindRequestDTO, error) {
 	return s.repo.GetTableNameListRepo(params)
 }
 
-func (s Service) CreateTableNameRecordService(params *TableNameDto.TableNameCreateRequestDTO) error {
+func (s Service) CreateTableNameRecordService(params *TableNameTypes.TableNameCreateRequestDTO) error {
 	return s.repo.CreateTableNameRecordRepo(params)
 }
 
-func (s Service) UpdateTableNameListService(id string, params *TableNameDto.TableNameUpdateRequestDTO) error {
+func (s Service) UpdateTableNameListService(id string, params *TableNameTypes.TableNameUpdateRequestDTO) error {
 	return s.repo.UpdateTableNameRecordRepo(id, params)
 }
 

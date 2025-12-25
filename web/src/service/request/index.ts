@@ -30,9 +30,13 @@ const request = new Request<IResponse>(import.meta.env.VITE_APP_BASE_URL, 1000 *
       return value.data;
     },
     onRejected(error) {
-      const { msg } = error.response.data;
-      message.error(msg);
-      if (error.response.data.code == 401) {
+      const responseData = error?.response?.data;
+      if (responseData?.msg) {
+        message.error(responseData.msg);
+      } else {
+        message.error('请求失败，请稍后重试');
+      }
+      if (responseData?.code == 401) {
         cache.clear();
         window.location.replace(constants.routePath.login);
         message.error('登录过期，请重新登录');

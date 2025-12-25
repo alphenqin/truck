@@ -16,7 +16,6 @@ const SystemMenu = lazy(() => import('@/pages/System/Menu'));
 const NotFond = lazy(() => import('@/pages/NotFond'));
 const Iframe = lazy(() => import('@/components/Iframe'));
 const Logs = lazy(() => import('@/pages/Monitor/Logs'));
-const File = lazy(() => import('@/pages/File/Upload'));
 const TimeTask = lazy(() => import('@/pages/Monitor/TimeTask'));
 const CodeGenerator = lazy(() => import('@/pages/SystemUtils/CodeGenerate'));
 const About = lazy(() => import('@/pages/About'));
@@ -62,7 +61,6 @@ const pagesMap: Record<string, React.ReactNode | null> = {
   '/system/menu': <SystemMenu />,
   '/monitor/logs': <Logs />,
   '/monitor/timeTask': <TimeTask />,
-  '/file/upload': <File />,
   '/utils/codeGenerator': <CodeGenerator />,
   '/about': <About />,
 

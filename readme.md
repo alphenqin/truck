@@ -12,8 +12,6 @@
 │       └── gen_license.go # 授权文件生成工具
 ├── web/                   # 前端代码
 ├── static/                # 静态资源
-├── docker-compose.yml     # Docker 编排
-├── Dockerfile             # Docker 构建
 ├── .gitignore             # Git 忽略文件
 └── readme.md              # 项目说明
 ```

@@ -1,7 +1,7 @@
 package TableNameRepository
 
 import (
-	"github.com/Xi-Yuer/cms/db"
+	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/template/server/dto"
 	"log"
 )
@@ -11,23 +11,23 @@ func NewTableNameRepository() RepositoryInterface {
 }
 
 type RepositoryInterface interface {
-	GetTableNameListRepo(params *TableNameDto.TableNameFindRequestDTO) ([]*TableNameDto.TableNameFindRequestDTO, error)
-	CreateTableNameRecordRepo(params *TableNameDto.TableNameCreateRequestDTO) error
-	UpdateTableNameRecordRepo(id string, params *TableNameDto.TableNameUpdateRequestDTO) error
+	GetTableNameListRepo(params *TableNameTypes.TableNameFindRequestDTO) ([]*TableNameTypes.TableNameFindRequestDTO, error)
+	CreateTableNameRecordRepo(params *TableNameTypes.TableNameCreateRequestDTO) error
+	UpdateTableNameRecordRepo(id string, params *TableNameTypes.TableNameUpdateRequestDTO) error
 	DeleteTableNameRecordRepo(id string) error
 }
 
 type repository struct{}
 
-func (r *repository) GetTableNameListRepo(params *TableNameDto.TableNameFindRequestDTO) ([]*TableNameDto.TableNameFindRequestDTO, error) {
+func (r *repository) GetTableNameListRepo(params *TableNameTypes.TableNameFindRequestDTO) ([]*TableNameTypes.TableNameFindRequestDTO, error) {
 	querySQL := "SELECT * FROM TableName LIMIT ?,?"
 	rows, err := db.DB.Query(querySQL, params.Limit, params.Offset)
 	if err != nil {
 		return nil, err
 	}
-	var tableNameList []*TableNameDto.TableNameFindRequestDTO
+	var tableNameList []*TableNameTypes.TableNameFindRequestDTO
 	for rows.Next() {
-		var params TableNameDto.TableNameFindRequestDTO
+		var params TableNameTypes.TableNameFindRequestDTO
 		if err := rows.Scan(&params.Name, &params.Age); err != nil {
 			log.Fatal(err)
 		}
@@ -36,7 +36,7 @@ func (r *repository) GetTableNameListRepo(params *TableNameDto.TableNameFindRequ
 	return tableNameList, nil
 }
 
-func (r *repository) CreateTableNameRecordRepo(params *TableNameDto.TableNameCreateRequestDTO) error {
+func (r *repository) CreateTableNameRecordRepo(params *TableNameTypes.TableNameCreateRequestDTO) error {
 	querySQL := "INSERT INTO TableName (Name,Age) VALUES (?,?)"
 	if _, err := db.DB.Exec(querySQL, params.Name, params.Age); err != nil {
 		return err
@@ -44,7 +44,7 @@ func (r *repository) CreateTableNameRecordRepo(params *TableNameDto.TableNameCre
 	return nil
 }
 
-func (r *repository) UpdateTableNameRecordRepo(id string, params *TableNameDto.TableNameUpdateRequestDTO) error {
+func (r *repository) UpdateTableNameRecordRepo(id string, params *TableNameTypes.TableNameUpdateRequestDTO) error {
 	querySQL := "UPDATE TableName SET Name=?,Age=? WHERE id=?"
 	if _, err := db.DB.Exec(querySQL, params.Name, params.Age); err != nil {
 		return err

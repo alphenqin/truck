@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { Layout, MenuProps } from 'antd';
 import { menuType } from '@/types/menus';
 import { Icon } from '@/components';
@@ -20,17 +20,11 @@ export const useMainPage = () => {
   useEffect(() => {
     dispatch(changeDefaultSelectedKeys([pathname])); // 设置选中项
     dispatch(changeDefaultOpenKeys(getTheCurrentRoutePathAllMenuPath(pathname, menus))); // 设置展开项
-  }, [pathname, menus]);
+  }, [dispatch, pathname, menus]);
 
   // ✅ 如果访问的是根路径 / ，自动跳转到第一个菜单页面
-  useEffect(() => {
-    if (menus.length && pathname === constants.routePath.main) {
-      navigateHome();
-    }
-  }, []);
-
   // ✅ 跳转到第一个菜单页面
-  const navigateHome = () => {
+  const navigateHome = useCallback(() => {
     if (menus && menus.length) {
       const firstMenu = getFirstMenu(menus); // 获取第一个叶子菜单
       dispatch(changeDefaultSelectedKeys([firstMenu.pagePath] || []));
@@ -38,7 +32,13 @@ export const useMainPage = () => {
       dispatch(addTabHeader(getMenuByPath(firstMenu.pagePath, menus) || ({} as menuType)));
       navigate(firstMenu.pagePath);
     }
-  };
+  }, [dispatch, menus, navigate]);
+
+  useEffect(() => {
+    if (menus.length && pathname === constants.routePath.main) {
+      navigateHome();
+    }
+  }, [menus.length, pathname, navigateHome]);
 
   // ✅ 菜单项点击事件处理
   const onSelect: MenuProps['onSelect'] = (e) => {
@@ -53,8 +53,10 @@ export const useMainPage = () => {
     dispatch(changeDefaultOpenKeys(e));
   };
 
+  const menuItems = useMemo(() => getItem(menus), [menus]);
+
   return {
-    menus: getItem(menus), // 转换后的菜单结构，适配 Ant Design Menu 使用
+    menus: menuItems, // 转换后的菜单结构，适配 Ant Design Menu 使用
     Header,
     Sider,
     Content,

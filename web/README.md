@@ -43,7 +43,6 @@ src
     ├── components                                  # 全局组件
     │   ├── AppBreadcrumb
     │   ├── AppHeaderTab
-    │   ├── AppUploads
     │   ├── Auth
     │   ├── Card
     │   ├── CodeEdit
@@ -61,9 +60,6 @@ src
     ├── pages                                       # 页面
     │   ├── About
     │   ├── Dashboard
-    │   ├── File
-    │   │   └── Upload
-    │   │       └── hooks
     │   ├── Login
     │   ├── Monitor
     │   │   ├── Logs
@@ -80,7 +76,6 @@ src
     ├── service                                     # 接口
     │   ├── api
     │   │   ├── department
-    │   │   ├── file
     │   │   ├── interface
     │   │   ├── login
     │   │   ├── logs
@@ -94,7 +89,6 @@ src
     │       └── lib
     ├── store                                        # 全局store
     │   ├── UIStore
-    │   ├── UploadStore
     │   └── UserStore
     ├── styles                                       # 全局样式
     │   ├── common
@@ -106,7 +100,6 @@ src
         ├── builder
         ├── cache
         ├── echarts
-        ├── event
         ├── format
         ├── message
         ├── monaco

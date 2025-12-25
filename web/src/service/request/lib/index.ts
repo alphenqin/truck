@@ -40,17 +40,29 @@ export default class Request<R> {
   // 实例方法 request
   public request<T = AxiosResponse<R>>(config: RequestConfig): Promise<T> {
     return new Promise<T>((resolve, reject) => {
+      const requestInterceptorIds: number[] = [];
+      const responseInterceptorIds: number[] = [];
       // 单个接口的请求拦截
       if (config.requestInterceptor) {
-        this.Instance?.interceptors.request.use(config.requestInterceptor.onFulfilled, config.requestInterceptor.onRejected, config.requestInterceptor.options);
+        const id = this.Instance?.interceptors.request.use(
+          config.requestInterceptor.onFulfilled,
+          config.requestInterceptor.onRejected,
+          config.requestInterceptor.options,
+        );
+        if (typeof id === 'number') {
+          requestInterceptorIds.push(id);
+        }
       }
       // 单个接口的响应拦截
       if (config.responseInterceptor) {
-        this.Instance?.interceptors.response.use(
+        const id = this.Instance?.interceptors.response.use(
           config.responseInterceptor.onFulfilled,
           config.responseInterceptor.onRejected,
           config.responseInterceptor.options,
         );
+        if (typeof id === 'number') {
+          responseInterceptorIds.push(id);
+        }
       }
 
       this.cancelTokenSource = axios.CancelToken.source();
@@ -67,6 +79,12 @@ export default class Request<R> {
         })
         .catch((err) => {
           reject(err);
+        })
+        .finally(() => {
+          if (this.Instance) {
+            requestInterceptorIds.forEach((id) => this.Instance?.interceptors.request.eject(id));
+            responseInterceptorIds.forEach((id) => this.Instance?.interceptors.response.eject(id));
+          }
         });
     });
   }

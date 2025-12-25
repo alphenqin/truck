@@ -25,16 +25,6 @@ const AboutPage: FC = () => {
     },
     {
       key: '4',
-      label: '国际化',
-      children: (
-        <div className='flex flex-col'>
-          <span>i18next: ^23.11.2</span>
-          <span>react-i18next: ^14.1.0</span>
-        </div>
-      ),
-    },
-    {
-      key: '5',
       label: '状态管理',
       children: (
         <div className='flex flex-col'>
@@ -45,7 +35,7 @@ const AboutPage: FC = () => {
       ),
     },
     {
-      key: '6',
+      key: '5',
       label: 'CSS解决方案',
       children: 'TailwindCSS: ^3.4.3',
     },

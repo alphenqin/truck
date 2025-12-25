@@ -1,7 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useRolePageHooks } from '@/pages/System/Role/hooks.tsx';
 import { Button, Card, Drawer, Form, Input, Modal, Pagination, Space, Table, Tabs, Tree } from 'antd';
-import { useTranslation } from 'react-i18next';
 import { IUpdateRoleParams } from '@/service';
 import { SwapOutlined } from '@ant-design/icons';
 import User from '@/pages/System/User';
@@ -43,7 +42,6 @@ const SystemRole: FC = () => {
     onFinish,
     editPermissionConfirm,
   } = useRolePageHooks();
-  const { t } = useTranslation();
   return (
     <>
       {SearchFormComponent}
@@ -66,27 +64,27 @@ const SystemRole: FC = () => {
         onChange={(e) => setPage(e)}
         showSizeChanger
         onShowSizeChange={(_, size) => setLimit(size)}></Pagination>
-      <Modal open={editRoleModalOpen} title={isEdit ? t('edit') : t('add')} onOk={onFinish} onCancel={() => setEditRoleModalOpen(false)}>
+      <Modal open={editRoleModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditRoleModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' labelCol={{ span: 6 }} id='editFormRef'>
-          <Form.Item<IUpdateRoleParams> name='roleName' label={t('roleName')} rules={[{ required: true }]}>
+          <Form.Item<IUpdateRoleParams> name='roleName' label='角色名称' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item<IUpdateRoleParams> name='description' label={t('roleDescription')} rules={[{ required: true }]}>
+          <Form.Item<IUpdateRoleParams> name='description' label='角色描述' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
         </Form>
       </Modal>
       <Drawer
-        title={t('permissionEdit')}
+        title='权限编辑'
         width='40%'
         destroyOnClose
         onClose={() => setEditRolePermissionOpen(false)}
         open={editRolePermissionOpen}
         extra={
           <Space>
-            <Button onClick={() => setEditRolePermissionOpen(false)}>{t('cancel')}</Button>
+            <Button onClick={() => setEditRolePermissionOpen(false)}>取消</Button>
             <Button type='primary' onClick={editPermissionConfirm}>
-              {t('confirm')}
+              确认
             </Button>
           </Space>
         }>
@@ -94,7 +92,7 @@ const SystemRole: FC = () => {
           size='small'
           items={[
             {
-              label: t('menusPermission'),
+              label: '菜单权限',
               key: '1',
               children: (
                 <>
@@ -111,7 +109,7 @@ const SystemRole: FC = () => {
               ),
             },
             {
-              label: t('resourcePermission'),
+              label: '资源权限',
               key: '2',
               children: (
                 <>
@@ -129,9 +127,9 @@ const SystemRole: FC = () => {
             },
           ]}></Tabs>
       </Drawer>
-      <Drawer open={editRoleUnderUserOpen} title={t('authUser')} width='80%' destroyOnClose onClose={() => setEditRoleUnderUserOpen(false)}>
+      <Drawer open={editRoleUnderUserOpen} title='授权用户' width='80%' destroyOnClose onClose={() => setEditRoleUnderUserOpen(false)}>
         <div className='flex gap-2 justify-between'>
-          <Card title={t('readyAuthUser')} style={{ width: '50%' }}>
+          <Card title='已授权用户' style={{ width: '50%' }}>
             <Table dataSource={roleUnderUsersList} columns={userColumns} pagination={false} rowKey='id' bordered></Table>
             <Pagination
               total={roleUnderUserListTotal}
@@ -143,7 +141,7 @@ const SystemRole: FC = () => {
           <div className='my-auto'>
             <SwapOutlined />
           </div>
-          <Card title={t('notAuthUser')}>
+          <Card title='未授权用户'>
             <User ref={userPageRef} module={constants.module.ROLE} context={currentEditRole?.id} operation={addRoleUnderUserAction}></User>
           </Card>
         </div>

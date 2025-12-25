@@ -15,7 +15,6 @@ import {
   IHasTotalResponse,
   IFormValues,
 } from './index.ts';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 import { AxiosResponse } from 'axios';
@@ -31,7 +30,6 @@ export const useRfidTagPageHooks = () => {
   const [currentEditRfidTag, setCurrentEditRfidTag] = useState<IRfidTagResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editRfidTagModalOpen, setEditRfidTagModalOpen] = useState(false);
-  const { t } = useTranslation();
   const searchConfig: { label: string; name: keyof IQueryRfidTagsParams; component: ReactNode }[] = [
     {
       label: '标签编码',
@@ -53,7 +51,7 @@ export const useRfidTagPageHooks = () => {
     formItems: searchConfig,
     operateComponent: !!selected.length && (
       <Button type='primary' icon={<DownloadOutlined />} onClick={() => exportRfidTagRequest(selected.map(String))}>
-        {t('export')}
+        导出
       </Button>
     ),
     formName: 'rfidTagSearchForm',
@@ -184,15 +182,15 @@ export const useRfidTagPageHooks = () => {
       render: (text) => text ? moment(text).format("YYYY/MM/DD HH:mm:ss") : '-',
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
-            <span onClick={() => editRfidTagAction(row)}>{t('edit')}</span>
+            <span onClick={() => editRfidTagAction(row)}>编辑</span>
             <span className='text-red-500' onClick={() => deleteRfidTagAction(row.id)}>
-              {t('delete')}
+              删除
             </span>
           </div>
         );

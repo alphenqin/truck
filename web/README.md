@@ -70,8 +70,6 @@ src
     │   │   ├── Menu
     │   │   ├── Role
     │   │   └── User
-    │   └── SystemUtils
-    │       └── CodeGenerate
     ├── router                                      # 路由
     ├── service                                     # 接口
     │   ├── api
@@ -82,7 +80,6 @@ src
     │   │   ├── pages
     │   │   ├── roles
     │   │   ├── system
-    │   │   ├── template
     │   │   ├── timeTask
     │   │   └── users
     │   └── request

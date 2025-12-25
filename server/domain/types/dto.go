@@ -7,7 +7,6 @@ import (
 	interfaceResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/interface"
 	pagesResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/pages"
 	rolesResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/roles"
-	templateResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/template"
 	timeTaskResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/timeTask"
 	usersResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/users"
 
@@ -125,15 +124,6 @@ type TimeTaskResponse = timeTaskResponsiesModules.TimeTaskResponse
 type HasTotalResponseData = commonResponsiesModules.HasTotalResponseData
 
 type AllInterfaceResponse = interfaceResponsiesModules.AllInterfaceResponse
-
-// CreateTemplateRequestParams 创建模板
-type CreateTemplateRequestParams = templateResponsiesModules.CreateTemplateRequestParams
-
-// CreateTemplateResponse 模板返回
-type CreateTemplateResponse = templateResponsiesModules.CreateTemplateResponse
-
-// DownloadTemplateRequestParams 下载模板
-type DownloadTemplateRequestParams = templateResponsiesModules.DownloadTemplateRequestParams
 
 type QueryParams struct {
 	Limit  int `json:"limit"`

@@ -1,9 +1,6 @@
 import { Button, Col, Form, Row } from 'antd';
 import { ReactNode } from 'react';
 import { PlusOutlined, RedoOutlined, SearchOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
-import Auth from '@/components/Auth';
-import { constants } from '@/constant';
 
 interface SearchFormProps<T extends Record<string, any>> {
   getDataRequestFn: (values: any) => void;
@@ -17,7 +14,6 @@ interface SearchFormProps<T extends Record<string, any>> {
 export const useSearchFrom = <T extends Record<string, any>>(props: SearchFormProps<T>) => {
   const { getDataRequestFn, onNewRecordFn, formItems, operateComponent, formName, showAddBtn = true } = props;
   const [searchFormRef] = Form.useForm();
-  const { t } = useTranslation();
   const onFinish = () => getDataRequestFn(searchFormRef.getFieldsValue() as T);
   const onReset = () => {
     searchFormRef?.resetFields();
@@ -40,14 +36,14 @@ export const useSearchFrom = <T extends Record<string, any>>(props: SearchFormPr
           <Col xs={{ span: 24 }} sm={{ span: 24 }} md={{ span: 24 }} lg={{ span: 12 }}>
             <div className='flex flex-nowrap'>
               <Button type='primary' className='mx-2' htmlType='reset' icon={<RedoOutlined />}>
-                {t('reset')}
+                重置
               </Button>
               <Button type='primary' className='mx-2' htmlType='submit' icon={<SearchOutlined />}>
-                {t('search')}
+                搜索
               </Button>
               {showAddBtn && (
                 <Button type='primary' className='mx-2' htmlType='button' icon={<PlusOutlined />} onClick={() => onNewRecordFn()}>
-                  {t('add')}
+                  新增
                 </Button>
               )}
               {operateComponent}

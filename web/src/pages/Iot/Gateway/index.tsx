@@ -1,7 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useGatewayPageHooks } from './hooks.tsx';
 import { Form, Input, Modal, Pagination, Table, Select } from 'antd';
-import { useTranslation } from 'react-i18next';
 import { IUpdateGatewayParams } from './index.ts';
 
 const GatewayPage: FC = () => {
@@ -21,7 +20,6 @@ const GatewayPage: FC = () => {
     setEditGatewayModalOpen,
     onFinish,
   } = useGatewayPageHooks();
-  const { t } = useTranslation();
   return (
     <>
       {SearchFormComponent}
@@ -46,7 +44,7 @@ const GatewayPage: FC = () => {
         showSizeChanger
         onShowSizeChange={(_, size) => setLimit(size)}
       ></Pagination>
-      <Modal open={editGatewayModalOpen} title={isEdit ? t('edit') : t('add')} onOk={onFinish} onCancel={() => setEditGatewayModalOpen(false)}>
+      <Modal open={editGatewayModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditGatewayModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
           <Form.Item<IUpdateGatewayParams> name='gatewayName' label='网关名称' rules={[{ required: true }]}> 
             <Input />

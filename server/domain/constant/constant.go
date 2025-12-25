@@ -57,8 +57,4 @@ var PermissionMap = map[string]string{
 	"^POST:" + config.Config.APP.BASEURL + "/timeTask/stop/\\d+$":    `POST:/timeTask/stop/:id`,
 	"^GET:" + config.Config.APP.BASEURL + "/timeTask$":               `GET:/timeTask`,
 	"^PATCH:" + config.Config.APP.BASEURL + "/timeTask/update/\\d+$": `PATCH:/timeTask/update/:id`,
-
-	// 代码生成器
-	"^POST:" + config.Config.APP.BASEURL + "/template":           `POST:/template`,
-	"^POST:" + config.Config.APP.BASEURL + "/template/download$": `POST:/template/download`,
 }

@@ -1,66 +1,85 @@
 # 工装车管理系统
 
+后端基于 Go + Gin + Gorm + MySQL，前端基于 React + Vite + Ant Design + TailwindCSS，支持 Web 管理端与可选的 TCP 设备接入能力。
+
 ## 目录结构
 
 ```
 项目根目录/
-├── server/                # 后端服务代码
-│   ├── main.go            # 后端主入口
-│   ├── license/           # 授权校验逻辑
-│   │   └── license.go     # 授权校验代码（机器码+试用期）
-│   └── tools/             # 工具目录
-│       └── gen_license.go # 授权文件生成工具
-├── web/                   # 前端代码
-├── static/                # 静态资源
-├── .gitignore             # Git 忽略文件
-└── readme.md              # 项目说明
+├── server/                     # 后端服务
+│   ├── app/                    # 启动与路由
+│   ├── config/                 # 配置文件
+│   ├── domain/                 # 领域/业务模型
+│   ├── infra/                  # 基础设施（DB、TCP 等）
+│   ├── license/                # 授权校验逻辑
+│   ├── main.go                 # 后端入口
+│   ├── sql/                    # 数据库脚本
+│   └── support/                # 工具与通用能力
+│       ├── tools/              # 运维/授权工具
+│       └── utils/              # 工具函数
+├── web/                        # 前端项目（Vite）
+│   ├── src/                    # 前端源码
+│   ├── public/                 # 公共资源
+│   └── nginx.conf              # 前端部署示例配置
+└── readme.md                   # 项目说明
 ```
 
-## 授权机制说明
+## 本地启动
 
-本系统采用**机器码绑定+试用期**的授权机制，防止代码被非法复制和长期使用。
+### 1. 后端
 
-### 1. 授权文件生成（仅开发者操作）
+1. 准备 MySQL，并导入初始化脚本：`server/sql/wms.sql`。
+2. 修改后端配置：`server/config/config.toml` 选择环境（dev/prod），并在对应的 `config.dev.toml` 或 `config.prod.toml` 中配置数据库账号、端口、JWT 等。
+3. 启动后端服务：
 
-1. 让甲方提供目标电脑的 MAC 地址。
-2. 进入 `server/tools/` 目录，运行：
-   ```bash
-   go run gen_license.go --mac=甲方MAC地址 --days=30 --secret=your_secret_key
-   ```
-   - `--mac`：甲方电脑的 MAC 地址
-   - `--days`：试用天数（如 30）
-   - `--secret`：签名密钥（需与主程序一致）
-3. 生成 `license.json` 文件，将其与后端可执行文件一起交付甲方。
+```bash
+cd server
 
-### 2. 甲方部署与运行
+go run .
+```
 
-1. 将 `license.json` 和后端可执行文件放在同一目录。
-2. 启动后端服务，程序会自动校验授权文件：
-   - 仅允许指定电脑（MAC 地址）运行
-   - 超过试用期自动失效
-   - 授权文件被篡改会拒绝运行
+默认端口为 `:8081`（可在配置中调整）。
 
-### 3. 续期或更换电脑
+### 2. 前端
 
-- 需重新生成新的 `license.json`，流程同上。
+```bash
+cd web
 
-## 常见问题
+pnpm install
+pnpm run dev
+```
 
-- **Q: 授权文件丢失/损坏怎么办？**
-  A: 重新生成并下发新的 `license.json`。
-- **Q: 甲方更换电脑怎么办？**
-  A: 需提供新电脑的 MAC 地址，重新生成授权文件。
-- **Q: 试用期到期后怎么办？**
-  A: 需联系乙方续期，生成新授权文件。
-- **Q: 授权文件可以随便改吗？**
-  A: 不可以，文件被改动后签名校验不通过，程序无法运行。
+如需构建生产包：
 
-## 其他说明
+```bash
+pnpm run build
+```
 
-- `.gitignore` 已配置常见依赖、构建产物、敏感文件忽略。
-- 前端只需打包后交付静态资源，无需授权保护。
-- 如需批量授权、自动化脚本等可联系开发者。
+## 配置说明（后端）
 
----
+- `server/config/config.toml`：仅用于指定环境（如 `env = "dev"`）。
+- `server/config/config.dev.toml` / `config.prod.toml`：服务端完整配置。
+  - `app.port`：HTTP 服务端口
+  - `app.baseurl`：接口前缀（默认 `/cms`）
+  - `app.tcp_enable`：是否启用 TCP 服务
+  - `db.*`：数据库连接信息
 
-如有疑问请联系乙方技术支持。
+## 授权机制（可选）
+
+项目内置机器码 + 试用期授权逻辑，默认在 `server/main.go` 中**未启用**。如需启用：
+
+1. 在 `server/main.go` 中取消授权校验的注释，并替换自定义密钥。
+2. 使用授权生成工具：
+
+```bash
+cd server/support/tools
+
+go run gen_license.go --mac=目标MAC地址 --days=30 --secret=your_secret_key
+```
+
+将生成的 `license.json` 与后端可执行文件放在同一目录后运行。
+
+## 其他
+
+- 前端详细结构与技术栈说明见 `web/README.md`。
+- 如需部署到 Nginx，可参考 `web/nginx.conf`。

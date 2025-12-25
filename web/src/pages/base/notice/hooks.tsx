@@ -11,7 +11,6 @@ import {
   IUpdateNoticeParams,
   updateNoticeRequest,
 } from './index.ts';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 
@@ -26,7 +25,6 @@ export const useNoticePageHooks = () => {
   const [currentEditNotice, setCurrentEditNotice] = useState<INoticeResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editNoticeModalOpen, setEditNoticeModalOpen] = useState(false);
-  const { t } = useTranslation();
   const searchConfig: { label: string; name: keyof IQueryNoticesParams; component: ReactNode }[] = [
     {
       label: '规则名称',
@@ -54,7 +52,7 @@ export const useNoticePageHooks = () => {
     formItems: searchConfig,
     operateComponent: !!selected.length && (
       <Button type='primary' icon={<DownloadOutlined />} onClick={() => exportNoticeRequest(selected.map(Number))}>
-        {t('export')}
+        导出
       </Button>
     ),
     formName: 'noticeSearchForm',
@@ -129,15 +127,15 @@ export const useNoticePageHooks = () => {
       key: 'ruleValue',
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
-            <span onClick={() => editNoticeAction(row)}>{t('edit')}</span>
+            <span onClick={() => editNoticeAction(row)}>编辑</span>
             <span className='text-red-500' onClick={() => deleteNoticeAction(row.id)}>
-              {t('delete')}
+              删除
             </span>
           </div>
         );

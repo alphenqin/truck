@@ -2,7 +2,6 @@ import { FC, memo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useDashBoard } from '@/pages/Dashboard/hooks.ts';
 import { useAppSelector } from '@/store';
-import { useTranslation } from 'react-i18next';
 import { getFirstMenuChildren } from '@/utils';
 import { Icon } from '@/components';
 import { Col, Popover, Row, Spin, Timeline } from 'antd';
@@ -11,7 +10,6 @@ import classNames from 'classnames';
 import dayjs from 'dayjs';
 
 const Dashboard: FC = () => {
-  const { t } = useTranslation();
   const { menus } = useAppSelector((state) => state.UserStore);
   const { themeMode } = useAppSelector((state) => state.UIStore);
   const { loading, totalOption, cpuUsageOption, allMenUsageOption, gitCommits, commitCount, gitCommitFrequency, navigateToPage } = useDashBoard();
@@ -24,7 +22,7 @@ const Dashboard: FC = () => {
     <ReactECharts option={allMenUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} />,
     <div className='flex h-[100px] justify-center items-center text-2xl dark:bg-[#110f25]'>
       <span className='text-[#ff6787] text-5xl'>{commitCount}</span>
-      <span className='ml-4'>{t('commitCount')}</span>
+      <span className='ml-4'>提交次数</span>
     </div>,
   ];
 
@@ -72,7 +70,7 @@ const Dashboard: FC = () => {
               className={classNames(commonStyle, {
                 physicDarkDashBoard: themeMode === 'dark',
               })}>
-              <span className='text-md font-bold mb-2'>{t('quickStart')}</span>
+              <span className='text-md font-bold mb-2'>快捷入口</span>
               <Row className='flex items-center min-h-[150px] justify-between gap-4'>
                 {getFirstMenuChildren(menus)
                   ?.slice(0, 4)
@@ -102,7 +100,7 @@ const Dashboard: FC = () => {
                 physicDarkDashBoard: themeMode === 'dark',
               })}>
               <span className='text-md font-bold'>
-                {commitCount} {t('commitTitle')}
+                {commitCount} 最近一年贡献
               </span>
               <ReactECharts option={gitCommitFrequency} theme={themeMode} style={{ width: '100%', height: '250px' }} />
             </div>
@@ -113,7 +111,7 @@ const Dashboard: FC = () => {
             className={classNames(commonStyle, 'overflow-scroll no-scrollbar h-[515px] truck-animate truck-fade-in-right', {
               physicDarkDashBoard: themeMode === 'dark',
             })}>
-            <span className='text-md font-bold'>{t('commitBlameTitle')}</span>
+            <span className='text-md font-bold'>更新日志</span>
             <Timeline
               items={TimeLine}
               mode='alternate'

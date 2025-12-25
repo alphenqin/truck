@@ -1,7 +1,6 @@
 import { FC, memo, useEffect, useState } from 'react';
 import { Button, Drawer, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, TableColumnsType, Tag } from 'antd';
 import { createMenuRequest, deleteMenuRequest, getAllMenusRequest, updateMenuRequest } from '@/service';
-import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { useForm } from 'antd/es/form/Form';
 import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons';
@@ -18,7 +17,6 @@ import Auth from '@/components/Auth';
 import { constants } from '@/constant';
 
 const SystemMenu: FC = () => {
-  const { t } = useTranslation(); // 国际化
   const [form] = useForm();
   const [resourceFormRef] = useForm();
   const [menuList, setMenuList] = useState<menuType[]>([]); // 菜单列表
@@ -57,13 +55,13 @@ const SystemMenu: FC = () => {
   // 菜单表格列配置
   const columns: TableColumnsType<menuType> = [
     {
-      title: t('menuName'),
+      title: '菜单名称',
       dataIndex: 'pageName',
       align: 'center',
       key: 'pageName',
     },
     {
-      title: t('menuIcon'),
+      title: '图标',
       dataIndex: 'pageIcon',
       align: 'center',
       key: 'pageIcon',
@@ -72,34 +70,34 @@ const SystemMenu: FC = () => {
       },
     },
     {
-      title: t('menuPath'),
+      title: '路径',
       dataIndex: 'pagePath',
       align: 'center',
       key: 'pagePath',
     },
     {
-      title: t('menuComponent'),
+      title: '组件名称',
       dataIndex: 'pageComponent',
       align: 'center',
       key: 'pageComponent',
     },
     {
-      title: t('order'),
+      title: '排序',
       dataIndex: 'pageOrder',
       align: 'center',
       key: 'pageOrder',
     },
     {
-      title: t('menuType'),
+      title: '类型',
       dataIndex: 'isOutSite',
       align: 'center',
       key: 'isOutSite',
       render: (text) => {
-        return text ? <Tag color='warning'>{t('routeExternalType')}</Tag> : <Tag color='green'>{t('routeInnerType')}</Tag>;
+        return text ? <Tag color='warning'>外链</Tag> : <Tag color='green'>内建路由</Tag>;
       },
     },
     {
-      title: t('createTime'),
+      title: '创建时间',
       align: 'center',
       dataIndex: 'createTime',
       key: 'createTime',
@@ -108,7 +106,7 @@ const SystemMenu: FC = () => {
       },
     },
     {
-      title: t('updateTime'),
+      title: '更新时间',
       align: 'center',
       dataIndex: 'updateTime',
       key: 'updateTime',
@@ -117,7 +115,7 @@ const SystemMenu: FC = () => {
       },
     },
     {
-      title: t('operate'),
+      title: '操作',
       dataIndex: 'operation',
       align: 'center',
       key: 'operation',
@@ -133,7 +131,7 @@ const SystemMenu: FC = () => {
                   setModalOpen(true);
                   form.setFieldsValue(row);
                 }}>
-                {t('edit')}
+                编辑
               </span>
             </Auth>
             {/* 添加子菜单 */}
@@ -145,7 +143,7 @@ const SystemMenu: FC = () => {
                   setModalOpen(true);
                   form.resetFields();
                 }}>
-                {t('addMenu')}
+                新增菜单
               </span>
             </Auth>
             {/* 编辑资源 */}
@@ -157,7 +155,7 @@ const SystemMenu: FC = () => {
                     await getPageInterfaceAction(row.pageID);
                     setEditResourceOpen(true);
                   }}>
-                  {t('resource')}
+                  资源管理
                 </span>
               </Auth>
             )}
@@ -169,7 +167,7 @@ const SystemMenu: FC = () => {
                   await deleteMenuRequest(row.pageID);
                   await getPageData();
                 }}>
-                {t('delete')}
+                删除
               </span>
             </Auth>
           </div>
@@ -181,25 +179,25 @@ const SystemMenu: FC = () => {
   // 资源表格列配置
   const resourceColumns: TableColumnsType<IInterfaceResponse> = [
     {
-      title: t('interfaceName'),
+      title: '名称',
       dataIndex: 'interfaceName',
       align: 'center',
       key: 'interfaceName',
     },
     {
-      title: t('interfacePath'),
+      title: '路径',
       dataIndex: 'interfacePath',
       align: 'center',
       key: 'interfacePath',
     },
     {
-      title: t('interfaceDic'),
+      title: '接口指令',
       dataIndex: 'interfaceDic',
       align: 'center',
       key: 'interfaceDic',
     },
     {
-      title: t('interfaceMethod'),
+      title: '方法',
       dataIndex: 'interfaceMethod',
       align: 'center',
       key: 'interfaceMethod',
@@ -208,13 +206,13 @@ const SystemMenu: FC = () => {
       },
     },
     {
-      title: t('interfaceDesc'),
+      title: '描述',
       dataIndex: 'interfaceDesc',
       align: 'center',
       key: 'interfaceDesc',
     },
     {
-      title: t('createTime'),
+      title: '创建时间',
       dataIndex: 'createTime',
       align: 'center',
       key: 'createTime',
@@ -223,7 +221,7 @@ const SystemMenu: FC = () => {
       },
     },
     {
-      title: t('updateTime'),
+      title: '更新时间',
       dataIndex: 'updateTime',
       align: 'center',
       key: 'updateTime',
@@ -232,7 +230,7 @@ const SystemMenu: FC = () => {
       },
     },
     {
-      title: t('operate'),
+      title: '操作',
       dataIndex: 'action',
       align: 'center',
       key: 'action',
@@ -248,7 +246,7 @@ const SystemMenu: FC = () => {
                   setResourceModalOpen(true);
                   resourceFormRef.setFieldsValue(row);
                 }}>
-                {t('edit')}
+                编辑
               </span>
             </Auth>
             {/* 删除资源 */}
@@ -259,7 +257,7 @@ const SystemMenu: FC = () => {
                   await deleteInterfaceRequest(row.id);
                   await getPageInterfaceAction(row.interfacePageID);
                 }}>
-                {t('delete')}
+                删除
               </span>
             </Auth>
           </div>
@@ -309,7 +307,7 @@ const SystemMenu: FC = () => {
     <>
       {/* 菜单顶部操作栏 */}
       <div className='mb-2 flex justify-between items-center bg-white p-4 rounded dark:bg-[#001620]'>
-        <span className='font-bold'>{t('menuList')}</span>
+        <span className='font-bold'>菜单列表</span>
         <Auth permission={constants.permissionDicMap.ADD_MENU}>
           <Button
             type='primary'
@@ -320,7 +318,7 @@ const SystemMenu: FC = () => {
               setIsEdit(false);
               setModalOpen(true);
             }}>
-            {t('add')}
+            新增
           </Button>
         </Auth>
       </div>
@@ -329,15 +327,15 @@ const SystemMenu: FC = () => {
       <Table columns={columns} dataSource={menuList} bordered key='menuTable' rowKey='pageID' />
 
       {/* 菜单添加/编辑弹窗 */}
-      <Modal open={modalOpen} onCancel={() => setModalOpen(false)} title={isEdit ? t('edit') : t('add')} onOk={onOk}>
+      <Modal open={modalOpen} onCancel={() => setModalOpen(false)} title={isEdit ? '编辑' : '新增'} onOk={onOk}>
         <Form form={form} labelAlign='left' labelCol={{ span: 6 }} autoComplete='off'>
-          <Form.Item label={t('menuName')} name='pageName' rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item label='菜单名称' name='pageName' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
-          <Form.Item label={t('menuPath')} name='pagePath' rules={[{ required: true }]}>
-            <Input allowClear placeholder={t('pleaseEnter')}></Input>
+          <Form.Item label='路径' name='pagePath' rules={[{ required: true }]}>
+            <Input allowClear placeholder='请输入'></Input>
           </Form.Item>
-          <Form.Item label={t('menuIcon')} name='pageIcon' rules={[{ required: true }]}>
+          <Form.Item label='图标' name='pageIcon' rules={[{ required: true }]}>
             <IconSelect></IconSelect>
           </Form.Item>
           {/* 是否外链判断，如果不是外链才显示组件路径 */}
@@ -345,18 +343,18 @@ const SystemMenu: FC = () => {
             {({ getFieldValue }) => {
               return (
                 (!getFieldValue('isOutSite') && (
-                  <Form.Item label={t('menuComponent')} name='pageComponent' rules={[{ required: true }]}>
-                    <Input allowClear placeholder={t('pleaseEnter')}></Input>
+                  <Form.Item label='组件名称' name='pageComponent' rules={[{ required: true }]}>
+                    <Input allowClear placeholder='请输入'></Input>
                   </Form.Item>
                 )) ||
                 null
               );
             }}
           </Form.Item>
-          <Form.Item label={t('order')} name='pageOrder' rules={[{ required: true }]}>
-            <InputNumber type='number' style={{ width: '100%' }} placeholder={t('pleaseEnter')} />
+          <Form.Item label='排序' name='pageOrder' rules={[{ required: true }]}>
+            <InputNumber type='number' style={{ width: '100%' }} placeholder='请输入' />
           </Form.Item>
-          <Form.Item label={t('isOutSite')} name='isOutSite' rules={[{ required: true }]} initialValue={false}>
+          <Form.Item label='是否外链' name='isOutSite' rules={[{ required: true }]} initialValue={false}>
             <Switch checkedChildren={<CheckOutlined />} unCheckedChildren={<CloseOutlined />} />
           </Form.Item>
           {/* 外链链接输入 */}
@@ -364,8 +362,8 @@ const SystemMenu: FC = () => {
             {({ getFieldValue }) => {
               return (
                 (getFieldValue('isOutSite') && (
-                  <Form.Item label={t('outSiteLink')} name='outSiteLink' rules={[{ required: true, type: 'url' }]}>
-                    <Input allowClear placeholder={t('pleaseEnter')}></Input>
+                  <Form.Item label='外链' name='outSiteLink' rules={[{ required: true, type: 'url' }]}>
+                    <Input allowClear placeholder='请输入'></Input>
                   </Form.Item>
                 )) ||
                 null
@@ -378,15 +376,15 @@ const SystemMenu: FC = () => {
       {/* 资源抽屉 */}
       <Drawer
         open={editResourceOpen}
-        title={t('resource')}
+        title='资源管理'
         width='70%'
         onClose={() => setEditResourceOpen(false)}
         extra={
           <Space>
-            <Button onClick={() => setEditResourceOpen(false)}>{t('cancel')}</Button>
+            <Button onClick={() => setEditResourceOpen(false)}>取消</Button>
             <Auth permission={constants.permissionDicMap.ADD_PAGE_INTERFACE}>
               <Button type='primary' onClick={addResource} icon={<PlusOutlined />}>
-                {t('add')}
+                新增
               </Button>
             </Auth>
           </Space>
@@ -399,28 +397,28 @@ const SystemMenu: FC = () => {
         open={resourceModalOpen}
         onCancel={() => setResourceModalOpen(false)}
         onOk={resourceEditOrAdd}
-        title={isEditResource ? t('edit') : t('add')}
+        title={isEditResource ? '编辑' : '新增'}
         mask={false}>
         <Form form={resourceFormRef} labelCol={{ span: 6 }} autoComplete='off'>
-          <Form.Item label={t('interfaceName')} name='interfaceName' rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item label='名称' name='interfaceName' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
-          <Form.Item label={t('interfacePath')} name='interfacePath' rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item label='路径' name='interfacePath' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
-          <Form.Item label={t('interfaceMethod')} name='interfaceMethod' rules={[{ required: true }]}>
-            <Select placeholder={t('pleaseEnter')}>
+          <Form.Item label='方法' name='interfaceMethod' rules={[{ required: true }]}>
+            <Select placeholder='请输入'>
               <Select.Option value='GET'>GET</Select.Option>
               <Select.Option value='POST'>POST</Select.Option>
               <Select.Option value='PATCH'>PATCH</Select.Option>
               <Select.Option value='DELETE'>DELETE</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label={t('interfaceDic')} name='interfaceDic' rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item label='接口指令' name='interfaceDic' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
-          <Form.Item label={t('interfaceDesc')} name='interfaceDesc' rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item label='描述' name='interfaceDesc' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
         </Form>
       </Modal>

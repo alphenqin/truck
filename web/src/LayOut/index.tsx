@@ -13,11 +13,9 @@ import { cache } from '@/utils'; // 封装的缓存工具（清除用户信息�
 import Logo from '@/assets/svg/logo.svg';
 import classNames from 'classnames';
 import { constants } from '@/constant';
-import { useTranslation } from 'react-i18next';
 import LoadingGIF from '@/assets/image/loading.gif';
 
 const Main: FC = () => {
-  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const fullscreenRef = useRef(); // 用于 ahooks 全屏挂载的 DOM 容器
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -143,7 +141,7 @@ const Main: FC = () => {
                 <Popover
                   content={
                     <div className='cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' onClick={logOutAction}>
-                      {t('logout')}
+                      退出登录
                     </div>
                   }
                   trigger='click'>

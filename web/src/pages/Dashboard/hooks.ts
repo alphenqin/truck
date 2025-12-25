@@ -1,6 +1,5 @@
 import { getGitCommitCountRequest, getGitCommitInfoRequest, getSystemRunTimeInfoRequest, IGitCommit, MenUsageMap } from '@/service';
 import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getMenuByPath } from '@/utils';
 import { addTabHeader } from '@/store/UIStore';
@@ -11,7 +10,6 @@ import { menuType } from '@/types/menus';
 import dayjs from 'dayjs';
 
 export const useDashBoard = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { menus } = useAppSelector((state) => state.UserStore);
@@ -30,7 +28,7 @@ export const useDashBoard = () => {
         ...SystemMemUsedSituationOptions,
         series: [
           {
-            name: t('memUsageTotal'),
+            name: '总内存',
             type: 'line',
             showSymbol: false,
             data: res.data?.map((item: any) => item.memUsage.total),
@@ -40,7 +38,7 @@ export const useDashBoard = () => {
             },
           },
           {
-            name: t('memUsageInUsed'),
+            name: '已使用内存',
             type: 'line',
             showSymbol: false,
             data: res.data?.map((item: any) => item.memUsage.used),

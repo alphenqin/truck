@@ -4,7 +4,6 @@ import { Footer, ThemeBar } from '@/components/index';
 import { Button, Form, Image, Input, message } from 'antd';
 import { EyeInvisibleOutlined, EyeTwoTone, UserOutlined } from '@ant-design/icons';
 import { getCaptchaRequest, getUserMenusRequest, LoginParamsType, loginRequest } from '@/service';
-import { useTranslation } from 'react-i18next';
 import { FieldType } from '@/pages/Login/type.ts';
 import { changeAllInterfaceDic, changeMenus, changeToken, changeUserInfo } from '@/store/UserStore';
 import { useAppDispatch } from '@/store';
@@ -22,7 +21,6 @@ const Login: FC = () => {
   const dispatch = useAppDispatch(); // Redux 派发器
   const [formRef] = Form.useForm(); // Ant Design 表单实例
   const { themeMode } = useTheme(); // 当前主题（暗/亮）
-  const { t } = useTranslation(); // 国际化 hook
 
   // 页面加载时自动获取验证码
   useEffect(() => getCaptcha(), []);

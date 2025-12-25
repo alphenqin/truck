@@ -1,5 +1,4 @@
 import { FC, memo, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { getTimeTaskListRequest, ITimeTaskResponse, startTimeTaskRequest, stopTimeTaskRequest, updateTimeTaskRequest } from '@/service/api/timeTask';
 import { Form, Image, Input, Modal, Switch, Table, TableColumnProps } from 'antd';
 import Start from '@/assets/svg/start.svg';
@@ -8,7 +7,6 @@ import { formatTimer } from '@/utils/format';
 import { useForm } from 'antd/es/form/Form';
 
 const TimeTask: FC = () => {
-  const { t } = useTranslation();
   const [formRef] = useForm();
   const [modalOpen, setModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<ITimeTaskResponse>();
@@ -31,12 +29,12 @@ const TimeTask: FC = () => {
 
   const columns: TableColumnProps<ITimeTaskResponse>[] = [
     {
-      title: t('taskName'),
+      title: '任务名称',
       dataIndex: 'taskName',
       key: 'taskName',
     },
     {
-      title: t('runTimes'),
+      title: '运行时间',
       dataIndex: 'runTimes',
       key: 'runTimes',
       align: 'center',
@@ -46,7 +44,7 @@ const TimeTask: FC = () => {
       },
     },
     {
-      title: t('taskStatus'),
+      title: '任务状态',
       dataIndex: 'status',
       key: 'status',
       align: 'center',
@@ -59,19 +57,19 @@ const TimeTask: FC = () => {
       },
     },
     {
-      title: t('cron'),
+      title: 'Cron表达式',
       dataIndex: 'cron',
       key: 'cron',
       align: 'center',
     },
     {
-      title: t('lastRunTime'),
+      title: '最后运行时间',
       dataIndex: 'lastRunTime',
       key: 'lastRunTime',
       align: 'center',
     },
     {
-      title: t('operate'),
+      title: '操作',
       align: 'center',
       width: 120,
       render: (_, row) => {
@@ -83,7 +81,7 @@ const TimeTask: FC = () => {
               setCurrentTask(row);
               formRef.setFieldsValue(row);
             }}>
-            {t('edit')}
+            编辑
           </div>
         );
       },
@@ -96,13 +94,13 @@ const TimeTask: FC = () => {
   return (
     <>
       <div className='mb-2 flex justify-between items-center bg-white p-4 rounded dark:bg-[#001620]'>
-        <span className='font-bold'>{t('timeTask')}</span>
+        <span className='font-bold'>定时任务</span>
       </div>
       <Table dataSource={taskList} rowKey='timeTaskID' columns={columns}></Table>
       <Modal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
-        title={t('edit')}
+        title='编辑'
         onOk={() => {
           formRef.validateFields().then(async (values) => {
             try {
@@ -115,13 +113,13 @@ const TimeTask: FC = () => {
           });
         }}>
         <Form form={formRef} autoComplete='off' labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} labelAlign='left'>
-          <Form.Item label={t('taskName')} name='taskName' rules={[{ required: true }]}>
+          <Form.Item label='任务名称' name='taskName' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label={t('cron')} name='cron' rules={[{ required: true }]}>
+          <Form.Item label='Cron表达式' name='cron' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label={t('taskStatus')} name='status' rules={[{ required: true }]}>
+          <Form.Item label='任务状态' name='status' rules={[{ required: true }]}>
             <Switch />
           </Form.Item>
         </Form>

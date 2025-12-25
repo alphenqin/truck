@@ -1,7 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useAssetPageHooks } from './hooks'
 import { Form, Input, Modal, Pagination, Table, Select } from 'antd';
-import { useTranslation } from 'react-i18next';
 import { IUpdateAssetParams, assetTypeMap, statusMap } from './index.ts';
 
 const AssetPage: FC = () => {
@@ -22,7 +21,6 @@ const AssetPage: FC = () => {
     onFinish,
     tagMap,
   } = useAssetPageHooks();
-  const { t } = useTranslation();
 
 // 资产类型选项
 const assetTypeOptions = Object.entries(assetTypeMap).map(([value, label]) => ({
@@ -66,7 +64,7 @@ const statusOptions = Object.entries(statusMap).map(([value, label]) => ({
         onChange={(e) => setPage(e)}
         showSizeChanger
         onShowSizeChange={(_, size) => setLimit(size)}></Pagination>
-      <Modal open={editAssetModalOpen} title={isEdit ? t('edit') : t('add')} onOk={onFinish} onCancel={() => setEditAssetModalOpen(false)}>
+      <Modal open={editAssetModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditAssetModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
           <Form.Item<IUpdateAssetParams> name='assetCode' label='资产编码' rules={[{ required: true, message: '请输入资产编码' }]}>
             <Input placeholder="请输入资产编码" />

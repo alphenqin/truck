@@ -13,7 +13,6 @@ import (
 	siteLibraryControllersModules "github.com/Xi-Yuer/cms/app/controllers/modules/siteLibrary"
 	systemControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/system"
 	systemDepartmentControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/systemDepartment"
-	templateControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/template"
 	timeTaskControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/timeTask"
 	userControllersModules "github.com/Xi-Yuer/cms/app/controllers/modules/users"
 )
@@ -41,9 +40,6 @@ var SystemController = systemControllerModules.SystemController
 
 // TimeTaskController 定时任务控制器，处理定时任务的创建、调度与执行
 var TimeTaskController = timeTaskControllerModules.TimeTaskController
-
-// TemplateController 模板管理控制器，处理模板内容的增删改查，比如导出模板等
-var TemplateController = templateControllerModules.TemplateController
 
 // AssetController 资产
 var AssetController = assetControllersModules.AssetController

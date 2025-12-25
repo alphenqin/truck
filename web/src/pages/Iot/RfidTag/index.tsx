@@ -1,7 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useRfidTagPageHooks } from './hooks.tsx';
 import { Form, Input, Modal, Pagination, Table, Select, DatePicker } from 'antd';
-import { useTranslation } from 'react-i18next';
 import { IUpdateRfidTagParams } from './index.ts';
 import moment from 'moment';
 
@@ -22,7 +21,6 @@ const RfidTagPage: FC = () => {
     setEditRfidTagModalOpen,
     onFinish,
   } = useRfidTagPageHooks();
-  const { t } = useTranslation();
   return (
     <>
       {SearchFormComponent}
@@ -47,7 +45,7 @@ const RfidTagPage: FC = () => {
         showSizeChanger
         onShowSizeChange={(_, size) => setLimit(size)}
       ></Pagination>
-      <Modal open={editRfidTagModalOpen} title={isEdit ? t('edit') : t('add')} onOk={onFinish} onCancel={() => setEditRfidTagModalOpen(false)}>
+      <Modal open={editRfidTagModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditRfidTagModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
           <Form.Item<IUpdateRfidTagParams> name='tagCode' label='标签编码' rules={[{ required: true }]}> 
             <Input />

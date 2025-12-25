@@ -2,7 +2,6 @@ import { IUserPageHooks, IUserPageRefProps, useUserPageHooks } from '@/pages/Sys
 import { IUpdateUserParams } from '@/service';
 import { Button, Form, Input, Modal, Pagination, Select, Table, TreeSelect } from 'antd';
 import { forwardRef, Key, memo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { DownloadOutlined } from '@ant-design/icons';
 import { constants } from '@/constant';
@@ -32,7 +31,6 @@ const SystemUser = (props?: IUserPageHooks, ref?: any) => {
     setEditUserModalOpen,
     editUserAction,
   } = useUserPageHooks(ref, props);
-  const { t } = useTranslation();
   const { SearchFormComponent } = useSearchFrom({
     getDataRequestFn: getPageData,
     onNewRecordFn: editUserAction,
@@ -40,7 +38,7 @@ const SystemUser = (props?: IUserPageHooks, ref?: any) => {
     operateComponent: !!selected.length && (
       <Auth permission={constants.permissionDicMap.EXPORT_USER}>
         <Button type='primary' icon={<DownloadOutlined />} onClick={exportUsersAction}>
-          {t('export')}
+          导出
         </Button>
       </Auth>
     ),
@@ -69,23 +67,23 @@ const SystemUser = (props?: IUserPageHooks, ref?: any) => {
         onChange={(e) => setPage(e)}
         showSizeChanger
         onShowSizeChange={(_, size) => setLimit(size)}></Pagination>
-      <Modal destroyOnClose open={editUserModalOpen} title={isEdit ? t('edit') : t('add')} onOk={editUserConfirm} onCancel={() => setEditUserModalOpen(false)}>
+      <Modal destroyOnClose open={editUserModalOpen} title={isEdit ? '编辑' : '新增'} onOk={editUserConfirm} onCancel={() => setEditUserModalOpen(false)}>
         <Form form={editFormRef} autoComplete='off' labelAlign='left' labelCol={{ span: 6 }} id='editFormRef'>
           {!isEdit && (
-            <Form.Item<IUpdateUserParams> name='account' label={t('account')} rules={[{ required: !isEdit }]}>
+            <Form.Item<IUpdateUserParams> name='account' label='账号' rules={[{ required: !isEdit }]}>
               <Input />
             </Form.Item>
           )}
-          <Form.Item<IUpdateUserParams> name='nickname' label={t('nickName')} rules={[{ required: true }]}>
+          <Form.Item<IUpdateUserParams> name='nickname' label='昵称' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item<IUpdateUserParams> name='password' label={t('password')} rules={[{ required: !isEdit }]}>
+          <Form.Item<IUpdateUserParams> name='password' label='密码' rules={[{ required: !isEdit }]}>
             <Input.Password />
           </Form.Item>
-          <Form.Item<IUpdateUserParams> name='departmentID' label={t('department')} rules={[{ required: !isEdit }]}>
+          <Form.Item<IUpdateUserParams> name='departmentID' label='部门' rules={[{ required: !isEdit }]}>
             <TreeSelect allowClear treeData={departments}></TreeSelect>
           </Form.Item>
-          <Form.Item<IUpdateUserParams> name='rolesID' label={t('role')} rules={[{ required: !isEdit }]}>
+          <Form.Item<IUpdateUserParams> name='rolesID' label='角色' rules={[{ required: !isEdit }]}>
             <Select allowClear mode='multiple'>
               {roles?.map((item) => {
                 return (
@@ -96,10 +94,10 @@ const SystemUser = (props?: IUserPageHooks, ref?: any) => {
               })}
             </Select>
           </Form.Item>
-          <Form.Item<IUpdateUserParams> name='status' label={t('status')} rules={[{ required: !isEdit }]}>
+          <Form.Item<IUpdateUserParams> name='status' label='状态' rules={[{ required: !isEdit }]}>
             <Select>
-              <Select.Option value='0'>{t('off')}</Select.Option>
-              <Select.Option value='1'>{t('on')}</Select.Option>
+              <Select.Option value='0'>禁用</Select.Option>
+              <Select.Option value='1'>启用</Select.Option>
             </Select>
           </Form.Item>
         </Form>

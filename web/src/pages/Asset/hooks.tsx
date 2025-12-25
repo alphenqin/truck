@@ -15,7 +15,6 @@ import {
   getTagMapRequest,
   TagMap,
 } from './index.ts';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 import dayjs from 'dayjs';
@@ -33,7 +32,6 @@ export const useAssetPageHooks = () => {
   const [editAssetModalOpen, setEditAssetModalOpen] = useState(false);
   const [storeMap, setStoreMap] = useState<StoreMap[]>([]);
   const [tagMap, setTagMap] = useState<TagMap[]>([]);
-  const { t } = useTranslation();
 
   // 获取场库映射
   useEffect(() => {
@@ -206,15 +204,15 @@ export const useAssetPageHooks = () => {
     },
     
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
-            <span onClick={() => editAssetAction(row)}>{t('edit')}</span>
+            <span onClick={() => editAssetAction(row)}>编辑</span>
             <span className='text-red-500' onClick={() => deleteAssetAction(row.assetId)}>
-              {t('delete')}
+              删除
             </span>
           </div>
         );

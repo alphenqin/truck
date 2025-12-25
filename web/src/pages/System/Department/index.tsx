@@ -1,7 +1,6 @@
 import { FC, memo, useEffect, useState } from 'react';
 import { Button, Form, Input, InputNumber, Modal, Table, TableColumnsType } from 'antd';
 import { addDepartmentRequest, deleteDepartmentRequest, getDepartmentRequest, IDepartmentResponse, updateDepartmentRequest } from '@/service';
-import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { useForm } from 'antd/es/form/Form';
 import { PlusOutlined } from '@ant-design/icons';
@@ -9,7 +8,6 @@ import Auth from '@/components/Auth';
 import { constants } from '@/constant';
 
 const SystemDepartment: FC = () => {
-  const { t } = useTranslation();
   const [form] = useForm();
   const [departmentList, setDepartmentList] = useState<IDepartmentResponse[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -22,24 +20,24 @@ const SystemDepartment: FC = () => {
 
   const columns: TableColumnsType<IDepartmentResponse> = [
     {
-      title: t('departmentName'),
+      title: '部门名称',
       dataIndex: 'departmentName',
       key: 'departmentName',
     },
     {
-      title: t('order'),
+      title: '排序',
       align: 'center',
       dataIndex: 'departmentOrder',
       key: 'departmentOrder',
     },
     {
-      title: t('departmentDescription'),
+      title: '部门描述',
       align: 'center',
       dataIndex: 'departmentDescription',
       key: 'departmentDescription',
     },
     {
-      title: t('createTime'),
+      title: '创建时间',
       align: 'center',
       dataIndex: 'createTime',
       key: 'createTime',
@@ -48,7 +46,7 @@ const SystemDepartment: FC = () => {
       },
     },
     {
-      title: t('updateTime'),
+      title: '更新时间',
       align: 'center',
       dataIndex: 'updateTime',
       key: 'updateTime',
@@ -57,7 +55,7 @@ const SystemDepartment: FC = () => {
       },
     },
     {
-      title: t('operate'),
+      title: '操作',
       dataIndex: 'operation',
       align: 'center',
       key: 'operation',
@@ -72,7 +70,7 @@ const SystemDepartment: FC = () => {
                   setModalOpen(true);
                   form.setFieldsValue(row);
                 }}>
-                {t('edit')}
+                编辑
               </span>
             </Auth>
             <Auth permission={constants.permissionDicMap.ADD_DEPARTMENT}>
@@ -83,7 +81,7 @@ const SystemDepartment: FC = () => {
                   setModalOpen(true);
                   form.resetFields();
                 }}>
-                {t('addChildDepartment')}
+                新增部门
               </span>
             </Auth>
             <Auth permission={constants.permissionDicMap.DELETE_DEPARTMENT}>
@@ -93,7 +91,7 @@ const SystemDepartment: FC = () => {
                   await deleteDepartmentRequest(row.id);
                   await getPageData();
                 }}>
-                {t('delete')}
+                删除
               </span>
             </Auth>
           </div>
@@ -121,7 +119,7 @@ const SystemDepartment: FC = () => {
   return (
     <>
       <div className='mb-2 flex justify-between items-center bg-white p-4 rounded dark:bg-[#001620]'>
-        <span className='font-bold'>{t('departmentList')}</span>
+        <span className='font-bold'>部门列表</span>
         <Auth permission={constants.permissionDicMap.ADD_DEPARTMENT}>
           <Button
             type='primary'
@@ -132,21 +130,21 @@ const SystemDepartment: FC = () => {
               setIsEdit(false);
               setModalOpen(true);
             }}>
-            {t('add')}
+            新增
           </Button>
         </Auth>
       </div>
       <Table columns={columns} dataSource={departmentList} bordered key='departmentTable' rowKey='id' />
-      <Modal open={modalOpen} onCancel={() => setModalOpen(false)} title={isEdit ? t('edit') : t('add')} onOk={onOk}>
+      <Modal open={modalOpen} onCancel={() => setModalOpen(false)} title={isEdit ? '编辑' : '新增'} onOk={onOk}>
         <Form form={form} labelAlign='left' labelCol={{ span: 6 }} autoComplete='off'>
-          <Form.Item name='departmentName' label={t('departmentName')} rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item name='departmentName' label='部门名称' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
-          <Form.Item name='departmentDescription' label={t('departmentDescription')} rules={[{ required: true }]}>
-            <Input placeholder={t('pleaseEnter')} />
+          <Form.Item name='departmentDescription' label='部门描述' rules={[{ required: true }]}>
+            <Input placeholder='请输入' />
           </Form.Item>
-          <Form.Item name='departmentOrder' label={t('order')} rules={[{ required: true }]}>
-            <InputNumber style={{ width: '100%' }} type='number' placeholder={t('pleaseEnter')} />
+          <Form.Item name='departmentOrder' label='排序' rules={[{ required: true }]}>
+            <InputNumber style={{ width: '100%' }} type='number' placeholder='请输入' />
           </Form.Item>
         </Form>
       </Modal>

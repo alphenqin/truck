@@ -11,7 +11,6 @@ import {
   IUpdateArgsParams,
   updateArgsRequest,
 } from './index.ts';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 
@@ -26,7 +25,6 @@ export const useArgsPageHooks = () => {
   const [currentEditArgs, setCurrentEditArgs] = useState<IArgsResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editArgsModalOpen, setEditArgsModalOpen] = useState(false);
-  const { t } = useTranslation();
   const searchConfig: { label: string; name: keyof IQueryArgsParams; component: ReactNode }[] = [
     {
       label: '参数键',
@@ -54,7 +52,7 @@ export const useArgsPageHooks = () => {
     formItems: searchConfig,
     operateComponent: !!selected.length && (
       <Button type='primary' icon={<DownloadOutlined />} onClick={() => exportArgsRequest(selected.map(Number))}>
-        {t('export')}
+        导出
       </Button>
     ),
     formName: 'roleSearchUserForm',
@@ -133,15 +131,15 @@ export const useArgsPageHooks = () => {
       key: 'argValue',
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
-            <span onClick={() => editArgsAction(row)}>{t('edit')}</span>
+            <span onClick={() => editArgsAction(row)}>编辑</span>
             <span className='text-red-500' onClick={() => deleteArgsAction(row.id)}>
-              {t('delete')}
+              删除
             </span>
           </div>
         );

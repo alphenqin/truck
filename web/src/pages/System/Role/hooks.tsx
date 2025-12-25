@@ -16,7 +16,6 @@ import {
   IUserResponse,
   updateRoleRequest,
 } from '@/service';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import dayjs from 'dayjs';
 import { useForm } from 'antd/es/form/Form';
@@ -44,7 +43,6 @@ export const useRolePageHooks = () => {
   const [editRoleModalOpen, setEditRoleModalOpen] = useState(false);
   const [editRolePermissionOpen, setEditRolePermissionOpen] = useState(false);
   const [editRoleUnderUserOpen, setEditRoleUnderUserOpen] = useState(false);
-  const { t } = useTranslation();
   const searchConfig: { label: string; name: keyof IQueryRoleParams; component: ReactNode }[] = [
     {
       label: '角色ID',
@@ -82,7 +80,7 @@ export const useRolePageHooks = () => {
     operateComponent: !!selected.length && (
       <Auth permission={constants.permissionDicMap.EXPORT_ROLE}>
         <Button type='primary' icon={<DownloadOutlined />} onClick={() => exportRolesRequest(selected)}>
-          {t('export')}
+          导出
         </Button>
       </Auth>
     ),
@@ -204,28 +202,28 @@ export const useRolePageHooks = () => {
   };
   const userColumns: TableProps<IUserResponse>['columns'] = [
     {
-      title: t('index'),
+      title: '序号',
       align: 'center',
       render: (_, __, index) => (roleUnderUserPage - 1) * roleUnderUserLimit + index + 1,
     },
     {
-      title: t('account'),
+      title: '账号',
       dataIndex: 'account',
       key: 'account',
     },
     {
-      title: t('nickName'),
+      title: '昵称',
       dataIndex: 'nickname',
       key: 'nickname',
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => (
         <div className='gap-2 flex text-red-500 items-center cursor-pointer justify-center'>
           <Auth permission={constants.permissionDicMap.UNBIND_USER}>
-            <span onClick={() => deBindRoleUnderUserAction(row)}>{t('remove')}</span>
+            <span onClick={() => deBindRoleUnderUserAction(row)}>移除</span>
           </Auth>
         </div>
       ),
@@ -234,44 +232,44 @@ export const useRolePageHooks = () => {
 
   const unSelectedUserColumns: TableProps<IUserResponse>['columns'] = [
     {
-      title: t('index'),
+      title: '序号',
       align: 'center',
       render: (_, __, index) => (roleUnderUserPage - 1) * roleUnderUserLimit + index + 1,
     },
     {
-      title: t('account'),
+      title: '账号',
       dataIndex: 'account',
       key: 'account',
     },
     {
-      title: t('nickName'),
+      title: '昵称',
       dataIndex: 'nickname',
       key: 'nickname',
     },
     {
-      title: t('role'),
+      title: '角色',
       dataIndex: 'isAdmin',
       key: 'isAdmin',
       align: 'center',
       render: (_, { isAdmin }) => {
-        return <Tag color={isAdmin ? 'gold' : 'green'}>{isAdmin ? t('superMan') : t('normalMan')}</Tag>;
+        return <Tag color={isAdmin ? 'gold' : 'green'}>{isAdmin ? '系统账号' : '普通账号'}</Tag>;
       },
     },
     {
-      title: t('status'),
+      title: '状态',
       dataIndex: 'status',
       key: 'status',
       align: 'center',
       render: (_, { status }) => {
         return (
           <Tag color={status ? 'green' : 'red'} className='cursor-pointer'>
-            {status === '1' ? t('on') : t('off')}
+            {status === '1' ? '启用' : '禁用'}
           </Tag>
         );
       },
     },
     {
-      title: t('createTime'),
+      title: '创建时间',
       dataIndex: 'createTime',
       key: 'createTime',
       align: 'center',
@@ -280,7 +278,7 @@ export const useRolePageHooks = () => {
       },
     },
     {
-      title: t('updateTime'),
+      title: '更新时间',
       dataIndex: 'updateTime',
       key: 'updateTime',
       align: 'center',
@@ -289,12 +287,12 @@ export const useRolePageHooks = () => {
       },
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => (
         <div className='gap-2 flex text-[#48ade9] items-center cursor-pointer justify-center'>
-          <span onClick={() => deBindRoleUnderUserAction(row)}>{t('add')}</span>
+          <span onClick={() => deBindRoleUnderUserAction(row)}>新增</span>
         </div>
       ),
     },
@@ -302,22 +300,22 @@ export const useRolePageHooks = () => {
 
   const roleColumns: TableProps<IRoleResponse>['columns'] = [
     {
-      title: t('index'),
+      title: '序号',
       align: 'center',
       render: (_, __, index) => (page - 1) * limit + index + 1,
     },
     {
-      title: t('roleName'),
+      title: '角色名称',
       dataIndex: 'roleName',
       key: 'roleName',
     },
     {
-      title: t('roleDescription'),
+      title: '角色描述',
       dataIndex: 'description',
       key: 'description',
     },
     {
-      title: t('createTime'),
+      title: '创建时间',
       dataIndex: 'createTime',
       key: 'createTime',
       align: 'center',
@@ -326,7 +324,7 @@ export const useRolePageHooks = () => {
       },
     },
     {
-      title: t('updateTime'),
+      title: '更新时间',
       dataIndex: 'updateTime',
       key: 'updateTime',
       align: 'center',
@@ -335,24 +333,24 @@ export const useRolePageHooks = () => {
       },
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
             <Auth permission={[constants.permissionDicMap.UPDATE_ROLE]}>
-              <span onClick={() => editRolePermissionAction(row)}>{t('permissionEdit')}</span>
+              <span onClick={() => editRolePermissionAction(row)}>权限编辑</span>
             </Auth>
             <Auth permission={[constants.permissionDicMap.UPDATE_ROLE]}>
-              <span onClick={() => editRoleUnderUserAction(row)}>{t('authUser')}</span>
+              <span onClick={() => editRoleUnderUserAction(row)}>授权用户</span>
             </Auth>
             <Auth permission={constants.permissionDicMap.UPDATE_ROLE}>
-              <span onClick={() => editRoleAction(row)}>{t('edit')}</span>
+              <span onClick={() => editRoleAction(row)}>编辑</span>
             </Auth>
             <Auth permission={constants.permissionDicMap.DELETE_ROLE}>
               <span className='text-red-500' onClick={() => deleteRoleAction(row.id)}>
-                {t('delete')}
+                删除
               </span>
             </Auth>
           </div>

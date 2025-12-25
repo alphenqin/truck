@@ -11,7 +11,6 @@ import {
   IUpdateGatewayParams,
   updateGatewayRequest,
 } from './index.ts';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 
@@ -26,7 +25,6 @@ export const useGatewayPageHooks = () => {
   const [currentEditGateway, setCurrentEditGateway] = useState<IGatewayResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editGatewayModalOpen, setEditGatewayModalOpen] = useState(false);
-  const { t } = useTranslation();
   const searchConfig: { label: string; name: keyof IQueryGatewaysParams; component: ReactNode }[] = [
     {
       label: '网关名称',
@@ -65,7 +63,7 @@ export const useGatewayPageHooks = () => {
     formItems: searchConfig,
     operateComponent: !!selected.length && (
       <Button type='primary' icon={<DownloadOutlined />} onClick={() => exportGatewayRequest(selected.map(String))}>
-        {t('export')}
+        导出
       </Button>
     ),
     formName: 'gatewaySearchForm',
@@ -176,15 +174,15 @@ export const useGatewayPageHooks = () => {
       render: (status) => (status === 1 ? '启用' : status === 2 ? '停止' : ''),
     },
     {
-      title: t('operate'),
+      title: '操作',
       key: 'action',
       align: 'center',
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
-            <span onClick={() => editGatewayAction(row)}>{t('edit')}</span>
+            <span onClick={() => editGatewayAction(row)}>编辑</span>
             <span className='text-red-500' onClick={() => deleteGatewayAction(row.id)}>
-              {t('delete')}
+              删除
             </span>
           </div>
         );

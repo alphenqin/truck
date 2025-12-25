@@ -2,7 +2,6 @@ import ReactDOM from 'react-dom/client';
 import '@/utils/echarts';
 import '@/styles/index.css';
 import '@/styles/animate.css';
-import '@/local/index';
 import store from '@/store';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';

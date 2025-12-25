@@ -11,7 +11,6 @@ import {
   IUpdateLinesParams,
   updateLinesRequest,
 } from './index';
-import { useTranslation } from 'react-i18next';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 
@@ -26,7 +25,6 @@ export const useLinesPageHooks = () => {
   const [currentEditLine, setCurrentEditLine] = useState<ILinesResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editLinesModalOpen, setEditLinesModalOpen] = useState(false);
-  const { t } = useTranslation();
   const searchConfig: { label: string; name: keyof IQueryLinesParams; component: ReactNode }[] = [
     {
       label: '线路ID',

@@ -1,7 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useNoticePageHooks } from './hooks.tsx'
 import { Form, Input, Modal, Pagination, Table } from 'antd';
-import { useTranslation } from 'react-i18next';
 import { IUpdateNoticeParams } from './index.ts';
 
 const NoticePage: FC = () => {
@@ -21,7 +20,6 @@ const NoticePage: FC = () => {
     setEditNoticeModalOpen,
     onFinish,
   } = useNoticePageHooks();
-  const { t } = useTranslation();
   return (
     <>
       {SearchFormComponent}
@@ -46,7 +44,7 @@ const NoticePage: FC = () => {
         onChange={(e) => setPage(e)}
         showSizeChanger
         onShowSizeChange={(_, size) => setLimit(size)}></Pagination>
-      <Modal open={editNoticeModalOpen} title={isEdit ? t('edit') : t('add')} onOk={onFinish} onCancel={() => setEditNoticeModalOpen(false)}>
+      <Modal open={editNoticeModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditNoticeModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
           <Form.Item<IUpdateNoticeParams> name='ruleName' label='规则名称' rules={[{ required: true }]}>
             <Input />

@@ -14,7 +14,6 @@ import (
 	siteLibraryRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/siteLibrary"
 	systemRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/system"
 	systemDepartmentRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/systemDepartment"
-	templateRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/template"
 	timeTaskRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/timeTask"
 	usersRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/users"
 	"github.com/Xi-Yuer/cms/config"
@@ -53,8 +52,6 @@ func SetUpRouters() *gin.Engine {
 		systemRouterModules.UseSystemRoutes(v1)
 		// 注册定时任务相关的路由
 		timeTaskRouterModules.UseTimeTaskRoutes(v1)
-		// 注册模板相关的路由
-		templateRouterModules.UseTTemplateRoutes(v1)
 
 		assetRouterModules.AssetRoutes(v1)
 		siteLibraryRouterModules.SiteLibraryRoutes(v1)

@@ -1,16 +1,16 @@
 [app]
 port = ":8081"
-session_secret = "change_me"
-jwt_secret = "change_me"
+session_secret = "dev_session_secret"
+jwt_secret = "dev_jwt_secret"
 baseurl = "/cms"
 domain = "localhost"
 tcp_addr = ":9000"
-remote_addrs = "192.168.1.168:20058"
-tcp_enable = true
+remote_addrs = ""
+tcp_enable = false
 
 [db]
 user = "root"
-password = "change_me"
-host = "localhost"
+password = "123456"
+host = "db"
 name = "cms"
 port = "3306"

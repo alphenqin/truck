@@ -1,9 +1,6 @@
 import { getGitCommitCountRequest, getGitCommitInfoRequest, getSystemRunTimeInfoRequest, IGitCommit, MenUsageMap } from '@/service';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMenuByPath } from '@/utils';
-import { addTabHeader } from '@/store/UIStore';
-import { useAppDispatch, useAppSelector } from '@/store';
 import { AllMemUsageOptions, gitCommitsOptions, SystemCPUUsageOptions, SystemMemUsedSituationOptions } from '@/pages/Dashboard/options.ts';
 import { EChartsOption } from 'echarts';
 import { menuType } from '@/types/menus';
@@ -11,8 +8,6 @@ import dayjs from 'dayjs';
 
 export const useDashBoard = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const { menus } = useAppSelector((state) => state.UserStore);
   const [totalOption, setTotalOption] = useState<EChartsOption>({});
   const [cpuUsageOption, setCpuUsageOption] = useState({});
   const [allMenUsageOption, setAllMenUsageOption] = useState({});
@@ -149,7 +144,6 @@ export const useDashBoard = () => {
   }, []);
 
   const navigateToPage = (item: menuType) => {
-    dispatch(addTabHeader(getMenuByPath(item.pagePath, menus) || ({} as menuType)));
     navigate(item.pagePath);
   };
   return {

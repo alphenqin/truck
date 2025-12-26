@@ -75,7 +75,7 @@ const AboutPage: FC = () => {
   ];
 
   return (
-    <div className='w-full h-full bg-white p-4 dark:bg-[#001620] flex flex-col gap-10'>
+    <div className='w-full h-full app-card-flat p-6 flex flex-col gap-10'>
       <Descriptions bordered title='前端' items={frontEndItems} />
       <Descriptions bordered title='后端' items={backEndItems} />
     </div>

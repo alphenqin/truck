@@ -1,14 +1,21 @@
 import { FC, memo, ReactNode } from 'react';
 import classNames from 'classnames';
-import { useAppSelector } from '@/store';
 
-const Card: FC<{ children: ReactNode }> = ({ children }) => {
-  const { themeMode } = useAppSelector((state) => state.UIStore);
+interface CardProps {
+  children: ReactNode;
+  className?: string;
+  noPadding?: boolean;
+}
+
+const Card: FC<CardProps> = ({ children, className, noPadding = false }) => {
   return (
     <div
-      className={classNames('flex-1 bg-white dark:bg-[#110f25] rounded-md shadow-md p-4 max-h-[520px] min-h-[130px] overflow-scroll no-scrollbar', {
-        physicDarkDashBoard: themeMode === 'dark',
-      })}>
+      className={classNames(
+        'app-card flex-1 max-h-[520px] min-h-[130px] overflow-auto no-scrollbar hover-lift',
+        !noPadding && 'p-5',
+        className
+      )}
+    >
       {children}
     </div>
   );

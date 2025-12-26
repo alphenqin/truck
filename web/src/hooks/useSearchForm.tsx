@@ -21,9 +21,9 @@ export const useSearchFrom = <T extends Record<string, any>>(props: SearchFormPr
   };
 
   const SearchFormComponent = (
-    <div className='bg-white p-4 pt-10 mb-4 rounded dark:bg-[#001620]'>
+    <div className='app-card-flat p-4 pt-6 mb-4'>
       <Form form={searchFormRef} onReset={onReset} onFinish={onFinish} autoComplete='off' name={formName}>
-        <Row gutter={[10, 10]}>
+        <Row gutter={[12, 12]}>
           {formItems.map((item) => {
             return (
               <Col xs={{ span: 24 }} sm={{ span: 24 }} md={{ span: 24 }} lg={{ span: 6 }} key={item.name as string}>
@@ -34,15 +34,15 @@ export const useSearchFrom = <T extends Record<string, any>>(props: SearchFormPr
             );
           })}
           <Col xs={{ span: 24 }} sm={{ span: 24 }} md={{ span: 24 }} lg={{ span: 12 }}>
-            <div className='flex flex-nowrap'>
-              <Button type='primary' className='mx-2' htmlType='reset' icon={<RedoOutlined />}>
+            <div className='flex flex-wrap gap-2'>
+              <Button type='default' htmlType='reset' icon={<RedoOutlined />}>
                 重置
               </Button>
-              <Button type='primary' className='mx-2' htmlType='submit' icon={<SearchOutlined />}>
+              <Button type='primary' htmlType='submit' icon={<SearchOutlined />}>
                 搜索
               </Button>
               {showAddBtn && (
-                <Button type='primary' className='mx-2' htmlType='button' icon={<PlusOutlined />} onClick={() => onNewRecordFn()}>
+                <Button type='primary' htmlType='button' icon={<PlusOutlined />} onClick={() => onNewRecordFn()}>
                   新增
                 </Button>
               )}

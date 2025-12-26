@@ -1,5 +1,5 @@
 import { Key, ReactNode, useEffect, useState } from 'react';
-import { Button, Input, TableProps, InputNumber } from 'antd';
+import { Button, Input, Modal, TableProps, InputNumber } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import {
   createBuzzersRequest,
@@ -65,7 +65,15 @@ export const useBuzzersPageHooks = () => {
   };
 
   const deleteBuzzersAction = (ids: number[]) => {
-    deleteBuzzersRequest(ids).then(() => getPageData());
+    Modal.confirm({
+      title: '确认删除',
+      content: ids.length > 1 ? '确定要删除选中的规则吗？' : '确定要删除该规则吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        deleteBuzzersRequest(ids).then(() => getPageData());
+      },
+    });
   };
 
   const editBuzzersAction = async (row: IBuzzersResponse) => {

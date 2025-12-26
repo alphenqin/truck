@@ -2,13 +2,11 @@ import { createSlice } from '@reduxjs/toolkit';
 import { constants } from '@/constant';
 import { cache } from '@/utils';
 import { MenuTheme } from 'antd';
-import { menuType } from '@/types/menus';
 
 interface IUIStore {
   isFold: boolean;
   langMode: 'enUS' | 'zhCN';
   themeMode: MenuTheme | undefined;
-  TabHeader: menuType[];
   defaultSelectedKeys: string[];
   defaultOpenKeys: string[];
 }
@@ -19,7 +17,6 @@ const useUIStoreSlice = createSlice({
     isFold: false,
     langMode: 'zhCN',
     themeMode: 'light',
-    TabHeader: [],
     defaultSelectedKeys: [],
     defaultOpenKeys: [],
   } as IUIStore,
@@ -42,26 +39,6 @@ const useUIStoreSlice = createSlice({
       cache.set(constants.localStorage.lang, action.payload);
     },
 
-    addTabHeader(state, action: { payload: menuType; type: string }) {
-      const tabHeader = action.payload;
-      state.TabHeader.forEach((item, index) => {
-        if (item.pageID === tabHeader.pageID) {
-          state.TabHeader.splice(index, 1);
-        }
-      });
-      state.TabHeader.push(tabHeader);
-    },
-
-    delTabHeader(state, action: { payload: number; type: string }) {
-      const result = state.TabHeader;
-      result.splice(action.payload, 1);
-      state.TabHeader = result;
-    },
-
-    changeTabHeader(state, action: { payload: menuType[]; type: string }) {
-      state.TabHeader = action.payload;
-    },
-
     changeDefaultOpenKeys(state, action: { payload: string[]; type: string }) {
       state.defaultOpenKeys = action.payload;
     },
@@ -76,9 +53,6 @@ export const {
   changeFold,
   changeLang,
   changeThemeMode,
-  addTabHeader,
-  delTabHeader,
-  changeTabHeader,
   changeDefaultOpenKeys,
   changeDefaultSelectedKeys,
 } = useUIStoreSlice.actions;

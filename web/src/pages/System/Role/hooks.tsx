@@ -1,5 +1,5 @@
 import { Key, ReactNode, useEffect, useRef, useState } from 'react';
-import { Button, DatePicker, Input, TableProps, Tag, TreeDataNode, TreeProps } from 'antd';
+import { Button, DatePicker, Input, Modal, TableProps, Tag, TreeDataNode, TreeProps } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import {
   bindUserRequest,
@@ -100,7 +100,15 @@ export const useRolePageHooks = () => {
   };
 
   const deleteRoleAction = (id: string) => {
-    deleteRolesRequest(id).then(() => getPageData());
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除该角色吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        deleteRolesRequest(id).then(() => getPageData());
+      },
+    });
   };
 
   const editRoleAction = async (row: IRoleResponse) => {

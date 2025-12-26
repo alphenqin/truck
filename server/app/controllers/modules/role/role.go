@@ -12,14 +12,6 @@ type roleController struct {
 }
 
 // CreateRole 创建角色
-// @Summary 创建角色
-// @Schemes
-// @Description 创建角色
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /roles [post]
 func (r *roleController) CreateRole(context *gin.Context) {
 	var role types.CreateRoleParams
 	err := context.ShouldBind(&role)
@@ -35,14 +27,6 @@ func (r *roleController) CreateRole(context *gin.Context) {
 }
 
 // DeleteRole 删除角色
-// @Summary 删除角色
-// @Schemes
-// @Description 删除角色
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /roles/{id} [delete]
 func (r *roleController) DeleteRole(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -60,14 +44,6 @@ func (r *roleController) DeleteRole(context *gin.Context) {
 }
 
 // UpdateRole 更新角色
-// @Summary 更新角色
-// @Schemes
-// @Description 更新角色
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /roles/{id} [patch]
 func (r *roleController) UpdateRole(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -88,14 +64,6 @@ func (r *roleController) UpdateRole(context *gin.Context) {
 }
 
 // GetRoles 获取角色
-// @Summary 获取角色
-// @Schemes
-// @Description 获取角色
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /roles/query [post]
 func (r *roleController) GetRoles(context *gin.Context) {
 	var params types.QueryRolesParams
 	err := context.ShouldBind(&params)
@@ -116,13 +84,6 @@ func (r *roleController) GetRoles(context *gin.Context) {
 }
 
 // ExportExcel 导出角色
-// @Summary 导出角色
-// @Description 导出角色
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Param id path int true "角色ID"
-// @Router /roles/export [post]
 func (r *roleController) ExportExcel(context *gin.Context) {
 	var IDs types.ExportExcelResponse
 	err := context.ShouldBind(&IDs)
@@ -147,12 +108,6 @@ func (r *roleController) ExportExcel(context *gin.Context) {
 }
 
 // CreateOneRecord 绑定用户
-// @Summary 绑定用户
-// @Description 绑定用户
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Router /roles/bindUser [post]
 func (r *roleController) CreateOneRecord(context *gin.Context) {
 	var params types.CreateOneRecord
 	if err := context.ShouldBind(&params); err != nil {
@@ -168,12 +123,6 @@ func (r *roleController) CreateOneRecord(context *gin.Context) {
 }
 
 // DeleteOneRecord 解绑用户
-// @Summary 解绑用户
-// @Description 解绑用户
-// @Tags 角色管理
-// @Accept json
-// @Produce json
-// @Router /roles/deBindUser [post]
 func (r *roleController) DeleteOneRecord(context *gin.Context) {
 	var params types.DeleteOneRecord
 	if err := context.ShouldBind(&params); err != nil {

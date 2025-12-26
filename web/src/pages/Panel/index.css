@@ -1,0 +1,131 @@
+.panel-page {
+  min-height: 100vh;
+  padding: 0;
+  background: #ffffff;
+}
+
+.panel-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+.panel-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.2px;
+}
+
+.panel-subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.panel-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-hero-search {
+  width: 220px;
+  border-radius: 999px;
+}
+
+.panel-kpi-row {
+  margin-bottom: 8px;
+}
+
+.panel-chart-row {
+  margin-top: 12px;
+}
+
+.panel-kpi-card {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: none;
+}
+
+.panel-kpi-card.panel-kpi-alert {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(244, 63, 94, 0.08));
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.panel-kpi-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.panel-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 6px;
+}
+
+.panel-kpi-footnote {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.panel-card {
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: none;
+  background: #ffffff;
+}
+
+.panel-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.panel-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-search {
+  width: 160px;
+  border-radius: 999px;
+}
+
+.panel-icon-btn {
+  border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+  .panel-page {
+    padding: 12px;
+  }
+
+  .panel-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .panel-hero-search {
+    width: 100%;
+  }
+}

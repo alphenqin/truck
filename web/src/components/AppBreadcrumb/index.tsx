@@ -4,6 +4,7 @@ import { menuType } from '@/types/menus';
 import { getTheCurrentRoutePathAllMenuEntity } from '@/utils';
 import { useLocation } from 'react-router-dom';
 import { Breadcrumb } from 'antd';
+import { HomeOutlined } from '@ant-design/icons';
 
 const AppBreadcrumb: FC = () => {
   const { menus } = useAppSelector((state) => state.UserStore);
@@ -13,7 +14,24 @@ const AppBreadcrumb: FC = () => {
   useEffect(() => {
     setBreadCrumb(getTheCurrentRoutePathAllMenuEntity(pathname, menus));
   }, [menus, pathname]);
-  return <Breadcrumb items={breadCrumb.map((item) => ({ title: item.pageName }))} className='font-bold select-none' />;
+
+  const items = [
+    { title: <HomeOutlined className='text-[var(--app-muted)]' /> },
+    ...breadCrumb.map((item, index) => ({ 
+      title: (
+        <span className={index === breadCrumb.length - 1 ? 'font-semibold text-[var(--app-text)]' : ''}>
+          {item.pageName}
+        </span>
+      )
+    }))
+  ];
+
+  return (
+    <Breadcrumb 
+      items={items} 
+      className='select-none text-sm' 
+    />
+  );
 };
 
 export default memo(AppBreadcrumb);

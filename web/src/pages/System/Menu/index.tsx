@@ -163,9 +163,17 @@ const SystemMenu: FC = () => {
             <Auth permission={constants.permissionDicMap.UPDATE_MENU}>
               <span
                 className='text-red-500'
-                onClick={async () => {
-                  await deleteMenuRequest(row.pageID);
-                  await getPageData();
+                onClick={() => {
+                  Modal.confirm({
+                    title: '确认删除',
+                    content: '确定要删除该菜单吗？',
+                    okText: '确定',
+                    cancelText: '取消',
+                    onOk: async () => {
+                      await deleteMenuRequest(row.pageID);
+                      await getPageData();
+                    },
+                  });
                 }}>
                 删除
               </span>
@@ -253,9 +261,17 @@ const SystemMenu: FC = () => {
             <Auth permission={constants.permissionDicMap.DELETE_PAGE_INTERFACE}>
               <span
                 className='text-red-500'
-                onClick={async () => {
-                  await deleteInterfaceRequest(row.id);
-                  await getPageInterfaceAction(row.interfacePageID);
+                onClick={() => {
+                  Modal.confirm({
+                    title: '确认删除',
+                    content: '确定要删除该资源吗？',
+                    okText: '确定',
+                    cancelText: '取消',
+                    onOk: async () => {
+                      await deleteInterfaceRequest(row.id);
+                      await getPageInterfaceAction(row.interfacePageID);
+                    },
+                  });
                 }}>
                 删除
               </span>
@@ -306,7 +322,7 @@ const SystemMenu: FC = () => {
   return (
     <>
       {/* 菜单顶部操作栏 */}
-      <div className='mb-2 flex justify-between items-center bg-white p-4 rounded dark:bg-[#001620]'>
+      <div className='mb-3 flex justify-between items-center app-card-flat p-4'>
         <span className='font-bold'>菜单列表</span>
         <Auth permission={constants.permissionDicMap.ADD_MENU}>
           <Button

@@ -11,12 +11,6 @@ var InterfaceController = &interfaceControllerModules{}
 type interfaceControllerModules struct{}
 
 // CreateInterface 创建接口
-// @Summary 创建接口
-// @Description 创建接口
-// @Tags 接口管理
-// @Accept json
-// @Produce json
-// @Router /interface [post]
 func (i *interfaceControllerModules) CreateInterface(context *gin.Context) {
 	var params types.CreateInterfaceRequest
 	err := context.ShouldBind(&params)
@@ -33,12 +27,6 @@ func (i *interfaceControllerModules) CreateInterface(context *gin.Context) {
 }
 
 // UpdateInterface 更新接口
-// @Summary 更新接口
-// @Description 更新接口
-// @Tags 接口管理
-// @Accept json
-// @Produce json
-// @Router /interface/{id} [patch]
 func (i *interfaceControllerModules) UpdateInterface(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -60,12 +48,6 @@ func (i *interfaceControllerModules) UpdateInterface(context *gin.Context) {
 }
 
 // GetInterfaceByPageID 获取接口（根据页面ID）
-// @Summary 获取接口（根据页面ID）
-// @Description 获取接口（根据页面ID）
-// @Tags 接口管理
-// @Accept json
-// @Produce json
-// @Router /interface/page/{id} [get]
 func (i *interfaceControllerModules) GetInterfaceByPageID(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -77,12 +59,6 @@ func (i *interfaceControllerModules) GetInterfaceByPageID(context *gin.Context) 
 }
 
 // DeleteInterface 删除接口
-// @Summary 删除接口
-// @Description 删除接口
-// @Tags 接口管理
-// @Accept json
-// @Produce json
-// @Router /interface/{id} [delete]
 func (i *interfaceControllerModules) DeleteInterface(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -98,12 +74,6 @@ func (i *interfaceControllerModules) DeleteInterface(context *gin.Context) {
 }
 
 // GetInterfacesByRoleID 获取接口（根据角色ID）
-// @Summary 获取接口（根据角色ID）
-// @Description 获取接口（根据角色ID）
-// @Tags 接口管理
-// @Accept json
-// @Produce json
-// @Router /interface/role/{id} [get]
 func (i *interfaceControllerModules) GetInterfacesByRoleID(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -119,12 +89,6 @@ func (i *interfaceControllerModules) GetInterfacesByRoleID(context *gin.Context)
 }
 
 // GetAllInterface 获取接口（所有页面）
-// @Summary 获取接口（所有页面）
-// @Description 获取接口（所有页面）
-// @Tags 接口管理
-// @Accept json
-// @Produce json
-// @Router /interface [get]
 func (i *interfaceControllerModules) GetAllInterface(context *gin.Context) {
 	allInterface, err := InterfaceService.GetAllInterface()
 	if err != nil {

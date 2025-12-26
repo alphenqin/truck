@@ -13,12 +13,6 @@ type pagesController struct {
 }
 
 // CreatePage 创建菜单
-// @Summary 创建菜单
-// @Description 创建菜单
-// @Tags 菜单管理
-// @Accept json
-// @Produce json
-// @Router /pages [post]
 func (p *pagesController) CreatePage(context *gin.Context) {
 	var pageParams types.CreatePageParams
 	if err := context.ShouldBind(&pageParams); err != nil {
@@ -38,12 +32,6 @@ func (p *pagesController) CreatePage(context *gin.Context) {
 }
 
 // DeletePage 删除菜单
-// @Summary 删除菜单
-// @Description 删除菜单
-// @Tags 菜单管理
-// @Accept json
-// @Produce json
-// @Router /pages/{id} [delete]
 func (p *pagesController) DeletePage(context *gin.Context) {
 	param := context.Param("id")
 	if param == "" {
@@ -59,12 +47,6 @@ func (p *pagesController) DeletePage(context *gin.Context) {
 }
 
 // GetPages 获取菜单
-// @Summary 获取菜单
-// @Description 获取菜单
-// @Tags 菜单管理
-// @Accept json
-// @Produce json
-// @Router /pages [get]
 func (p *pagesController) GetPages(context *gin.Context) {
 	pages, err := PageService.GetPages()
 	if err != nil {
@@ -75,13 +57,6 @@ func (p *pagesController) GetPages(context *gin.Context) {
 }
 
 // GetUserMenus 获取用户菜单
-// @Summary 获取用户菜单
-// @Description 获取用户菜单
-// @Tags 菜单管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /pages/user [get]
 func (p *pagesController) GetUserMenus(context *gin.Context) {
 	jwtPayload, exist := context.Get(constant.JWTPAYLOAD)
 	if !exist {
@@ -96,13 +71,6 @@ func (p *pagesController) GetUserMenus(context *gin.Context) {
 }
 
 // UpdatePage 更新菜单
-// @Summary 更新菜单
-// @Description 更新菜单
-// @Tags 菜单管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /pages/{id} [patch]
 func (p *pagesController) UpdatePage(context *gin.Context) {
 	var params *types.UpdatePageRequest
 	id := context.Param("id")
@@ -123,13 +91,6 @@ func (p *pagesController) UpdatePage(context *gin.Context) {
 }
 
 // GetPagesByRoleID 根据角色 ID 获取菜单
-// @Summary 获取角色菜单
-// @Description 获取角色菜单
-// @Tags 获取角色菜单
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /pages/role/{id} [get]
 func (p *pagesController) GetPagesByRoleID(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {

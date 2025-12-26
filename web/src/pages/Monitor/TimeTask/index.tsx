@@ -93,7 +93,7 @@ const TimeTask: FC = () => {
   }, []);
   return (
     <>
-      <div className='mb-2 flex justify-between items-center bg-white p-4 rounded dark:bg-[#001620]'>
+      <div className='mb-3 flex justify-between items-center app-card-flat p-4'>
         <span className='font-bold'>定时任务</span>
       </div>
       <Table dataSource={taskList} rowKey='timeTaskID' columns={columns}></Table>

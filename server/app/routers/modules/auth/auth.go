@@ -9,6 +9,5 @@ func UseAuthRoutes(r *gin.RouterGroup) {
 	group := r.Group("/auth")
 	{
 		group.POST("/login", controllers.AuthController.Login)
-		group.GET("/captcha", controllers.AuthController.Captcha)
 	}
 }

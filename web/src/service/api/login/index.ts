@@ -5,7 +5,6 @@ import { AxiosResponse } from 'axios';
 export type LoginParamsType = {
   account: string;
   password: string;
-  captcha: string;
 };
 
 export interface LoginUserResponseType {
@@ -29,12 +28,5 @@ export const loginRequest = (data: LoginParamsType) => {
       ...data,
       password: Md5.hashStr(data.password),
     },
-  });
-};
-
-export const getCaptchaRequest = () => {
-  return request.get({
-    url: '/auth/captcha',
-    responseType: 'blob',
   });
 };

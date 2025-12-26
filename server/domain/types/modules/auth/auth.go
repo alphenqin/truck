@@ -5,7 +5,6 @@ import usersResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/users
 type LoginRequestParams struct {
 	Account  string `form:"account" binding:"required"`
 	Password string `form:"password" binding:"required"`
-	Captcha  string `form:"captcha" binding:"required"`
 }
 
 type LoginResponse struct {

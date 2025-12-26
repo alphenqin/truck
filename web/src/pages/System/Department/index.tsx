@@ -87,9 +87,17 @@ const SystemDepartment: FC = () => {
             <Auth permission={constants.permissionDicMap.DELETE_DEPARTMENT}>
               <span
                 className='text-red-500'
-                onClick={async () => {
-                  await deleteDepartmentRequest(row.id);
-                  await getPageData();
+                onClick={() => {
+                  Modal.confirm({
+                    title: '确认删除',
+                    content: '确定要删除该部门吗？',
+                    okText: '确定',
+                    cancelText: '取消',
+                    onOk: async () => {
+                      await deleteDepartmentRequest(row.id);
+                      await getPageData();
+                    },
+                  });
                 }}>
                 删除
               </span>
@@ -118,7 +126,7 @@ const SystemDepartment: FC = () => {
   }, []);
   return (
     <>
-      <div className='mb-2 flex justify-between items-center bg-white p-4 rounded dark:bg-[#001620]'>
+      <div className='mb-3 flex justify-between items-center app-card-flat p-4'>
         <span className='font-bold'>部门列表</span>
         <Auth permission={constants.permissionDicMap.ADD_DEPARTMENT}>
           <Button

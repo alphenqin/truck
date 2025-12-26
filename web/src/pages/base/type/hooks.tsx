@@ -1,5 +1,5 @@
 import { Key, ReactNode, useEffect, useState } from 'react';
-import { Button, Input, TableProps } from 'antd';
+import { Button, Input, Modal, TableProps } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import {
   createAssetTypesRequest,
@@ -77,7 +77,15 @@ export const useAssetTypesPageHooks = () => {
   };
 
   const deleteAssetTypesAction = (id: number) => {
-    deleteAssetTypesRequest([id]).then(() => getPageData());
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除该资产类型吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        deleteAssetTypesRequest([id]).then(() => getPageData());
+      },
+    });
   };
 
   const editAssetTypesAction = async (row: IAssetTypesResponse) => {

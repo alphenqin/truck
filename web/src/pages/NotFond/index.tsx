@@ -4,11 +4,13 @@ import NotFondImage from '@/assets/image/404.png';
 
 const NotFond: FC = () => {
   return (
-    <div className='flex items-center justify-center bg-white h-full dark:bg-[#121121]'>
-      <Image src={NotFondImage} preview={false}></Image>
-      <div className='text-6xl font-bold flex flex-col text-gray-700 dark:text-[#a6aeb3]'>
+    <div className='app-shell h-full flex items-center justify-center'>
+      <div className='app-card-flat flex items-center gap-10 p-8'>
+        <Image src={NotFondImage} preview={false}></Image>
+        <div className='text-5xl font-semibold flex flex-col app-muted'>
         <span>OOPS!</span>
         <span>Page Not Font!</span>
+        </div>
       </div>
     </div>
   );

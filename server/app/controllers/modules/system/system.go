@@ -58,12 +58,6 @@ type systemInfo struct {
 }
 
 // GetSystemInfo 获取系统运行信息
-// @Summary 获取系统运行信息
-// @Description 获取系统运行信息
-// @Tags 系统管理
-// @Accept json
-// @Produce json
-// @Router /system [get]
 func (s *systemController) GetSystemInfo(context *gin.Context) {
 	utils.Response.Success(context, response)
 }

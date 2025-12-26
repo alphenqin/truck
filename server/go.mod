@@ -6,7 +6,6 @@ toolchain go1.23.5
 
 require (
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/dchest/captcha v1.0.0
 	github.com/gin-contrib/sessions v1.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/locales v0.14.1
@@ -17,8 +16,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/swaggo/files v1.0.1
-	github.com/swaggo/swag v1.16.3
 	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.23.0
 	gorm.io/driver/mysql v1.5.7

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Row, Col, Card, Modal, Button, Input } from 'antd';
 import { FullscreenOutlined, SearchOutlined } from '@ant-design/icons';
-import { Column, Pie, Bar, Line } from '@ant-design/plots';
+import { Column, Bar, Line } from '@ant-design/plots';
+import './index.css';
 
 // 资产状态图表 mock 数据
 const assetStatusColumnData = [
@@ -81,40 +82,22 @@ const PanelPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   // 存储当前放大卡片的标题
   const [modalTitle, setModalTitle] = useState('');
-  // 存储当前放大卡片的内容（这里用字符串占位，实际可传组件）
-  const [modalContentPlaceholder, setModalContentPlaceholder] = useState('');
   const [modalChartConfig, setModalChartConfig] = useState<any>(null); // 存储模态框中要显示的图表配置
   const [modalChartType, setModalChartType] = useState(''); // 存储模态框中要显示的图表类型
-
-  // 新增状态：当前选择的资产编号
-  const [selectedAssetForStay, setSelectedAssetForStay] = useState<string>('工装车-A001'); // 默认选择
 
   // 搜索框状态
   const [searchTermAssetStay, setSearchTermAssetStay] = useState('');
   const [searchTermCirculation, setSearchTermCirculation] = useState('');
 
   // 配置 Card 和 Chart 的通用样式
-  const cardStyle = {
-    borderRadius: 8,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-    minHeight: 300, // 调整最小高度以适应更多卡片
-    marginBottom: 4, // 调整卡片间距
-  };
-
-  const chartTitleContainerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  };
-
-  const chartTitleTextStyle = {
-    fontSize: 16,
-    fontWeight: 600,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  };
+  const kpiStats = useMemo(() => {
+    const totalAssets = assetStatusColumnData.reduce((sum, item) => sum + item.count, 0);
+    const inStorage = assetStatusColumnData
+      .filter((item) => item.status.includes('在库'))
+      .reduce((sum, item) => sum + item.count, 0);
+    const lostTotal = lostStatsColumnData.reduce((sum, item) => sum + item.count, 0);
+    return { totalAssets, inStorage, lostTotal };
+  }, []);
 
   // "资产状态" Column 图表配置
   const assetStatusColumnConfig = {
@@ -127,26 +110,19 @@ const PanelPage: React.FC = () => {
     style: {
       inset: 5,
     },
+    color: ['#2563eb', '#22c55e'],
     xAxis: {
-      title: { text: '状态类型' }, // X轴标题
-      label: { autoRotate: true }, // 标签自动旋转
+      title: null,
+      label: { autoRotate: false },
     },
     yAxis: {
-      title: { text: '数量' }, // Y轴标题
+      title: null,
       min: 0,
     },
-    label: {
-      position: 'top', // 数值标签位置
-      style: {
-        fill: '#000', // 调整标签颜色
-        opacity: 0.8,
-        fontSize: 10,
-        fontWeight: 500,
-      },
-    },
-    tooltip: false,
-    legend: { position: 'top-left' }, // 图例位置
-    height: 220, // 调整高度以适应卡片
+    label: false,
+    tooltip: { shared: true },
+    legend: { position: 'top-right' },
+    height: 220,
   };
 
   // "资产在库分布" Column 图表配置
@@ -154,29 +130,17 @@ const PanelPage: React.FC = () => {
     data: assetInStorageData,
     xField: 'warehouse', // 场库号
     yField: 'count', // 资产数量
-    label: {
-      text: (d: any) => `${d.count}`, // 直接显示数量
-      textBaseline: 'bottom',
-      style: { fontSize: 10, fontWeight: 500, fill: '#000' },
-    },
     axis: {
-      x: {
-        title: { text: '场库号' },
-        label: { autoRotate: true },
-      },
-      y: {
-        title: { text: '资产数量' },
-        labelFormatter: (value: number) => value.toFixed(0), // 格式化为整数
-        min: 0,
-      },
+      x: { title: null, label: { autoRotate: false } },
+      y: { title: null, labelFormatter: (value: number) => value.toFixed(0), min: 0 },
     },
     style: {
       radiusTopLeft: 10,
       radiusTopRight: 10,
     },
-    tooltip: false, // 禁用 tooltip
-    height: 220, // 调整高度以适应卡片
-    color: '#1890ff', // 单一颜色
+    tooltip: { shared: true },
+    height: 220,
+    color: '#6366f1',
   };
 
   // 过滤后的资产停留分布数据
@@ -194,27 +158,18 @@ const PanelPage: React.FC = () => {
       inset: 5,
     },
     xAxis: {
-      title: { text: '停留地点' }, // X轴标题
-      label: { autoRotate: true },
+      title: null,
+      label: { autoRotate: false },
     },
     yAxis: {
-      title: { text: '时间 (小时)' }, // Y轴标题
+      title: null,
       label: { autoRotate: true },
       min: 0,
       max: 24, // 假设时间范围是0-24小时
     },
-    label: {
-      position: 'right', // 标签位置
-      text: (d: any) => `${d.startTime.toFixed(1)}h-${d.endTime.toFixed(1)}h`, // 显示时间段
-      style: {
-        fill: '#000',
-        opacity: 0.8,
-        fontSize: 10,
-        fontWeight: 500,
-      },
-    },
-    tooltip: false, // 禁用 tooltip
-    legend: { position: 'top-left' },
+    label: false,
+    tooltip: { shared: true },
+    legend: false,
     height: 220,
   };
 
@@ -223,18 +178,13 @@ const PanelPage: React.FC = () => {
     data: lostStatsColumnData,
     xField: 'time', // X轴为时间间隔
     yField: 'count', // Y轴为数量
-    label: {
-      text: (d: any) => `${d.count}`, // 显示数量
-      textBaseline: 'bottom',
-      style: { fontSize: 10, fontWeight: 500, fill: '#000' },
-    },
     axis: {
       x: {
-        title: { text: '时间间隔' },
+        title: null,
         label: { autoRotate: false }, // 不自动旋转，保持水平
       },
       y: {
-        title: { text: '数量' },
+        title: null,
         labelFormatter: (value: number) => value.toFixed(0),
         min: 0,
       },
@@ -243,9 +193,9 @@ const PanelPage: React.FC = () => {
       radiusTopLeft: 10,
       radiusTopRight: 10,
     },
-    tooltip: false, // 禁用 tooltip
+    tooltip: { shared: true },
     height: 220,
-    color: '#f5222d', // 设置颜色
+    color: '#ef4444',
   };
 
   // "资产状态趋势" Line 图表配置
@@ -254,15 +204,15 @@ const PanelPage: React.FC = () => {
     xField: 'time',
     yField: 'value',
     seriesField: 'statusType', // 根据状态类型区分不同的线
-    color: ({ statusType }: { statusType: string }) => { // <--- 明确的颜色映射函数
+    color: ({ statusType }: { statusType: string }) => {
       if (statusType === '维修数量') {
-        return '#faad14'; // 黄色系
+        return '#f59e0b';
       }
-      return '#f5222d'; // 红色系
+      return '#ef4444';
     },
     point: {
-      shapeField: 'square', // 方形点
-      sizeField: 4, // 点大小
+      shapeField: 'circle',
+      sizeField: 4,
     },
     interaction: { // 交互配置
       tooltip: {
@@ -273,26 +223,17 @@ const PanelPage: React.FC = () => {
       lineWidth: 2, // 线宽
     },
     xAxis: {
-      title: { text: '时间' },
-      label: { autoRotate: true },
+      title: null,
+      label: { autoRotate: false },
     },
     yAxis: {
-      title: { text: '数量' },
+      title: null,
       min: 0,
     },
-    label: { // 线条上的标签
-      content: (d: any) => `${d.value}`, // 显示数值
-      position: 'right', // 标签位置
-      style: {
-        fontSize: 10,
-        fontWeight: 500,
-        fill: '#000',
-        opacity: 0.8,
-      },
-    },
-    legend: { // 图例配置
-      position: 'top-left', // 图例位置
-      itemMarker: 'square', // 图例标记为方形
+    label: false,
+    legend: {
+      position: 'top-right',
+      itemMarker: 'circle',
     },
     height: 220,
   };
@@ -323,28 +264,19 @@ const PanelPage: React.FC = () => {
       inset: 5,
     },
     xAxis: {
-      title: { text: '' },
+      title: null,
       label: { autoRotate: false },
     },
     yAxis: {
-      title: { text: '数量' },
+      title: null,
       labelFormatter: (value: number) => value.toFixed(0),
       min: 0,
     },
-    label: {
-      text: (d: any) => `${d.count}`,
-      position: 'top',
-      style: {
-        fill: '#000',
-        opacity: 0.8,
-        fontSize: 10,
-        fontWeight: 500,
-      },
-    },
-    tooltip: false,
-    legend: { position: 'top-left', itemMarker: 'square' },
+    label: false,
+    tooltip: { shared: true },
+    legend: false,
     height: 220,
-    color: ['#1890ff', '#f5222d'],
+    color: ['#22c55e', '#ef4444'],
   };
 
   // 处理放大按钮点击事件
@@ -360,7 +292,6 @@ const PanelPage: React.FC = () => {
   const handleCancel = () => {
     setIsModalVisible(false);
     setModalTitle('');
-    setModalContentPlaceholder('');
     setModalChartConfig(null);
     setModalChartType('');
   };
@@ -376,16 +307,16 @@ const PanelPage: React.FC = () => {
 
   // 渲染每个图表卡片的辅助函数
   const renderChartCard = (title: string, config: any, type: string, showSearch: 'assetStay' | 'circulation' | false = false) => (
-    <Card style={cardStyle} styles={{ body: { padding: 16 } }}>
-      <div style={chartTitleContainerStyle}>
-        <div style={chartTitleTextStyle}>{title}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <Card className="panel-card" styles={{ body: { padding: 16 } }}>
+      <div className="panel-card-header">
+        <div className="panel-card-title">{title}</div>
+        <div className="panel-card-actions">
           {showSearch === 'assetStay' && (
             <Input.Search
               placeholder="搜索资产编号"
               onSearch={handleSearchAssetStay}
               onChange={(e) => setSearchTermAssetStay(e.target.value)}
-              style={{ width: 150 }}
+              className="panel-search"
               allowClear
             />
           )}
@@ -394,7 +325,7 @@ const PanelPage: React.FC = () => {
               placeholder="搜索网关"
               onSearch={handleSearchCirculation}
               onChange={(e) => setSearchTermCirculation(e.target.value)}
-              style={{ width: 150 }}
+              className="panel-search"
               allowClear
             />
           )}
@@ -402,7 +333,7 @@ const PanelPage: React.FC = () => {
             type="text"
             icon={<FullscreenOutlined />}
             onClick={() => handleMaximize(title, config, type)}
-            style={{ cursor: 'pointer' }}
+            className="panel-icon-btn"
           />
         </div>
       </div>
@@ -419,27 +350,66 @@ const PanelPage: React.FC = () => {
   );
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', padding: 16 }}>
-      <Row gutter={[8, 8]}> {/* 调整 gutter 保持紧凑 */}
+    <div className="panel-page">
+      <div className="panel-hero">
+        <div>
+          <div className="panel-title">资产看板</div>
+          <div className="panel-subtitle">实时掌握资产分布与状态趋势</div>
+        </div>
+        <div className="panel-hero-actions">
+          <Input
+            placeholder="全局搜索资产编号"
+            prefix={<SearchOutlined />}
+            className="panel-hero-search"
+            allowClear
+          />
+        </div>
+      </div>
+
+      <Row gutter={[12, 12]} className="panel-kpi-row">
+        <Col xs={24} md={8}>
+          <div className="panel-kpi-card">
+            <div className="panel-kpi-label">资产总量</div>
+            <div className="panel-kpi-value">{kpiStats.totalAssets}</div>
+            <div className="panel-kpi-footnote">包含工装车与牵引车</div>
+          </div>
+        </Col>
+        <Col xs={24} md={8}>
+          <div className="panel-kpi-card">
+            <div className="panel-kpi-label">在库资产</div>
+            <div className="panel-kpi-value">{kpiStats.inStorage}</div>
+            <div className="panel-kpi-footnote">正常在库 + 维修在库</div>
+          </div>
+        </Col>
+        <Col xs={24} md={8}>
+          <div className="panel-kpi-card panel-kpi-alert">
+            <div className="panel-kpi-label">疑似丢失</div>
+            <div className="panel-kpi-value">{kpiStats.lostTotal}</div>
+            <div className="panel-kpi-footnote">近 8 小时累计</div>
+          </div>
+        </Col>
+      </Row>
+
+      <Row gutter={[20, 20]} className="panel-chart-row">
         {/* 第一行 */}
-        <Col span={8}>
+        <Col xs={24} md={8}>
           {renderChartCard('资产状态', assetStatusColumnConfig, 'Column')}
         </Col>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           {renderChartCard('资产在库分布', assetInStorageColumnConfig, 'Column')} {/* 使用 Column 组件 */}
         </Col>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           {renderChartCard('资产停留分布', assetStayBarConfig, 'Bar', 'assetStay')} {/* 为此卡片添加搜索框 */}
         </Col>
       </Row>
-      <Row gutter={[8, 8]}> {/* 第二行 */}
-        <Col span={8}>
+      <Row gutter={[20, 20]} className="panel-chart-row">
+        <Col xs={24} md={8}>
           {renderChartCard('疑似丢失统计', lostStatsColumnConfig, 'Column')} {/* 使用 Column 组件 */}
         </Col>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           {renderChartCard('资产状态趋势', assetStatusTrendConfig, 'Line')} {/* 使用 Line 组件 */}
         </Col>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           {renderChartCard('流转分析', circulationAnalysisConfig, 'Column', 'circulation')} {/* 使用 Column 组件和新的搜索框 */}
         </Col>
       </Row>

@@ -11,13 +11,6 @@ var SystemDepartmentController = &departmentController{}
 type departmentController struct{}
 
 // CreateDepartment 创建部门
-// @Summary 创建部门
-// @Description 创建部门
-// @Tags 部门管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /department [post]
 func (d *departmentController) CreateDepartment(context *gin.Context) {
 	var createParams types.CreateDepartmentRequest
 	if err := context.ShouldBind(&createParams); err != nil {
@@ -33,13 +26,6 @@ func (d *departmentController) CreateDepartment(context *gin.Context) {
 }
 
 // DeleteDepartment 删除部门
-// @Summary 删除部门
-// @Description 删除部门
-// @Tags 部门管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /department/{id} [delete]
 func (d *departmentController) DeleteDepartment(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -56,13 +42,6 @@ func (d *departmentController) DeleteDepartment(context *gin.Context) {
 }
 
 // GetDepartments 获取部门
-// @Summary 获取部门
-// @Description 获取部门
-// @Tags 部门管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /department [get]
 func (d *departmentController) GetDepartments(context *gin.Context) {
 	department, err := SystemDepartmentService.GetDepartments()
 	if err != nil {
@@ -73,13 +52,6 @@ func (d *departmentController) GetDepartments(context *gin.Context) {
 }
 
 // UpdateDepartment 修改部门
-// @Summary 修改部门
-// @Description 修改部门
-// @Tags 部门管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /department/{id} [patch]
 func (d *departmentController) UpdateDepartment(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {

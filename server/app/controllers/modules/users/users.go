@@ -12,12 +12,6 @@ var UserController = &userController{}
 type userController struct{}
 
 // CreateUser 创建用户
-// @Summary 创建新用户
-// @Description 创建新用户并将其添加到系统中
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Router /users [post]
 func (u *userController) CreateUser(context *gin.Context) {
 	var user types.CreateSingleUserRequest
 	err := context.ShouldBind(&user)
@@ -34,14 +28,6 @@ func (u *userController) CreateUser(context *gin.Context) {
 }
 
 // GetUser 获取用户
-// @Summary 根据ID获取用户信息
-// @Schemes
-// @Description 根据ID获取用户信息
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
-// @Router /users/{id} [get]
 func (u *userController) GetUser(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -57,13 +43,6 @@ func (u *userController) GetUser(context *gin.Context) {
 }
 
 // GetUsers 查询用户
-// @Summary 查询用户
-// @Description 根据查询参数查询用户信息
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Body
-// @Router /users/query [post]
 func (u *userController) GetUsers(context *gin.Context) {
 	var params types.QueryUsersParams
 	err := context.ShouldBind(&params)
@@ -84,13 +63,6 @@ func (u *userController) GetUsers(context *gin.Context) {
 }
 
 // FindUserByParamsAndOutRoleID 查询角色以外的用户
-// @Summary 查询角色以外的用户
-// @Description 查询角色以外的用户
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Body
-// @Router /users/query/role/:id [post]
 func (u *userController) FindUserByParamsAndOutRoleID(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -116,13 +88,6 @@ func (u *userController) FindUserByParamsAndOutRoleID(context *gin.Context) {
 }
 
 // UpdateUser 更新用户
-// @Summary 更新用户信息
-// @Description 更新现有用户的信息
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Param id path int true "用户ID"
-// @Router /users/{id} [patch]
 func (u *userController) UpdateUser(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -154,13 +119,6 @@ func (u *userController) UpdateUser(context *gin.Context) {
 }
 
 // DeleteUser 删除用户
-// @Summary 删除用户
-// @Description 根据用户ID删除用户
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Param id path int true "用户ID"
-// @Router /users/{id} [delete]
 func (u *userController) DeleteUser(context *gin.Context) {
 	id := context.Param("id")
 	if id == "" {
@@ -176,13 +134,6 @@ func (u *userController) DeleteUser(context *gin.Context) {
 }
 
 // GetUserByRoleID 查询用户（查询某个角色下的所有用户）
-// @Summary 查询用户（查询某个角色下的所有用户）
-// @Description 查询用户（查询某个角色下的所有用户）
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Param id path int true "角色ID"
-// @Router /users/role/{id} [get]
 func (u *userController) GetUserByRoleID(context *gin.Context) {
 	roleID := context.Param("id")
 	var params types.Page
@@ -208,13 +159,6 @@ func (u *userController) GetUserByRoleID(context *gin.Context) {
 }
 
 // ExportExcel 导出用户
-// @Summary 导出用户
-// @Description 导出用户
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Param id path int true "用户ID"
-// @Router /users/export [post]
 func (u *userController) ExportExcel(context *gin.Context) {
 	var IDs types.ExportExcelResponse
 	err := context.ShouldBind(&IDs)

@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useImperativeHandle, useState } from 'react';
-import { DatePicker, Form, Input, Select, TableProps, Tag, TreeSelect } from 'antd';
+import { DatePicker, Form, Input, Modal, Select, TableProps, Tag, TreeSelect } from 'antd';
 import {
   createUsersRequest,
   deleteUsersRequest,
@@ -239,7 +239,15 @@ export const useUserPageHooks = (userPageRef: any, props?: IUserPageHooks) => {
   };
 
   const deleteUsersAction = (id: string) => {
-    deleteUsersRequest(id).then(() => getPageData());
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除该用户吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        deleteUsersRequest(id).then(() => getPageData());
+      },
+    });
   };
 
   const exportUsersAction = async () => {

@@ -4,9 +4,9 @@ import { menuType } from '@/types/menus';
 import { Icon } from '@/components';
 import { useAppSelector } from '@/store';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getFirstMenu, getMenuByPath, getTheCurrentRoutePathAllMenuPath } from '@/utils';
+import { getFirstMenu, getTheCurrentRoutePathAllMenuPath } from '@/utils';
 import { useDispatch } from 'react-redux';
-import { addTabHeader, changeDefaultOpenKeys, changeDefaultSelectedKeys } from '@/store/UIStore';
+import { changeDefaultOpenKeys, changeDefaultSelectedKeys } from '@/store/UIStore';
 import { constants } from '@/constant';
 
 export const useMainPage = () => {
@@ -29,7 +29,6 @@ export const useMainPage = () => {
       const firstMenu = getFirstMenu(menus); // 获取第一个叶子菜单
       dispatch(changeDefaultSelectedKeys([firstMenu.pagePath] || []));
       dispatch(changeDefaultOpenKeys(getTheCurrentRoutePathAllMenuPath(firstMenu.pagePath, menus)));
-      dispatch(addTabHeader(getMenuByPath(firstMenu.pagePath, menus) || ({} as menuType)));
       navigate(firstMenu.pagePath);
     }
   }, [dispatch, menus, navigate]);
@@ -44,7 +43,6 @@ export const useMainPage = () => {
   const onSelect: MenuProps['onSelect'] = (e) => {
     dispatch(changeDefaultSelectedKeys(e.selectedKeys)); // 设置选中菜单
     dispatch(changeDefaultOpenKeys(e.keyPath)); // 设置展开路径
-    dispatch(addTabHeader(getMenuByPath(e.key, menus) || ({} as menuType))); // 加入标签页
     navigate(e.key); // 路由跳转
   };
 

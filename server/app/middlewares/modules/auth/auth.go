@@ -77,7 +77,7 @@ func AuthMethodMiddleWare(context *gin.Context) {
 func WhiteList(context *gin.Context) bool {
 	// 白名单
 	prefix := "^" + config.Config.APP.BASEURL
-	whiteList := []string{"/auth/login$", "/auth/captcha$"}
+	whiteList := []string{"/auth/login$"}
 	pass := false
 	for _, v := range whiteList {
 		re, err := regexp.Compile(prefix + v)

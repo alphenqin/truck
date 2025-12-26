@@ -14,114 +14,117 @@ const Dashboard: FC = () => {
   const { themeMode } = useAppSelector((state) => state.UIStore);
   const { loading, totalOption, cpuUsageOption, allMenUsageOption, gitCommits, commitCount, gitCommitFrequency, navigateToPage } = useDashBoard();
 
-  const commonStyle = 'bg-white dark:bg-[#110f25] rounded-md shadow-md p-4 no-scrollbar w-full';
-  const backgroundArray = ['#ff9066', '#56bafc', '#ab77e3', '#ff7bb6', '#46d6cd'];
-  const echartsContent = [
-    <ReactECharts option={totalOption} theme={themeMode} style={{ height: '120px', width: '100%' }} />,
-    <ReactECharts option={cpuUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} />,
-    <ReactECharts option={allMenUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} />,
-    <div className='flex h-[100px] justify-center items-center text-2xl dark:bg-[#110f25]'>
-      <span className='text-[#ff6787] text-5xl'>{commitCount}</span>
-      <span className='ml-4'>提交次数</span>
-    </div>,
+  const cardStyle = 'app-card p-5 no-scrollbar w-full';
+  const quickAccessColors = [
+    { bg: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' },
+    { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981' },
+    { bg: 'rgba(168, 85, 247, 0.12)', color: '#a855f7' },
+    { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' },
   ];
 
-  const TimeLine: any[] = gitCommits.map((item) => {
-    return {
-      color: '#00CCFF',
-      dot: <SmileOutlined />,
-      label: <p className='text-[#5bb4ef]'>{item.date}</p>,
-      children: item.children.map((item) => {
-        return (
-          <div key={item.commitID} className='cursor-pointer'>
-            <Popover
-              placement='bottom'
-              content={
-                <div>
-                  <p>Auth:{item.author}</p>
-                  <p>Date:{dayjs(item.date).format('YYYY-MM-DD HH:mm:ss')}</p>
-                </div>
-              }>
-              <p>{item.message}</p>
-            </Popover>
-          </div>
-        );
-      }),
-    };
-  });
+  const statCards = [
+    { chart: <ReactECharts option={totalOption} theme={themeMode} style={{ height: '120px', width: '100%' }} /> },
+    { chart: <ReactECharts option={cpuUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} /> },
+    { chart: <ReactECharts option={allMenUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} /> },
+    {
+      chart: (
+        <div className='flex h-[120px] justify-center items-center gap-3'>
+          <span className='text-5xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent'>
+            {commitCount}
+          </span>
+          <span className='text-[var(--app-muted)] text-lg'>提交次数</span>
+        </div>
+      ),
+    },
+  ];
+
+  const timelineItems: any[] = gitCommits.map((item) => ({
+    color: 'var(--app-accent)',
+    dot: <SmileOutlined className='text-[var(--app-accent)]' />,
+    label: <span className='text-[var(--app-accent)] font-medium'>{item.date}</span>,
+    children: item.children.map((commit) => (
+      <div key={commit.commitID} className='cursor-pointer'>
+        <Popover
+          placement='bottom'
+          arrow={false}
+          content={
+            <div className='text-sm space-y-1'>
+              <p className='text-[var(--app-muted)]'>作者：{commit.author}</p>
+              <p className='text-[var(--app-muted)]'>时间：{dayjs(commit.date).format('YYYY-MM-DD HH:mm:ss')}</p>
+            </div>
+          }
+        >
+          <p className='hover:text-[var(--app-accent)] tran-fast'>{commit.message}</p>
+        </Popover>
+      </div>
+    )),
+  }));
+
   return (
     <Spin spinning={loading}>
-      <Row gutter={[10, 10]}>
-        {echartsContent.map((item, index) => {
-          return (
-            <Col xs={{ span: 24 }} sm={{ span: 24 }} md={{ span: 12 }} lg={{ span: 12 }} xl={6} key={index}>
-              <div
-                className={classNames(commonStyle, 'h-full truck-animate truck-fade-in-right', {
-                  physicDarkDashBoard: themeMode === 'dark',
-                })}>
-                {item}
-              </div>
-            </Col>
-          );
-        })}
-        <Col xs={{ span: 24 }} sm={{ span: 24 }} md={{ span: 24 }} lg={{ span: 12 }}>
-          <div className='flex flex-col justify-between gap-2 truck-animate truck-fade-in-right'>
-            <div
-              className={classNames(commonStyle, {
-                physicDarkDashBoard: themeMode === 'dark',
-              })}>
-              <span className='text-md font-bold mb-2'>快捷入口</span>
-              <Row className='flex items-center min-h-[150px] justify-between gap-4'>
+      <Row gutter={[16, 16]}>
+        {/* 统计卡片区域 */}
+        {statCards.map((item, index) => (
+          <Col xs={24} sm={24} md={12} lg={12} xl={6} key={index}>
+            <div className={classNames(cardStyle, 'h-full hover-lift')} style={{ animationDelay: `${index * 0.1}s` }}>
+              {item.chart}
+            </div>
+          </Col>
+        ))}
+
+        {/* 快捷入口 + 贡献图 */}
+        <Col xs={24} sm={24} md={24} lg={12}>
+          <div className='flex flex-col gap-4'>
+            <div className={classNames(cardStyle)}>
+              <h3 className='app-section-title mb-4'>快捷入口</h3>
+              <Row gutter={[12, 12]} className='min-h-[120px]'>
                 {getFirstMenuChildren(menus)
                   ?.slice(0, 4)
-                  ?.map((item, index) => {
-                    return (
-                      <Col
-                        xs={{ span: 24 }}
-                        sm={{ span: 4 }}
-                        md={{ span: 4 }}
-                        lg={{ span: 24 }}
-                        xl={{ span: 4 }}
-                        key={item.pageID}
+                  ?.map((item, index) => (
+                    <Col xs={12} sm={6} md={6} lg={12} xl={6} key={item.pageID}>
+                      <div
                         onClick={() => navigateToPage(item)}
-                        className={classNames('flex flex-col justify-evenly items-center h-20 rounded cursor-pointer shadow')}
-                        style={{ background: backgroundArray[index] + '30' }}>
+                        className='flex flex-col justify-center items-center h-24 rounded-xl cursor-pointer tran hover-lift press-scale'
+                        style={{ background: quickAccessColors[index]?.bg }}
+                      >
                         <Icon
                           name={item.pageIcon as any}
-                          props={{ className: `text-xl text-[${backgroundArray[index]}]`, style: { color: backgroundArray[index] } }}></Icon>
-                        {item.pageName}
-                      </Col>
-                    );
-                  })}
+                          props={{
+                            className: 'text-2xl mb-2',
+                            style: { color: quickAccessColors[index]?.color },
+                          }}
+                        />
+                        <span className='text-sm font-medium text-[var(--app-text)]'>{item.pageName}</span>
+                      </div>
+                    </Col>
+                  ))}
               </Row>
             </div>
-            <div
-              className={classNames(commonStyle, {
-                physicDarkDashBoard: themeMode === 'dark',
-              })}>
-              <span className='text-md font-bold'>
-                {commitCount} 最近一年贡献
-              </span>
+            <div className={classNames(cardStyle)}>
+              <h3 className='app-section-title mb-2'>
+                <span className='text-[var(--app-accent)] mr-2'>{commitCount}</span>
+                最近一年贡献
+              </h3>
               <ReactECharts option={gitCommitFrequency} theme={themeMode} style={{ width: '100%', height: '250px' }} />
             </div>
           </div>
         </Col>
-        <Col xs={{ span: 24 }} sm={{ span: 24 }} md={{ span: 24 }} lg={{ span: 12 }}>
-          <div
-            className={classNames(commonStyle, 'overflow-scroll no-scrollbar h-[515px] truck-animate truck-fade-in-right', {
-              physicDarkDashBoard: themeMode === 'dark',
-            })}>
-            <span className='text-md font-bold'>更新日志</span>
+
+        {/* 更新日志 */}
+        <Col xs={24} sm={24} md={24} lg={12}>
+          <div className={classNames(cardStyle, 'overflow-auto no-scrollbar h-[515px]')}>
+            <h3 className='app-section-title mb-4'>更新日志</h3>
             <Timeline
-              items={TimeLine}
+              items={timelineItems}
               mode='alternate'
               pending={
-                <div className='text-[#00c7fc] gap-2 flex'>
-                  <BugOutlined />
-                  Coding...
+                <div className='text-[var(--app-accent)] gap-2 flex items-center'>
+                  <BugOutlined className='animate-pulse' />
+                  <span>Coding...</span>
                 </div>
               }
-              reverse={true}></Timeline>
+              reverse={true}
+            />
           </div>
         </Col>
       </Row>

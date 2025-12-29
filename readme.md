@@ -28,7 +28,7 @@
 
 ### 1. 后端
 
-1. 准备 MySQL，并导入初始化脚本：`server/sql/wms.sql`。
+1. 准备 MySQL，并导入初始化脚本：`server/sql/cms.sql`。
 2. 修改后端配置：`server/config/config.toml` 选择环境（dev/prod），并在对应的 `config.dev.toml` 或 `config.prod.toml` 中配置数据库账号、端口、JWT 等。
 3. 启动后端服务：
 
@@ -63,13 +63,14 @@ pnpm run build
   - `app.baseurl`：接口前缀（默认 `/cms`）
   - `app.tcp_enable`：是否启用 TCP 服务
   - `db.*`：数据库连接信息
+  - `license.path`：授权文件路径（默认 `license.json`）
+  - `license.secret`：授权签名密钥（必填）
 
-## 授权机制（可选）
+## 授权机制
 
-项目内置机器码 + 试用期授权逻辑，默认在 `server/main.go` 中**未启用**。如需启用：
+项目内置 MAC + 过期时间授权逻辑，启动时强制校验。请在配置文件中提供 `license.secret`，并生成对应的 `license.json`。
 
-1. 在 `server/main.go` 中取消授权校验的注释，并替换自定义密钥。
-2. 使用授权生成工具：
+1. 使用授权生成工具：
 
 ```bash
 cd server/support/tools
@@ -77,7 +78,71 @@ cd server/support/tools
 go run gen_license.go --mac=目标MAC地址 --days=30 --secret=your_secret_key
 ```
 
-将生成的 `license.json` 与后端可执行文件放在同一目录后运行。
+2. 将生成的 `license.json` 放到 `license.path` 指定的路径，启动后端即可。
+
+## Win10 服务器部署（不使用 Docker）
+
+### 1. 后端部署
+
+1. 在 Win10 服务器安装 Go（或在本地编译后拷贝可执行文件）。
+2. 准备配置文件：`server/config/config.toml` 与对应环境的 `config.dev.toml` 或 `config.prod.toml`。
+3. 配置授权：
+   - `license.secret` 与生成授权时使用的 `--secret` 一致。
+   - `license.path` 指向 `license.json`。
+4. 进入 `server` 目录运行：
+
+```powershell
+go run .
+```
+
+如需编译后运行：
+
+```powershell
+go build -o cms-server.exe .
+.\cms-server.exe
+```
+
+示例（Win10 直接部署）：
+
+1. 配置文件 `server/config/config.dev.toml`（或 `config.prod.toml`）：
+
+```toml
+[license]
+path = "C:\\your\\path\\license.json"
+secret = "YOUR_SECRET"
+```
+
+2. 获取服务器 MAC 地址（任选其一）：
+
+```powershell
+getmac /v /fo list
+```
+
+或：
+
+```powershell
+ipconfig /all
+```
+
+3. 生成授权文件（任意有 Go 的机器）：
+
+```bash
+go run server/support/tools/gen_license.go --mac "AA-BB-CC-DD-EE-FF" --days 30 --secret "YOUR_SECRET"
+```
+
+4. 把生成的 `license.json` 放到 `license.path` 指定的位置。
+
+### 2. 前端部署
+
+在开发机编译产物后拷贝到服务器：
+
+```bash
+cd web
+pnpm install
+pnpm run build
+```
+
+将 `web/dist` 部署到 Nginx 或 IIS，Nginx 示例可参考 `web/nginx.conf`。
 
 ## 其他
 

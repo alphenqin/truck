@@ -2,21 +2,33 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/Xi-Yuer/cms/app/bootStrap"
+	"github.com/Xi-Yuer/cms/config"
 	"github.com/Xi-Yuer/cms/infra/tcpserver"
+	"github.com/Xi-Yuer/cms/license"
 )
 
 func main() {
-	//const secret = "your_secret_key" // 你自定义的密钥
-	//if !license.CheckLicense("license.json", secret) {
-	//	fmt.Println("授权校验失败，程序即将退出")
-	//	os.Exit(1)
-	//}
+	licensePath := strings.TrimSpace(config.Config.LICENSE.PATH)
+	if licensePath == "" {
+		licensePath = "license.json"
+	}
+	secret := strings.TrimSpace(config.Config.LICENSE.SECRET)
+	if secret == "" {
+		fmt.Println("missing license.secret in config")
+		os.Exit(1)
+	}
+	if err := license.ValidateLicense(licensePath, secret); err != nil {
+		fmt.Println("license check failed:", err.Error())
+		os.Exit(1)
+	}
 	bootStrap.Start()
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

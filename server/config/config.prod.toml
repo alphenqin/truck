@@ -14,3 +14,7 @@ password = "123456"
 host = "db"
 name = "cms"
 port = "3306"
+
+[license]
+path = "license.json"
+secret = "prod_license_secret"

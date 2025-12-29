@@ -25,6 +25,9 @@ func defaultConfig() config {
 			DB:   "cms",
 			PORT: "3306",
 		},
+		LICENSE: LICENSE{
+			PATH: "license.json",
+		},
 	}
 }
 
@@ -68,11 +71,15 @@ func validateConfig(cfg config) {
 	if cfg.DB.PASSWORD == "" {
 		panic("missing required config: db.password")
 	}
+	if cfg.LICENSE.SECRET == "" {
+		panic("missing required config: license.secret")
+	}
 }
 
 type config struct {
-	APP APP `toml:"app"`
-	DB  DB  `toml:"db"`
+	APP     APP     `toml:"app"`
+	DB      DB      `toml:"db"`
+	LICENSE LICENSE `toml:"license"`
 }
 
 type APP struct {
@@ -92,4 +99,9 @@ type DB struct {
 	HOST     string `toml:"host"`
 	DB       string `toml:"name"`
 	PORT     string `toml:"port"`
+}
+
+type LICENSE struct {
+	PATH   string `toml:"path"`
+	SECRET string `toml:"secret"`
 }

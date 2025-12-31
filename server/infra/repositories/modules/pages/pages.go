@@ -55,20 +55,30 @@ func (p *pageRepository) FindPageByID(id string) (*types.SinglePageResponse, err
 
 func (p *pageRepository) FindChildPagesByParentID(parentID string) ([]types.SinglePageResponse, error) {
 	query := "SELECT page_id, page_name, page_order, page_path, page_icon, page_component, parent_page, can_edit, is_out_site,out_site_link, create_time, update_time FROM pages WHERE parent_page = ?"
-	var Page []types.SinglePageResponse
 	exec, err := db.DB.Query(query, parentID)
 	if err != nil {
+		utils.Log.Error("查询子页面失败", "error", err, "parentID", parentID)
 		return nil, err
 	}
+	defer exec.Close()
+
+	var pages []types.SinglePageResponse
 	for exec.Next() {
 		var page types.SinglePageResponse
 		err := exec.Scan(&page.PageID, &page.PageName, &page.PageOrder, &page.PagePath, &page.PageIcon, &page.PageComponent, &page.ParentPage, &page.CanEdit, &page.IsOutSite, &page.OutSiteLink, &page.CreatedTime, &page.UpdateTime)
 		if err != nil {
+			utils.Log.Error("扫描子页面数据失败", "error", err, "parentID", parentID)
 			return nil, err
 		}
-		Page = append(Page, page)
+		pages = append(pages, page)
 	}
-	return Page, nil
+
+	if err = exec.Err(); err != nil {
+		utils.Log.Error("遍历子页面数据失败", "error", err, "parentID", parentID)
+		return nil, err
+	}
+
+	return pages, nil
 }
 
 func (p *pageRepository) CheckPagesExistence(pagesIDs []string) error {

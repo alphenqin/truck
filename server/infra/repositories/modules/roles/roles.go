@@ -221,29 +221,43 @@ func (r *rolesRepository) CheckRolesExistence(roleIDs []string) error {
 }
 
 func (r *rolesRepository) ExportExcel(params *types.ExportExcelResponse) ([]*types.SingleRoleResponse, error) {
-	query := "SELECT role_id, role_name, description, create_time, update_time FROM roles WHERE role_id IN "
-	value := ""
-	hasSet := false
-	for _, id := range params.IDs {
-		value += id + ","
-		hasSet = true
+	if len(params.IDs) == 0 {
+		return []*types.SingleRoleResponse{}, nil
 	}
-	if hasSet {
-		value = value[:len(value)-1]
+
+	// 使用参数化查询防止SQL注入
+	placeholders := make([]string, len(params.IDs))
+	args := make([]interface{}, len(params.IDs))
+	for i, id := range params.IDs {
+		placeholders[i] = "?"
+		args[i] = id
 	}
-	query += "(" + value + ")"
-	rows, err := db.DB.Query(query)
+
+	query := "SELECT role_id, role_name, description, create_time, update_time FROM roles WHERE role_id IN (" +
+		strings.Join(placeholders, ",") + ")"
+
+	rows, err := db.DB.Query(query, args...)
 	if err != nil {
+		utils.Log.Error("查询角色导出数据失败", "error", err, "roleIds", params.IDs)
 		return nil, err
 	}
+	defer rows.Close()
+
 	var roles []*types.SingleRoleResponse
 	for rows.Next() {
 		var role types.SingleRoleResponse
 		err := rows.Scan(&role.ID, &role.RoleName, &role.Description, &role.CreateTime, &role.UpdateTime)
 		if err != nil {
+			utils.Log.Error("扫描角色数据失败", "error", err)
 			return nil, err
 		}
 		roles = append(roles, &role)
 	}
+
+	if err = rows.Err(); err != nil {
+		utils.Log.Error("遍历角色数据失败", "error", err)
+		return nil, err
+	}
+
 	return roles, nil
 }

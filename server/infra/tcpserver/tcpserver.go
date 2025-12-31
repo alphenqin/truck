@@ -24,7 +24,10 @@ type Server struct {
 	closed    chan struct{}
 }
 
-var srv *Server
+var (
+	srv *Server
+	srvMu sync.Mutex // 保护srv变量的并发访问
+)
 
 type listenerItem struct {
 	ln   net.Listener
@@ -39,13 +42,20 @@ func RegisterHandler(addr string, handler DataHandler) {
 	if handler == nil {
 		return
 	}
+
+	// 使用原子操作保护srv的初始化
 	if srv == nil {
-		srv = &Server{
-			closed:   make(chan struct{}),
-			handlers: map[string]DataHandler{},
-			remote:   map[string]DataHandler{},
+		srvMu.Lock()
+		if srv == nil {
+			srv = &Server{
+				closed:   make(chan struct{}),
+				handlers: map[string]DataHandler{},
+				remote:   map[string]DataHandler{},
+			}
 		}
+		srvMu.Unlock()
 	}
+
 	srv.mu.Lock()
 	if srv.handlers == nil {
 		srv.handlers = map[string]DataHandler{}
@@ -59,13 +69,20 @@ func RegisterRemoteHandler(remoteAddr string, handler DataHandler) {
 	if handler == nil {
 		return
 	}
+
+	// 使用原子操作保护srv的初始化
 	if srv == nil {
-		srv = &Server{
-			closed:   make(chan struct{}),
-			handlers: map[string]DataHandler{},
-			remote:   map[string]DataHandler{},
+		srvMu.Lock()
+		if srv == nil {
+			srv = &Server{
+				closed:   make(chan struct{}),
+				handlers: map[string]DataHandler{},
+				remote:   map[string]DataHandler{},
+			}
 		}
+		srvMu.Unlock()
 	}
+
 	srv.mu.Lock()
 	if srv.remote == nil {
 		srv.remote = map[string]DataHandler{}
@@ -76,7 +93,10 @@ func RegisterRemoteHandler(remoteAddr string, handler DataHandler) {
 
 // Start 在独立协程中启动 TCP 监听
 func Start() {
+	// 使用原子操作保护srv的初始化
+	srvMu.Lock()
 	if srv != nil {
+		srvMu.Unlock()
 		return
 	}
 	s := &Server{
@@ -84,6 +104,8 @@ func Start() {
 		handlers: snapshotHandlers(),
 		remote:   snapshotRemoteHandlers(),
 	}
+	srvMu.Unlock()
+
 	// 支持多地址监听：以逗号分隔，例如 ":9000,0.0.0.0:9100,127.0.0.1:9200"
 	addrs := strings.Split(config.Config.APP.TCPADDR, ",")
 	for _, raw := range addrs {
@@ -103,7 +125,13 @@ func Start() {
 		utils.Log.Warn("未成功启动任何 TCP 监听，请检查 TCPADDR 配置:", config.Config.APP.TCPADDR)
 		return
 	}
-	srv = s
+
+	// 使用原子操作保护srv的赋值
+	srvMu.Lock()
+	if srv == nil {
+		srv = s
+	}
+	srvMu.Unlock()
 
 	// 为每个监听器启动独立的 accept 循环
 	for _, item := range s.listeners {
@@ -157,9 +185,9 @@ func (s *Server) handleConn(conn net.Conn, confAddr string) {
 		}
 
 		data := readBuf[:n]
-		if h := s.getHandler(confAddr); h != nil {
+		if h := s.GetHandler(confAddr); h != nil {
 			h(conn, data)
-		} else if rh := s.getRemoteHandler(conn.RemoteAddr().String()); rh != nil {
+		} else if rh := s.GetRemoteHandler(conn.RemoteAddr().String()); rh != nil {
 			rh(conn, data)
 		} else {
 			_, _ = io.Discard.Write(data)
@@ -169,18 +197,24 @@ func (s *Server) handleConn(conn net.Conn, confAddr string) {
 
 // Shutdown 优雅关闭
 func Shutdown(ctx context.Context) {
-	if srv == nil {
+	// 使用原子操作保护srv的访问
+	srvMu.Lock()
+	currentSrv := srv
+	srv = nil
+	srvMu.Unlock()
+
+	if currentSrv == nil {
 		return
 	}
 	ShutdownRecordQueue()
-	close(srv.closed)
-	for _, item := range srv.listeners {
+	close(currentSrv.closed)
+	for _, item := range currentSrv.listeners {
 		_ = item.ln.Close()
 	}
 
 	ch := make(chan struct{})
 	go func() {
-		srv.wg.Wait()
+		currentSrv.wg.Wait()
 		close(ch)
 	}()
 
@@ -192,7 +226,13 @@ func Shutdown(ctx context.Context) {
 	}
 }
 
-func (s *Server) getHandler(addr string) DataHandler {
+func (s *Server) SetHandler(addr string, handler DataHandler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.handlers[strings.TrimSpace(addr)] = handler
+}
+
+func (s *Server) GetHandler(addr string) DataHandler {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.handlers[strings.TrimSpace(addr)]
@@ -200,23 +240,28 @@ func (s *Server) getHandler(addr string) DataHandler {
 
 // 启动时复制一份已注册的 handler，避免运行中被改动
 func snapshotHandlers() map[string]DataHandler {
-	if srv == nil || srv.handlers == nil {
+	// 使用原子操作保护srv的访问
+	srvMu.Lock()
+	currentSrv := srv
+	srvMu.Unlock()
+
+	if currentSrv == nil || currentSrv.handlers == nil {
 		return map[string]DataHandler{}
 	}
 	// 为了稳定性，按 key 排序拷贝（非必须）
-	keys := make([]string, 0, len(srv.handlers))
-	for k := range srv.handlers {
+	keys := make([]string, 0, len(currentSrv.handlers))
+	for k := range currentSrv.handlers {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	dst := make(map[string]DataHandler, len(keys))
 	for _, k := range keys {
-		dst[k] = srv.handlers[k]
+		dst[k] = currentSrv.handlers[k]
 	}
 	return dst
 }
 
-func (s *Server) getRemoteHandler(remote string) DataHandler {
+func (s *Server) GetRemoteHandler(remote string) DataHandler {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	remote = strings.TrimSpace(remote)
@@ -234,17 +279,22 @@ func (s *Server) getRemoteHandler(remote string) DataHandler {
 }
 
 func snapshotRemoteHandlers() map[string]DataHandler {
-	if srv == nil || srv.remote == nil {
+	// 使用原子操作保护srv的访问
+	srvMu.Lock()
+	currentSrv := srv
+	srvMu.Unlock()
+
+	if currentSrv == nil || currentSrv.remote == nil {
 		return map[string]DataHandler{}
 	}
-	keys := make([]string, 0, len(srv.remote))
-	for k := range srv.remote {
+	keys := make([]string, 0, len(currentSrv.remote))
+	for k := range currentSrv.remote {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	dst := make(map[string]DataHandler, len(keys))
 	for _, k := range keys {
-		dst[k] = srv.remote[k]
+		dst[k] = currentSrv.remote[k]
 	}
 	return dst
 }

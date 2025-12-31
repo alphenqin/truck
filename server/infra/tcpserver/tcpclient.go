@@ -29,7 +29,7 @@ func connectLoop(addr string) {
 	for {
 		conn, err := net.Dial("tcp", addr)
 		if err != nil {
-			utils.Log.Warn("TCP 客户端连接失败:", addr, err)
+			utils.Log.Warn("TCP 客户端连接失败", "addr", addr, "error", err)
 			time.Sleep(backoff)
 			if backoff < maxBackoff {
 				backoff *= 2
@@ -40,10 +40,10 @@ func connectLoop(addr string) {
 			continue
 		}
 
-		utils.Log.Info("TCP 客户端已连接:", addr)
+		utils.Log.Info("TCP 客户端已连接", "addr", addr)
 		handleClientConn(conn, addr)
 		_ = conn.Close()
-		utils.Log.Warn("TCP 客户端连接断开，将重连:", addr)
+		utils.Log.Warn("TCP 客户端连接断开，将重连", "addr", addr)
 		time.Sleep(time.Second)
 		backoff = time.Second
 	}

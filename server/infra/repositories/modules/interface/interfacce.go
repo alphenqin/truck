@@ -22,16 +22,28 @@ func (i *interfaceRepository) CreateInterface(params *types.CreateInterfaceReque
 
 func (i *interfaceRepository) GetInterfaceByPageID(id string) []*types.GetInterfaceResponse {
 	query := `SELECT interface_id, interface_name, interface_method, interface_path, interface_page_id, interface_desc,interface_dic, create_time,update_time FROM interfaces WHERE interface_page_id = ?`
-	rows, _ := db.DB.Query(query, id)
+	rows, err := db.DB.Query(query, id)
+	if err != nil {
+		utils.Log.Error("查询接口失败", "error", err, "pageID", id)
+		return nil
+	}
+	defer rows.Close()
+
 	var interfaces []*types.GetInterfaceResponse
 	for rows.Next() {
 		var interfaceInfo types.GetInterfaceResponse
 		err := rows.Scan(&interfaceInfo.ID, &interfaceInfo.InterfaceName, &interfaceInfo.InterfaceMethod, &interfaceInfo.InterfacePath, &interfaceInfo.InterfacePageID, &interfaceInfo.InterfaceDesc, &interfaceInfo.InterfaceDic, &interfaceInfo.CreateTime, &interfaceInfo.UpdateTime)
 		if err != nil {
-			return nil
+			utils.Log.Error("扫描接口数据失败", "error", err, "pageID", id)
+			continue
 		}
 		interfaces = append(interfaces, &interfaceInfo)
 	}
+
+	if err = rows.Err(); err != nil {
+		utils.Log.Error("遍历接口数据失败", "error", err, "pageID", id)
+	}
+
 	return interfaces
 }
 

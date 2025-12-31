@@ -282,9 +282,9 @@ func saveRecordToDB(job recordJob) {
 
 	// 4. 写入数据库
 	if err := db.GormDB.Create(&record).Error; err != nil {
-		utils.Log.Error("写入IoRecord失败", "error", err)
+		utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", record.TagCode, "actionType", record.ActionType)
 	} else {
-		utils.Log.Info("成功写入IoRecord", "assetId", record.AssetId, "actionType", record.ActionType)
+		utils.Log.Info("成功写入IoRecord", "assetId", record.AssetId, "actionType", record.ActionType, "tagCode", record.TagCode)
 	}
 }
 

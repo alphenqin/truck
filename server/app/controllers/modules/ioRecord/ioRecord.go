@@ -1,6 +1,7 @@
 package ioRecordControllersModules
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Xi-Yuer/cms/domain/types"
@@ -20,7 +21,8 @@ func (c *ioRecordController) GetIoRecords(ctx *gin.Context) {
 		return
 	}
 
-	if params.Limit < 0 || params.Limit > 100 {
+	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
+	if params.Limit == 0 {
 		utils.Response.ParameterTypeError(ctx, "limit 参数必须在 1 到 100 之间")
 		return
 	}
@@ -44,7 +46,8 @@ func (c *ioRecordController) GetIoRecords(ctx *gin.Context) {
 	// 获取总数
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -55,7 +58,8 @@ func (c *ioRecordController) GetIoRecords(ctx *gin.Context) {
 		Offset(params.Offset).
 		Limit(params.Limit).
 		Scan(&ioRecords).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -70,14 +74,16 @@ func (c *ioRecordController) GetIoRecords(ctx *gin.Context) {
 func (c *ioRecordController) AddBuzzer(context *gin.Context) {
 	var buzzer types.Buzzer
 	if err := context.ShouldBindJSON(&buzzer); err != nil {
-		utils.Response.ParameterTypeError(context, "请求参数绑定失败: "+err.Error())
+		utils.Log.Warn("请求参数绑定失败", "error", err)
+utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	if err := db.GormDB.
 		Table("buzzers").
 		Create(&buzzer).
 		Error; err != nil {
-		utils.Response.ServerError(context, "新增 buzzer 失败: "+err.Error())
+		utils.Log.Error("新增buzzer失败", "error", err)
+utils.Response.ServerError(context, "新增失败，请稍后重试")
 		return
 	}
 	utils.Response.SuccessNoData(context)
@@ -87,7 +93,8 @@ func (c *ioRecordController) DelBuzzers(context *gin.Context) {
 	var ids []int64
 	err := context.ShouldBind(&ids)
 	if err != nil {
-		utils.Response.ParameterTypeError(context, err.Error())
+		utils.Log.Warn("参数绑定失败", "error", err)
+utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	// 服务层
@@ -120,7 +127,8 @@ func (c *ioRecordController) UpdateBuzzer(ctx *gin.Context) {
 		Table("buzzers").
 		Where("buzzer_id = ?", buzzer.BuzzerId).
 		Updates(&buzzer).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -133,7 +141,9 @@ func (c *ioRecordController) GetBuzzer(ctx *gin.Context) {
 		utils.Response.ParameterTypeError(ctx, err.Error())
 		return
 	}
-	if params.Limit > 100 || params.Limit < 0 {
+	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
+	// 保留原始的错误消息
+	if params.Limit == 0 {
 		utils.Response.ParameterTypeError(ctx, "limit参数不正确")
 		return
 	}
@@ -149,7 +159,8 @@ func (c *ioRecordController) GetBuzzer(ctx *gin.Context) {
 	// 获取总数
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -160,7 +171,8 @@ func (c *ioRecordController) GetBuzzer(ctx *gin.Context) {
 		Limit(params.Limit).
 		Scan(&buzzers).Error
 	if err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -181,7 +193,8 @@ func (c *ioRecordController) GetPanel(ctx *gin.Context) {
 		Select("action_type, action_time").
 		Where("action_time BETWEEN ? AND ?", start, now).
 		Find(&records).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -226,6 +239,7 @@ func (c *ioRecordController) GetPanel(ctx *gin.Context) {
 func (c *ioRecordController) GetPanelV2(ctx *gin.Context) {
 	now := time.Now().Truncate(time.Minute)
 	oneHourAgo := now.Add(-1 * time.Hour)
+	twentyFourHoursAgo := now.Add(-24 * time.Hour)
 
 	// 最近1小时统计
 	var lastHourInbound, lastHourOutbound int64
@@ -243,22 +257,43 @@ func (c *ioRecordController) GetPanelV2(ctx *gin.Context) {
 	}
 	intervals := make(map[string]Interval)
 
-	// 当前小时
-	curHour := now.Truncate(time.Hour)
+	// 使用单次查询替代循环查询
+	type HourlyCount struct {
+		HourStart  string `json:"hour_start"`
+		ActionType int    `json:"action_type"`
+		Count      int    `json:"count"`
+	}
+
+	var hourlyCounts []HourlyCount
+	db.GormDB.Raw(`
+		SELECT
+			DATE_FORMAT(action_time, '%H') as hour_start,
+			action_type,
+			COUNT(*) as count
+		FROM io_records
+		WHERE action_time >= ? AND action_time < ? AND action_type IN (1, 2)
+		GROUP BY DATE_FORMAT(action_time, '%H'), action_type
+		ORDER BY hour_start
+	`, twentyFourHoursAgo, now).Scan(&hourlyCounts)
+
+	// 初始化所有小时的数据
 	for i := 0; i < 24; i++ {
-		hourTime := curHour.Add(-time.Duration(i) * time.Hour)
-		from := hourTime
-		to := hourTime.Add(time.Hour)
-		var inbound, outbound int64
-		db.GormDB.Table("io_records").
-			Where("action_time >= ? AND action_time < ? AND action_type = 1", from, to).
-			Count(&inbound)
-		db.GormDB.Table("io_records").
-			Where("action_time >= ? AND action_time < ? AND action_type = 2", from, to).
-			Count(&outbound)
-		intervals[from.Format("15")] = Interval{
-			Inbound:  int(inbound),
-			Outbound: int(outbound),
+		hourKey := fmt.Sprintf("%02d", i)
+		intervals[hourKey] = Interval{
+			Inbound:  0,
+			Outbound: 0,
+		}
+	}
+
+	// 填充查询结果
+	for _, hc := range hourlyCounts {
+		if interval, exists := intervals[hc.HourStart]; exists {
+			if hc.ActionType == 1 {
+				interval.Inbound = hc.Count
+			} else if hc.ActionType == 2 {
+				interval.Outbound = hc.Count
+			}
+			intervals[hc.HourStart] = interval
 		}
 	}
 
@@ -303,7 +338,8 @@ func (c *ioRecordController) GetFlows(ctx *gin.Context) {
 	// 获取总数
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -314,7 +350,8 @@ func (c *ioRecordController) GetFlows(ctx *gin.Context) {
 		Limit(params.Limit).
 		Offset(params.Offset).
 		Scan(&flowVOs).Error; err != nil {
-		utils.Response.ServerError(ctx, err.Error())
+		utils.Log.Error("操作失败", "error", err)
+utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 

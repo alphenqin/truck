@@ -16,7 +16,8 @@ type pagesController struct {
 func (p *pagesController) CreatePage(context *gin.Context) {
 	var pageParams types.CreatePageParams
 	if err := context.ShouldBind(&pageParams); err != nil {
-		utils.Response.ParameterMissing(context, err.Error())
+		utils.Log.Warn("创建菜单参数绑定失败", "error", err)
+		utils.Response.ParameterMissing(context, "参数缺失")
 		return
 	}
 	if pageParams.IsOutSite && *pageParams.OutSiteLink == "" {
@@ -25,7 +26,8 @@ func (p *pagesController) CreatePage(context *gin.Context) {
 	}
 	err := PageService.CreatePage(&pageParams)
 	if err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("创建菜单失败", "error", err, "page", pageParams)
+		utils.Response.ServerError(context, "创建失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, nil)
@@ -40,7 +42,8 @@ func (p *pagesController) DeletePage(context *gin.Context) {
 	}
 	err := PageService.DeletePage(param)
 	if err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("删除菜单失败", "error", err, "pageId", param)
+		utils.Response.ServerError(context, "删除失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, nil)
@@ -50,7 +53,8 @@ func (p *pagesController) DeletePage(context *gin.Context) {
 func (p *pagesController) GetPages(context *gin.Context) {
 	pages, err := PageService.GetPages()
 	if err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("查询菜单失败", "error", err)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, pages)
@@ -65,6 +69,8 @@ func (p *pagesController) GetUserMenus(context *gin.Context) {
 	}
 	menus, err := PageService.GetUserMenus(jwtPayload.(*types.JWTPayload).ID)
 	if err != nil {
+		utils.Log.Error("查询用户菜单失败", "error", err, "userId", jwtPayload.(*types.JWTPayload).ID)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, menus)
@@ -80,11 +86,13 @@ func (p *pagesController) UpdatePage(context *gin.Context) {
 	}
 	err := context.ShouldBind(&params)
 	if err != nil {
-		utils.Response.ParameterError(context, err.Error())
+		utils.Log.Warn("更新菜单参数绑定失败", "error", err, "pageId", id)
+		utils.Response.ParameterError(context, "参数格式错误")
 		return
 	}
 	if err := PageService.UpdatePage(id, params); err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("更新菜单失败", "error", err, "pageId", id)
+		utils.Response.ServerError(context, "更新失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, "更新成功")
@@ -99,7 +107,8 @@ func (p *pagesController) GetPagesByRoleID(context *gin.Context) {
 	}
 	pages, err := PageService.GetPagesByRoleID(id)
 	if err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("查询角色菜单失败", "error", err, "roleId", id)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, pages)

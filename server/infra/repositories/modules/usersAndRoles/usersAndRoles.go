@@ -14,36 +14,57 @@ type usersAndRolesRepositorys struct {
 }
 
 func (u *usersAndRolesRepositorys) CreateRecords(userID string, roleID []string) error {
+	if len(roleID) == 0 {
+		return fmt.Errorf("roleID列表不能为空")
+	}
+
 	// 创建用户角色之前需要先将之前的记录全部删除，并且要保证事务的一致性
 	tx, err := db.DB.Begin()
 	if err != nil {
+		utils.Log.Error("开启事务失败", "error", err, "userID", userID)
 		return err
 	}
-	_, err = db.DB.Exec("DELETE FROM users_roles WHERE user_id = ?", userID)
-	if err != nil {
-		err := tx.Rollback()
+
+	// 使用defer确保事务回滚或提交
+	defer func() {
 		if err != nil {
-			return err
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				utils.Log.Error("事务回滚失败", "error", rollbackErr, "userID", userID)
+			}
 		}
+	}()
+
+	// 使用事务执行删除操作
+	_, err = tx.Exec("DELETE FROM users_roles WHERE user_id = ?", userID)
+	if err != nil {
+		utils.Log.Error("删除用户角色失败", "error", err, "userID", userID)
 		return err
 	}
+
+	// 使用参数化批量插入防止SQL注入
 	query := "INSERT INTO users_roles (user_id, role_id) VALUES "
-	for _, roleID := range roleID {
-		query += fmt.Sprintf("('%s', '%s'),", userID, roleID)
+	placeholders := make([]string, len(roleID))
+	args := make([]interface{}, len(roleID)*2)
+
+	for i, rid := range roleID {
+		placeholders[i] = "(?, ?)"
+		args[i*2] = userID
+		args[i*2+1] = rid
 	}
-	query = query[:len(query)-1] // Remove the last comma and space
-	_, err = db.DB.Exec(query)
+	query += strings.Join(placeholders, ",")
+
+	_, err = tx.Exec(query, args...)
 	if err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			return err
-		}
+		utils.Log.Error("批量插入用户角色失败", "error", err, "userID", userID, "roleIDs", roleID)
 		return err
 	}
-	err = tx.Commit()
-	if err != nil {
+
+	// 提交事务
+	if err = tx.Commit(); err != nil {
+		utils.Log.Error("提交事务失败", "error", err, "userID", userID)
 		return err
 	}
+
 	return nil
 }
 

@@ -15,7 +15,8 @@ func (i *interfaceControllerModules) CreateInterface(context *gin.Context) {
 	var params types.CreateInterfaceRequest
 	err := context.ShouldBind(&params)
 	if err != nil {
-		utils.Response.ParameterTypeError(context, err.Error())
+		utils.Log.Warn("创建接口参数绑定失败", "error", err)
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 
@@ -36,7 +37,8 @@ func (i *interfaceControllerModules) UpdateInterface(context *gin.Context) {
 	var params types.UpdateInterfaceRequest
 
 	if err := context.ShouldBind(&params); err != nil {
-		utils.Response.ParameterTypeError(context, err.Error())
+		utils.Log.Warn("更新接口参数绑定失败", "error", err)
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 
@@ -67,7 +69,8 @@ func (i *interfaceControllerModules) DeleteInterface(context *gin.Context) {
 	}
 
 	if err := InterfaceService.DeleteInterfaceByID(id); err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("删除接口失败", "error", err, "id", id)
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, "删除成功")
@@ -82,7 +85,8 @@ func (i *interfaceControllerModules) GetInterfacesByRoleID(context *gin.Context)
 	}
 	interfaceResponses, err := RolesAndInterfacesService.GetInterfacesByRoleID(id)
 	if err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("根据角色ID获取接口失败", "error", err, "id", id)
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, interfaceResponses)
@@ -92,7 +96,8 @@ func (i *interfaceControllerModules) GetInterfacesByRoleID(context *gin.Context)
 func (i *interfaceControllerModules) GetAllInterface(context *gin.Context) {
 	allInterface, err := InterfaceService.GetAllInterface()
 	if err != nil {
-		utils.Response.ServerError(context, err.Error())
+		utils.Log.Error("获取所有接口失败", "error", err)
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	utils.Response.Success(context, allInterface)

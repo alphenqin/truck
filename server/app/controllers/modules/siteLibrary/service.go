@@ -10,5 +10,9 @@ var SiteLibraryService = &siteLibraryService{}
 type siteLibraryService struct{}
 
 func (s siteLibraryService) AddGarden(garden types.Garden) error {
-	return db.GormDB.Create(&garden).Error
+	if err := db.GormDB.Create(&garden).Error; err != nil {
+		utils.Log.Error("服务层添加园区失败", "error", err, "garden", garden)
+		return err
+	}
+	return nil
 }

@@ -35,6 +35,7 @@ func InitDB() error {
 	DB.SetMaxOpenConns(20)
 	DB.SetMaxIdleConns(10)
 	DB.SetConnMaxLifetime(time.Minute * 60)
+	DB.SetConnMaxIdleTime(time.Minute * 10)
 
 	if err = DB.Ping(); err != nil {
 		utils.Log.Panic(err)

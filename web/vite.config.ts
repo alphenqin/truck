@@ -40,15 +40,22 @@ export default defineConfig({
           // Monaco Editor 分块
           if (id.includes(`${prefix}/language/typescript/ts.worker`)) return 'tsWorker';
           if (id.includes(`${prefix}/editor/editor.worker`)) return 'editorWorker';
+          // React 核心库
+          if (id.includes('node_modules/react') && !id.includes('react-router')) return 'vendor-react';
+          if (id.includes('node_modules/react-router')) return 'vendor-router';
+          if (id.includes('node_modules/redux') || id.includes('node_modules/@reduxjs')) return 'vendor-redux';
+          // Ant Design 生态合并
+          if (id.includes('node_modules/antd') || id.includes('node_modules/@ant-design')) return 'vendor-antd';
+          // ECharts 单独分块
+          if (id.includes('node_modules/echarts')) return 'vendor-echarts';
+          // Monaco Editor
+          if (id.includes('node_modules/monaco-editor')) return 'vendor-monaco';
+          // 其他第三方库统一打包
+          if (id.includes('node_modules')) return 'vendor-common';
           // 路由页面分块
           if (id.includes('/src/pages/Login')) return 'route-login';
           if (id.includes('/src/LayOut')) return 'route-layout';
           if (id.includes('/src/pages/NotFond')) return 'route-notfound';
-          // 第三方库分块
-          if (id.includes('node_modules/antd')) return 'vendor-antd';
-          if (id.includes('node_modules/@ant-design')) return 'vendor-antd-icons';
-          if (id.includes('node_modules/echarts')) return 'vendor-echarts';
-          if (id.includes('node_modules/monaco-editor')) return 'vendor-monaco';
           return undefined;
         },
         chunkFileNames: 'js/[name]-[hash].js',

@@ -8,6 +8,7 @@ import (
 	"github.com/Xi-Yuer/cms/support/utils/modules/exportExcel"
 	"github.com/Xi-Yuer/cms/support/utils/modules/file"
 	"github.com/Xi-Yuer/cms/support/utils/modules/jwt"
+	"github.com/Xi-Yuer/cms/support/utils/modules/pagination"
 	"github.com/Xi-Yuer/cms/support/utils/modules/response"
 	"github.com/Xi-Yuer/cms/support/utils/modules/snowflake"
 	"github.com/Xi-Yuer/cms/support/utils/modules/timeTask"
@@ -29,3 +30,4 @@ var ExportExcel = exportExcel.ExportExcel
 var TimeTask = timeTask.TimeTask
 var File = file.File
 var CreateFilesAndZip = buildZip.CreateFilesAndZip
+var Pagination = &pagination.PaginationUtil{}

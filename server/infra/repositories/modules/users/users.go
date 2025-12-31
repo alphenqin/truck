@@ -577,29 +577,43 @@ func (u *userRepository) GetUserByRoleID(roleID string, params types.Page) (*typ
 }
 
 func (u *userRepository) ExportExcel(params *types.ExportExcelResponse) ([]*types.UsersSingleResponse, error) {
-	query := "SELECT id, account, nickname, avatar , department_id ,status, create_time, update_time  FROM users WHERE id IN "
-	value := ""
-	hasSet := false
-	for _, id := range params.IDs {
-		value += id + ","
-		hasSet = true
+	if len(params.IDs) == 0 {
+		return []*types.UsersSingleResponse{}, nil
 	}
-	if hasSet {
-		value = value[:len(value)-1]
+
+	// 使用参数化查询防止SQL注入
+	placeholders := make([]string, len(params.IDs))
+	args := make([]interface{}, len(params.IDs))
+	for i, id := range params.IDs {
+		placeholders[i] = "?"
+		args[i] = id
 	}
-	query += "(" + value + ")"
-	rows, err := db.DB.Query(query)
+
+	query := "SELECT id, account, nickname, avatar, department_id, status, create_time, update_time FROM users WHERE id IN (" +
+		strings.Join(placeholders, ",") + ")"
+
+	rows, err := db.DB.Query(query, args...)
 	if err != nil {
+		utils.Log.Error("查询用户导出数据失败", "error", err, "userIds", params.IDs)
 		return nil, err
 	}
+	defer rows.Close()
+
 	var users []*types.UsersSingleResponse
 	for rows.Next() {
 		var user types.UsersSingleResponse
 		err := rows.Scan(&user.ID, &user.Account, &user.Nickname, &user.Avatar, &user.DepartmentID, &user.Status, &user.CreateTime, &user.UpdateTime)
 		if err != nil {
+			utils.Log.Error("扫描用户数据失败", "error", err)
 			return nil, err
 		}
 		users = append(users, &user)
 	}
+
+	if err = rows.Err(); err != nil {
+		utils.Log.Error("遍历用户数据失败", "error", err)
+		return nil, err
+	}
+
 	return users, nil
 }

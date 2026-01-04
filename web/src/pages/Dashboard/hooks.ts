@@ -132,14 +132,16 @@ export const useDashBoard = () => {
         setLoading(false);
       });
   };
-  let timer: number;
+  let timer: ReturnType<typeof setInterval> | null = null;
 
   useEffect(() => {
     getSystemInfoAction();
     getGitCommitAction();
     // timer = setInterval(getSystemInfoAction, 1000);
     return () => {
-      timer && clearInterval(timer);
+      if (timer) {
+        clearInterval(timer);
+      }
     };
   }, []);
 

@@ -32,7 +32,6 @@ export default class Request<R> {
       this.Instance.interceptors.response.use(
         this.interceptor.responseInterceptor.onFulfilled,
         this.interceptor.responseInterceptor.onRejected,
-        this.interceptor.responseInterceptor.options,
       );
     }
   }
@@ -58,7 +57,6 @@ export default class Request<R> {
         const id = this.Instance?.interceptors.response.use(
           config.responseInterceptor.onFulfilled,
           config.responseInterceptor.onRejected,
-          config.responseInterceptor.options,
         );
         if (typeof id === 'number') {
           responseInterceptorIds.push(id);

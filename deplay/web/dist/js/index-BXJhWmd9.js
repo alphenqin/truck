@@ -1,0 +1,1 @@
+import{h as c}from"./route-layout-33ldzD5l.js";const n=({children:t,permission:r})=>{const u=c(e=>e.UserStore.userInterfaceDic);return Array.isArray(r)?r.some(e=>u.includes(e))?t:null:u.includes(r)?t:null};export{n as A};

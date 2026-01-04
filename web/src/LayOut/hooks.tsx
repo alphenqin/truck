@@ -27,7 +27,8 @@ export const useMainPage = () => {
   const navigateHome = useCallback(() => {
     if (menus && menus.length) {
       const firstMenu = getFirstMenu(menus); // 获取第一个叶子菜单
-      dispatch(changeDefaultSelectedKeys([firstMenu.pagePath] || []));
+      if (!firstMenu) return;
+      dispatch(changeDefaultSelectedKeys([firstMenu.pagePath]));
       dispatch(changeDefaultOpenKeys(getTheCurrentRoutePathAllMenuPath(firstMenu.pagePath, menus)));
       navigate(firstMenu.pagePath);
     }

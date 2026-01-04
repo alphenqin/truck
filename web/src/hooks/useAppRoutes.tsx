@@ -23,7 +23,10 @@ export const useAppRouter = () => {
   // 当菜单或当前路径变化时，重新构建动态路由
   useEffect(() => {
     const menuRoutes = builderMenuRoutes(menus);
-    const routesWithDynamicMenus = routes.map((route) => {
+    const routesWithDynamicMenus: RouteObject[] = routes.map<RouteObject>((route) => {
+      if ('index' in route && route.index) {
+        return route;
+      }
       if (route.path === constants.routePath.main) {
         return {
           ...route,

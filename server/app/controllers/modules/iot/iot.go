@@ -5,6 +5,7 @@ import (
 
 	"github.com/Xi-Yuer/cms/domain/types"
 	"github.com/Xi-Yuer/cms/infra/db"
+	"github.com/Xi-Yuer/cms/infra/tcpserver"
 	"github.com/Xi-Yuer/cms/support/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -26,6 +27,8 @@ func (c iotController) AddGateway(context *gin.Context) {
 		"gateway_name": gateway.GatewayName,
 		"gateway_code": gateway.GatewayCode,
 		"gateway_type": gateway.GatewayType,
+		"ip_address":   gateway.IpAddress,
+		"port":         gateway.Port,
 	}
 
 	// Only include status if it's not nil
@@ -38,6 +41,10 @@ func (c iotController) AddGateway(context *gin.Context) {
 		utils.Response.ServerError(context, "添加失败，请稍后重试")
 		return
 	}
+
+	// 触发即时连接（如果是启用状态）
+	tcpserver.ConnectGateway(gateway)
+
 	utils.Response.SuccessNoData(context)
 }
 
@@ -70,6 +77,8 @@ func (c iotController) UpdateGateway(context *gin.Context) {
 		"gateway_name": gateway.GatewayName,
 		"gateway_code": gateway.GatewayCode,
 		"gateway_type": gateway.GatewayType,
+		"ip_address":   gateway.IpAddress,
+		"port":         gateway.Port,
 	}
 
 	if gateway.Id == "" {
@@ -87,6 +96,14 @@ func (c iotController) UpdateGateway(context *gin.Context) {
 		utils.Response.ServerError(context, "更新失败，请稍后重试")
 		return
 	}
+
+	// Fetch full gateway info to ensure we have IP and Port for connection
+	var fullGateway types.Gateway
+	if err := db.GormDB.Table("gateways").Where("id = ?", gateway.Id).First(&fullGateway).Error; err == nil {
+		// 触发即时连接（配置变更生效）
+		tcpserver.ConnectGateway(fullGateway)
+	}
+
 	utils.Response.SuccessNoData(context)
 }
 
@@ -105,8 +122,8 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 	if params.GatewayCode != "" {
 		query = query.Where("gateway_code LIKE ?", "%"+params.GatewayCode+"%")
 	}
-	if params.GatewayType != "" {
-		query = query.Where("gateway_type LIKE ?", "%"+params.GatewayType+"%")
+	if params.GatewayType != 0 {
+		query = query.Where("gateway_type = ?", params.GatewayType)
 	}
 	if params.Status != 0 {
 		query = query.Where("status = ?", params.Status)

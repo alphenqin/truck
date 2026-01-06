@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
-	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -22,6 +20,8 @@ import (
 var (
 	// 使用连接级缓冲处理粘包/半包
 	connBuffers     sync.Map // key: connKey(conn) -> *bytes.Buffer
+	// 维护 IP:Port -> 网关类型的映射 (int: 1=入库, 2=出库, 3=盘点)
+	gatewayTypeMap  sync.Map // key: deviceAddr (string) -> gatewayType (int)
 	queueOnce       sync.Once
 	recordQueue     chan recordJob
 	recordQueueMu   sync.RWMutex
@@ -32,17 +32,16 @@ var (
 	queueSize       = 1024
 )
 
-func init() {
-	if v := os.Getenv("TCP_RECORD_WORKERS"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			workerCount = n
-		}
+// SetGatewayType 动态设置网关地址对应的类型（供外部调用）
+func SetGatewayType(addr string, gatewayType int) {
+	gatewayTypeMap.Store(addr, gatewayType)
+}
+
+func getGatewayType(addr string) int {
+	if val, ok := gatewayTypeMap.Load(addr); ok {
+		return val.(int)
 	}
-	if v := os.Getenv("TCP_RECORD_QUEUE_SIZE"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			queueSize = n
-		}
-	}
+	return 0
 }
 
 func handle(conn net.Conn, data []byte) {
@@ -95,6 +94,8 @@ func parseFrame(frameData []byte, deviceAddr string) (bool, int) {
 	}
 
 	switch dataLen {
+	case 1:
+		parseAckFrame(data, deviceAddr)
 	case 10:
 		parseNoTimeFrame(data, deviceAddr)
 	case 18:
@@ -102,6 +103,14 @@ func parseFrame(frameData []byte, deviceAddr string) (bool, int) {
 	}
 
 	return true, totalLen
+}
+
+func parseAckFrame(data []byte, deviceAddr string) {
+	if len(data) < 1 {
+		return
+	}
+	status := data[0]
+	utils.Log.Info("收到设备确认帧", "device", deviceAddr, "status", status)
 }
 
 func parseNoTimeFrame(data []byte, deviceAddr string) {
@@ -118,9 +127,15 @@ func parseNoTimeFrame(data []byte, deviceAddr string) {
 	batteryLevel := data[3]
 	uid := hex.EncodeToString(data[4:8])
 	antennaNum := int(data[8])
+	
+	var additionalCategory byte
+	if len(data) >= 10 {
+		additionalCategory = data[9]
+	}
+
 	batStr := fmt.Sprintf("%02X", batteryLevel)
 
-	printLine(uid, pcValue, batStr, rssi, antennaNum, time.Now().Format("2006-01-02 15:04:05"), deviceAddr)
+	printLine(uid, pcValue, batStr, rssi, antennaNum, int(additionalCategory), time.Now().Format("2006-01-02 15:04:05"), deviceAddr)
 }
 
 func parseWithTimeFrame(data []byte, deviceAddr string) {
@@ -138,9 +153,15 @@ func parseWithTimeFrame(data []byte, deviceAddr string) {
 	uid := hex.EncodeToString(data[4:8])
 	antennaNum := int(data[8])
 	_, readTime := parseTime(data[9:17])
+
+	var additionalCategory byte
+	if len(data) >= 18 {
+		additionalCategory = data[17]
+	}
+
 	batStr := fmt.Sprintf("%02X", batteryLevel)
 
-	printLine(uid, pcValue, batStr, rssi, antennaNum, readTime, deviceAddr)
+	printLine(uid, pcValue, batStr, rssi, antennaNum, int(additionalCategory), readTime, deviceAddr)
 }
 
 func parseTime(data []byte) (time.Time, string) {
@@ -159,26 +180,29 @@ func bcdToDec(b byte) int {
 	return int(b>>4)*10 + int(b&0x0F)
 }
 
-func printLine(uid, pcValue, batStr string, rssi, antenna int, ts, deviceAddr string) {
-	switch deviceAddr {
-	case "192.168.1.168:20058":
-		fmt.Printf("[入库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d Time=%s Dev=%s\n",
-			uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
+func printLine(uid, pcValue, batStr string, rssi, antenna, addCat int, ts, deviceAddr string) {
+	gwType := getGatewayType(deviceAddr)
+	
+	switch gwType {
+	case 1: // 入库
+		fmt.Printf("[入库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
+			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
 		enqueueRecord(uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
 
-	case "192.168.1.168:20059":
-		fmt.Printf("[出库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d Time=%s Dev=%s\n",
-			uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
+	case 2: // 出库
+		fmt.Printf("[出库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
+			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
 		enqueueRecord(uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
 
-	case "192.168.1.168:20060":
-		fmt.Printf("[出库设备] 发送MQ消息 UID=%s\n", uid)
+	case 3: // 盘点
+		fmt.Printf("[盘点设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
+			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
 		enqueueRecord(uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
 
 	default:
-		// 其他设备：打印警告
-		fmt.Printf("[未知设备 %s] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d Time=%s\n",
-			deviceAddr, uid, pcValue, batStr, rssi, antenna, ts)
+		// 如果没找到类型，打印警告
+		fmt.Printf("[未知网关类型 %d] 地址=%s UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s\n",
+			gwType, deviceAddr, uid, pcValue, batStr, rssi, antenna, addCat, ts)
 	}
 }
 
@@ -255,14 +279,17 @@ func ShutdownRecordQueue() {
 }
 
 func saveRecordToDB(job recordJob) {
-	// 1. 根据 deviceAddr 判断动作类型和仓库位置
-	var actionType int // 1=入库，2=出库
+	// 1. 根据网关类型判断动作类型
+	var actionType int // 1=入库，2=出库，3=盘点
+	gwType := getGatewayType(job.deviceAddr)
 
-	switch job.deviceAddr {
-	case "192.168.1.168:20058": // 入库设备
+	switch gwType {
+	case 1: // 入库
 		actionType = 1
-	case "192.168.1.168:20060": // 出库设备
+	case 2: // 出库
 		actionType = 2
+	case 3: // 盘点
+		actionType = 3
 	default:
 		return
 	}
@@ -300,12 +327,3 @@ func handle9200(conn net.Conn, data []byte) {
 	// TODO: 在这里实现 127.0.0.1:9200 的协议解析 / 入库 / 回 ACK
 }
 
-// RegisterBusinessHandlers 将三个监听地址与各自处理函数进行绑定
-func RegisterBusinessHandlers() {
-	// 按远端设备 IP+端口分发（严格匹配）
-	RegisterRemoteHandler("192.168.1.168:20058", handle)
-
-	// 仍保留按本地监听地址分发的示例（可选）
-	RegisterHandler("0.0.0.0:9100", handle9100)
-	RegisterHandler("127.0.0.1:9200", handle9200)
-}

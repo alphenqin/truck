@@ -12,12 +12,9 @@ var Config = loadConfig()
 func defaultConfig() config {
 	return config{
 		APP: APP{
-			PORT:         ":8081",
-			BASEURL:      "/cms",
-			DOMAIN:       "localhost",
-			TCPADDR:      ":9000",
-			REMOTE_ADDRS: "192.168.1.168:20058",
-			TCP_ENABLE:   true,
+			PORT:    ":8081",
+			BASEURL: "/cms",
+			DOMAIN:  "localhost",
 		},
 		DB: DB{
 			NAME: "root",
@@ -88,9 +85,6 @@ type APP struct {
 	JWT           string `toml:"jwt_secret"`
 	BASEURL       string `toml:"baseurl"`
 	DOMAIN        string `toml:"domain"`
-	TCPADDR       string `toml:"tcp_addr"`
-	REMOTE_ADDRS  string `toml:"remote_addrs"`
-	TCP_ENABLE    bool   `toml:"tcp_enable"`
 }
 
 type DB struct {

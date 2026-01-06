@@ -67,7 +67,8 @@ const Main: FC = () => {
         className='hidden md:block app-sider' 
         style={{ 
           height: '100vh',
-          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         }} 
         trigger={null} 
         collapsible 
@@ -75,7 +76,7 @@ const Main: FC = () => {
       >
         {/* Logo 区域 */}
         <div
-          className='app-sider-brand cursor-pointer press-scale'
+          className='app-sider-brand cursor-pointer press-scale flex-shrink-0'
           onClick={navigateHome}
         >
           <Image 
@@ -88,16 +89,18 @@ const Main: FC = () => {
         </div>
 
         {/* 左侧菜单内容 */}
-        <Menu
-          onSelect={onSelect}
-          mode='inline'
-          theme={themeMode}
-          items={menus}
-          onOpenChange={onOpenChange}
-          selectedKeys={defaultSelectedKeys}
-          openKeys={isFold ? [] : defaultOpenKeys}
-          inlineIndent={20}
-        />
+        <div className='flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar'>
+          <Menu
+            onSelect={onSelect}
+            mode='inline'
+            theme={themeMode}
+            items={menus}
+            onOpenChange={onOpenChange}
+            selectedKeys={defaultSelectedKeys}
+            openKeys={isFold ? [] : defaultOpenKeys}
+            inlineIndent={20}
+          />
+        </div>
       </Sider>
 
       {/* 右侧主区域 */}

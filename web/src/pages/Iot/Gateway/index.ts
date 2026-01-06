@@ -12,7 +12,7 @@ export interface IQueryGatewaysParams extends IPage {
   id?: string;
   gatewayName?: string;
   gatewayCode?: string;
-  gatewayType?: string;
+  gatewayType?: number;
   status?: number;
 }
 
@@ -21,7 +21,9 @@ export interface IGatewayResponse {
   id: string;
   gatewayName: string;
   gatewayCode: string;
-  gatewayType: string;
+  gatewayType: number;
+  ipAddress: string;
+  port: number;
   status: number;
 }
 
@@ -36,7 +38,9 @@ export interface IUpdateGatewayParams {
   id?: string;
   gatewayName: string;
   gatewayCode: string;
-  gatewayType: string;
+  gatewayType: number;
+  ipAddress: string;
+  port: number;
   status?: number;
 }
 

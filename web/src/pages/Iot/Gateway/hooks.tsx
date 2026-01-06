@@ -39,7 +39,11 @@ export const useGatewayPageHooks = () => {
     {
       label: '网关类型',
       name: 'gatewayType',
-      component: <Input allowClear />,
+      component: <Select allowClear options={[
+        { label: '入库', value: 1 },
+        { label: '出库', value: 2 },
+        { label: '盘点', value: 3 },
+      ]} />,
     },
     {
       label: '状态',
@@ -166,6 +170,20 @@ export const useGatewayPageHooks = () => {
       title: '网关类型',
       dataIndex: 'gatewayType',
       key: 'gatewayType',
+      render: (type) => {
+        const map: Record<number, string> = { 1: '入库', 2: '出库', 3: '盘点' };
+        return map[type] || type;
+      },
+    },
+    {
+      title: 'IP地址',
+      dataIndex: 'ipAddress',
+      key: 'ipAddress',
+    },
+    {
+      title: '端口',
+      dataIndex: 'port',
+      key: 'port',
     },
     {
       title: '状态',

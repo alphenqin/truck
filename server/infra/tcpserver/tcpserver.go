@@ -2,7 +2,6 @@ package tcpserver
 
 import (
 	"context"
-	"encoding/hex"
 	"io"
 	"net"
 	"sort"
@@ -10,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Xi-Yuer/cms/config"
 	"github.com/Xi-Yuer/cms/support/utils"
 )
 
@@ -91,52 +89,8 @@ func RegisterRemoteHandler(remoteAddr string, handler DataHandler) {
 	srv.mu.Unlock()
 }
 
-// Start 在独立协程中启动 TCP 监听
 func Start() {
-	// 使用原子操作保护srv的初始化
-	srvMu.Lock()
-	if srv != nil {
-		srvMu.Unlock()
-		return
-	}
-	s := &Server{
-		closed:   make(chan struct{}),
-		handlers: snapshotHandlers(),
-		remote:   snapshotRemoteHandlers(),
-	}
-	srvMu.Unlock()
-
-	// 支持多地址监听：以逗号分隔，例如 ":9000,0.0.0.0:9100,127.0.0.1:9200"
-	addrs := strings.Split(config.Config.APP.TCPADDR, ",")
-	for _, raw := range addrs {
-		addr := strings.TrimSpace(raw)
-		if addr == "" {
-			continue
-		}
-		ln, err := net.Listen("tcp", addr)
-		if err != nil {
-			utils.Log.Error("TCP 监听启动失败:", addr, err)
-			continue
-		}
-		s.listeners = append(s.listeners, listenerItem{ln: ln, addr: addr})
-		utils.Log.Info("TCP 监听启动成功，地址:", addr)
-	}
-	if len(s.listeners) == 0 {
-		utils.Log.Warn("未成功启动任何 TCP 监听，请检查 TCPADDR 配置:", config.Config.APP.TCPADDR)
-		return
-	}
-
-	// 使用原子操作保护srv的赋值
-	srvMu.Lock()
-	if srv == nil {
-		srv = s
-	}
-	srvMu.Unlock()
-
-	// 为每个监听器启动独立的 accept 循环
-	for _, item := range s.listeners {
-		go s.acceptLoop(item.ln, item.addr)
-	}
+	// 该功能已由 StartClients 接管，如需开启服务端模式，请重新设计。
 }
 
 func (s *Server) acceptLoop(listener net.Listener, confAddr string) {
@@ -299,29 +253,3 @@ func snapshotRemoteHandlers() map[string]DataHandler {
 	return dst
 }
 
-// SetupHandlersFromConfig 基于配置的 TCPADDR 为每个监听地址注册一个默认处理器
-// 默认处理器仅打印来源与数据长度（以及前 32 字节十六进制预览），随后丢弃数据。
-// 若在外部已通过 RegisterHandler 注册了相同地址，会被此函数覆盖；如不希望被覆盖，请在调用 Start 前自行控制调用顺序。
-func SetupHandlersFromConfig() {
-	addrs := strings.Split(config.Config.APP.TCPADDR, ",")
-	for _, raw := range addrs {
-		addr := strings.TrimSpace(raw)
-		if addr == "" {
-			continue
-		}
-		RegisterHandler(addr, func(conn net.Conn, data []byte) {
-			preview := data
-			if len(preview) > 32 {
-				preview = preview[:32]
-			}
-			utils.Log.Info(
-				"TCP 数据",
-				"local", addr,
-				"remote", conn.RemoteAddr().String(),
-				"len", len(data),
-				"hex", strings.ToUpper(hex.EncodeToString(preview)),
-			)
-			_, _ = io.Discard.Write(data)
-		})
-	}
-}

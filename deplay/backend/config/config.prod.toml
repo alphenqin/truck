@@ -11,10 +11,10 @@ tcp_enable = false
 [db]
 user = "root"
 password = "123456"
-host = "db"
+host = "127.0.0.1"
 name = "cms"
 port = "3306"
 
 [license]
-path = "license.json"
+path = "C:\\truck\\deplay\\backend\\license.json"
 secret = "prod_license_secret"

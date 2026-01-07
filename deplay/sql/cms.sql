@@ -294,7 +294,9 @@ CREATE TABLE `gateways` (
   `id` int NOT NULL AUTO_INCREMENT,
   `gateway_name` varchar(100) DEFAULT NULL COMMENT '网关名称',
   `gateway_code` varchar(100) DEFAULT NULL COMMENT '唯一编码，例如设备序列号、MAC',
-  `gateway_type` varchar(100) DEFAULT NULL COMMENT '网关类型',
+  `gateway_type` int DEFAULT NULL COMMENT '网关类型 (1:入库, 2:出库, 3:盘点)',
+  `ip_address` varchar(100) DEFAULT NULL COMMENT 'IP地址',
+  `port` int DEFAULT NULL COMMENT '端口',
   `status` int DEFAULT NULL COMMENT '网关状态',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='网关表';
@@ -306,7 +308,7 @@ CREATE TABLE `gateways` (
 
 LOCK TABLES `gateways` WRITE;
 /*!40000 ALTER TABLE `gateways` DISABLE KEYS */;
-INSERT INTO `gateways` VALUES (1,'网关1','111','哈哈x',1);
+INSERT INTO `gateways` VALUES (1,'网关1','111',1,NULL,NULL,1);
 /*!40000 ALTER TABLE `gateways` ENABLE KEYS */;
 UNLOCK TABLES;
 

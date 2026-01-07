@@ -22,20 +22,24 @@ func (r *assetBaseRepository) UpdateAssetDepartment(dept *types.Department) erro
 }
 
 func (r *assetBaseRepository) QueryAssetDepartments(params *types.QueryDepartmentsParams) ([]types.Department, int64, error) {
-	query := db.GormDB.Table("departments")
+	query := db.GormDB.Table("departments AS d").
+		Select("d.department_id, d.department_name, d.store_id, s.store_name").
+		Joins("LEFT JOIN stores AS s ON d.store_id = s.store_id")
 	if params.DepartmentId > 0 {
-		query = query.Where("department_id = ?", params.DepartmentId)
+		query = query.Where("d.department_id = ?", params.DepartmentId)
 	}
 	if params.DepartmentName != "" {
-		query = query.Where("department_name LIKE ?", "%"+params.DepartmentName+"%")
+		query = query.Where("d.department_name LIKE ?", "%"+params.DepartmentName+"%")
 	}
-	if params.StoreId > 0 {
-		query = query.Where("store_id = ?", params.StoreId)
+	if params.StoreName != "" {
+		query = query.Where("s.store_name LIKE ?", "%"+params.StoreName+"%")
+	} else if params.StoreId > 0 {
+		query = query.Where("d.store_id = ?", params.StoreId)
 	}
 
 	var total int64
 	var list []types.Department
-	if err := query.Count(&total).Limit(params.Limit).Offset(params.Offset).Find(&list).Error; err != nil {
+	if err := query.Count(&total).Limit(params.Limit).Offset(params.Offset).Scan(&list).Error; err != nil {
 		return nil, 0, err
 	}
 	return list, total, nil

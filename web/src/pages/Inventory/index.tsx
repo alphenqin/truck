@@ -78,7 +78,6 @@ const InventoryPage: React.FC = () => {
   };
 
   const columns = [
-    { title: '资产ID', dataIndex: 'assetId', key: 'assetId' },
     { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
     { title: '资产类型', dataIndex: 'assetType', key: 'assetType', render: (type: number) => assetTypeMap[type] || type },
     { title: '当前状态', dataIndex: 'status', key: 'status', render: (status: number) => statusMap[status] || status },

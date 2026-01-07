@@ -1,6 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useStorePageHooks } from './hooks.tsx';
-import { Form, Input, Modal, Pagination, Table, InputNumber } from 'antd';
+import { Form, Input, Modal, Pagination, Table, Select } from 'antd';
 import { IUpdateStoreParams } from './index.ts';
 
 const StorePage: FC = () => {
@@ -20,7 +20,13 @@ const StorePage: FC = () => {
     selectedRowKeys,
     setEditStoreModalOpen,
     onFinish,
+    gardens,
   } = useStorePageHooks();
+
+  const gardenOptions = gardens.map((garden) => ({
+    label: garden.gardenName,
+    value: garden.gardenId,
+  }));
 
   return (
     <>
@@ -60,8 +66,8 @@ const StorePage: FC = () => {
           <Form.Item<IUpdateStoreParams> name='storeName' label='场库名称' rules={[{ required: true }]}> 
             <Input />
           </Form.Item>
-          <Form.Item<IUpdateStoreParams> name='gardenId' label='园区id' rules={[{ required: true, type: 'number', message: '园区id必须为数字' }]}> 
-            <InputNumber style={{ width: '100%' }} />
+          <Form.Item<IUpdateStoreParams> name='gardenId' label='园区名称' rules={[{ required: true, message: '请选择园区' }]}> 
+            <Select options={gardenOptions} placeholder="请选择园区" />
           </Form.Item>
         </Form>
       </Modal>

@@ -60,9 +60,9 @@ const AssetStatistics: React.FC = () => {
 
   const columns = [
     {
-      title: '资产ID',
-      dataIndex: 'assetId',
-      key: 'assetId',
+      title: '资产编码',
+      dataIndex: 'assetCode',
+      key: 'assetCode',
       width: 100,
     },
     {
@@ -102,7 +102,7 @@ const AssetStatistics: React.FC = () => {
         <Row gutter={16} align="middle">
           <Col span={6}>
             <Input
-              placeholder="请输入工装车编码"
+              placeholder="请输入资产编码"
               value={assetCode}
               onChange={(e) => setAssetCode(e.target.value)}
               allowClear

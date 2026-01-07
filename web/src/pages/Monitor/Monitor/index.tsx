@@ -22,8 +22,8 @@ const MonitorPage: React.FC = () => {
   // 轨迹回放
   const handleTrackSearch = async () => {
     const values = form.getFieldsValue();
-    if (!values.assetId) {
-      messageApi.error('请输入资产ID');
+    if (!values.assetCode) {
+      messageApi.error('请输入资产编码');
       return;
     }
     if (!values.timeRange) {
@@ -34,7 +34,7 @@ const MonitorPage: React.FC = () => {
     setLoading(true);
     try {
       const params: IQueryTrackParams = {
-        assetId: parseInt(values.assetId, 10),
+        assetCode: values.assetCode.trim(),
         startTime: values.timeRange[0].format('YYYY-MM-DD HH:mm:ss'),
         endTime: values.timeRange[1].format('YYYY-MM-DD HH:mm:ss'),
         limit: pageSize,
@@ -59,14 +59,14 @@ const MonitorPage: React.FC = () => {
   // 实时定位
   const handleLocationSearch = async () => {
     const values = locationForm.getFieldsValue();
-    if (!values.assetId) {
-      messageApi.error('请输入资产ID');
+    if (!values.assetCode) {
+      messageApi.error('请输入资产编码');
       return;
     }
 
     setLocationLoading(true);
     try {
-      const response = await getAssetLocation({ assetId: parseInt(values.assetId, 10) });
+      const response = await getAssetLocation({ assetCode: values.assetCode.trim() });
       if (response?.code === 200) {
         setCurrentLocation(response.data);
       } else {
@@ -81,9 +81,8 @@ const MonitorPage: React.FC = () => {
   };
 
   const trackColumns = [
-    { title: '监控记录ID', dataIndex: 'monitorId', key: 'monitorId' },
-    { title: '资产ID', dataIndex: 'assetId', key: 'assetId' },
-    { title: '网关ID', dataIndex: 'gatewayId', key: 'gatewayId' },
+    { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
+    { title: '网关名称', dataIndex: 'gatewayName', key: 'gatewayName' },
     {
       title: '检测时间',
       dataIndex: 'detectionTime',
@@ -99,18 +98,12 @@ const MonitorPage: React.FC = () => {
       children: (
         <>
           <Form form={form} onFinish={handleTrackSearch} layout="inline">
-            <Form.Item 
-              name="assetId" 
-              label="资产ID" 
-              rules={[
-                { required: true, message: '请输入资产ID' },
-                { 
-                  pattern: /^[1-9]\d*$/, 
-                  message: '资产ID必须为正整数' 
-                }
-              ]}
+            <Form.Item
+              name="assetCode"
+              label="资产编码"
+              rules={[{ required: true, message: '请输入资产编码' }]}
             >
-              <Input placeholder="请输入资产ID" />
+              <Input placeholder="请输入资产编码" />
             </Form.Item>
             <Form.Item name="timeRange" label="时间范围" rules={[{ required: true }]}> 
               <RangePicker showTime />
@@ -150,18 +143,12 @@ const MonitorPage: React.FC = () => {
       children: (
         <>
           <Form form={locationForm} onFinish={handleLocationSearch} layout="inline">
-            <Form.Item 
-              name="assetId" 
-              label="资产ID" 
-              rules={[
-                { required: true, message: '请输入资产ID' },
-                { 
-                  pattern: /^[1-9]\d*$/, 
-                  message: '资产ID必须为正整数' 
-                }
-              ]}
+            <Form.Item
+              name="assetCode"
+              label="资产编码"
+              rules={[{ required: true, message: '请输入资产编码' }]}
             >
-              <Input placeholder="请输入资产ID" />
+              <Input placeholder="请输入资产编码" />
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={locationLoading} icon={<SearchOutlined />}>
@@ -173,8 +160,8 @@ const MonitorPage: React.FC = () => {
           {currentLocation && (
             <div className="mt-4">
               <h3>当前位置信息</h3>
-              <p>资产ID: {currentLocation.assetId}</p>
-              <p>网关ID: {currentLocation.gatewayId}</p>
+              <p>资产编码: {currentLocation.assetCode}</p>
+              <p>网关名称: {currentLocation.gatewayName}</p>
               <p>最后检测时间: {dayjs(currentLocation.detectionTime).format('YYYY-MM-DD HH:mm:ss')}</p>
             </div>
           )}

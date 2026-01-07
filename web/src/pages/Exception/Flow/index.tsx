@@ -38,7 +38,7 @@ const ExceptionFlowPage: React.FC = () => {
         endTime: values.timeRange?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
         exceptionType: values.exceptionType,
         status: values.status,
-        assetId: values.assetId,
+        assetCode: values.assetCode?.trim(),
       };
       const res = await getExceptionList(params);
       if (res.code === 200) {
@@ -110,7 +110,7 @@ const ExceptionFlowPage: React.FC = () => {
         endTime: values.timeRange?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
         exceptionType: values.exceptionType,
         status: values.status,
-        assetId: values.assetId,
+        assetCode: values.assetCode?.trim(),
       };
       const res = await exportExceptionList(params);
       if (res.code === 200 && res.data) {
@@ -125,7 +125,7 @@ const ExceptionFlowPage: React.FC = () => {
 
   const columns = [
     { title: '异常类型', dataIndex: 'exceptionType', render: (v: number) => exceptionTypeMap[v] },
-    { title: '资产ID', dataIndex: 'assetId' },
+    { title: '资产编码', dataIndex: 'assetCode' },
     { title: '检测时间', dataIndex: 'detectionTime', render: (t: string) => t ? dayjs(t).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: '状态', dataIndex: 'status', render: (v: number) => statusMap[v] },
     { title: '异常内容', dataIndex: 'exceptionNote', render: (v?: string) => v || '-' },
@@ -177,8 +177,8 @@ const ExceptionFlowPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col xs={24} sm={12} md={8} lg={6}>
-              <Form.Item name="assetId" label="资产ID">
-                <Input allowClear placeholder="请输入资产ID" />
+              <Form.Item name="assetCode" label="资产编码">
+                <Input allowClear placeholder="请输入资产编码" />
               </Form.Item>
             </Col>
           </Row>

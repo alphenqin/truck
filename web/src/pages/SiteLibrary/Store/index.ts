@@ -12,6 +12,7 @@ export interface IQueryStoreParams {
 export interface IStoreResponse {
   storeId: number;
   storeName: string;
+  gardenId?: number;
 }
 
 // 带总数的响应数据接口

@@ -25,22 +25,16 @@ export const useDepartmentsPageHooks = () => {
   const [currentEditDepartments, setCurrentEditDepartments] = useState<IDepartmentsResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editDepartmentsModalOpen, setEditDepartmentsModalOpen] = useState(false);
-
   const searchConfig: { label: string; name: keyof IQueryDepartmentsParams; component: ReactNode }[] = [
-    {
-      label: '部门ID',
-        name: 'departmentId',
-      component: <Input allowClear type="number" min={0} />,
-    },
     {
       label: '部门名称',
         name: 'departmentName',
         component: <Input allowClear />,
     },
     {
-      label: '场库ID',
-        name: 'storeId',
-      component: <Input allowClear type="number" min={0} />,
+      label: '场库名称',
+      name: 'storeName',
+      component: <Input allowClear />,
     },
   ];
 
@@ -70,7 +64,6 @@ export const useDepartmentsPageHooks = () => {
     const params = {
       ...values,
       departmentId: values?.departmentId ? Number(values.departmentId) : undefined,
-      storeId: values?.storeId ? Number(values.storeId) : undefined,
     };
     getDepartmentsRequest({ limit, offset: (page - 1) * limit, ...params } as IQueryDepartmentsParams)
       .then((res) => {
@@ -127,19 +120,14 @@ export const useDepartmentsPageHooks = () => {
 
   const roleColumns: TableProps<IDepartmentsResponse>['columns'] = [
     {
-      title: '部门ID',
-        dataIndex: 'departmentId',
-        key: 'departmentId',
-    },
-    {
       title: '部门名称',
         dataIndex: 'departmentName',
         key: 'departmentName',
     },
     {
-      title: '场库ID',
-        dataIndex: 'storeId',
-        key: 'storeId',
+      title: '场库名称',
+      dataIndex: 'storeName',
+      key: 'storeName',
     },
     {
       title: '操作',

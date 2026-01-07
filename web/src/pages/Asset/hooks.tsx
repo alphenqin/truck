@@ -138,12 +138,6 @@ export const useAssetPageHooks = () => {
 
   const roleColumns: TableProps<IAssetResponse>['columns'] = [
     {
-        title: '资产ID',
-        dataIndex: 'assetId',
-        key: 'assetId',
-    },
-    
-    {
         title: '资产编码',
         dataIndex: 'assetCode',
         key: 'assetCode',

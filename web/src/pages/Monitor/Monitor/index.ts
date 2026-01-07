@@ -9,21 +9,23 @@ export interface IPage {
 
 // 查询轨迹参数接口
 export interface IQueryTrackParams extends IPage {
-  assetId: number;     // 资产ID
+  assetCode: string;   // 资产编码
   startTime: string;   // 开始时间
   endTime: string;     // 结束时间
 }
 
 // 查询实时位置参数接口
 export interface IQueryLocationParams {
-  assetId: number;     // 资产ID
+  assetCode: string;   // 资产编码
 }
 
 // 监控记录接口
 export interface IMonitorRecord {
   monitorId: number;     // 监控记录ID
   assetId: number;       // 资产ID
+  assetCode: string;     // 资产编码
   gatewayId: number;     // 网关ID
+  gatewayName: string;   // 网关名称
   detectionTime: string; // 检测时间
 }
 

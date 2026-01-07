@@ -244,7 +244,8 @@ func (a *assetController) QueryLost(ctx *gin.Context) {
 
 	// 主查询：找出最新为出库且早于阈值的记录
 	query := db.GormDB.Table("io_records as r1").
-		Select("r1.asset_id, r1.action_type, r1.action_time, r1.store_from, r1.store_to").
+		Select("r1.asset_id, a.asset_code, r1.action_type, r1.action_time, r1.store_from, r1.store_to").
+		Joins("LEFT JOIN asset AS a ON r1.asset_id = a.asset_id").
 		Where("r1.action_type = ?", 2).
 		Where("r1.action_time < ?", timeThreshold).
 		Where("NOT EXISTS (?)", subQuery)
@@ -290,11 +291,18 @@ func (a *assetController) GetTrack(ctx *gin.Context) {
 	}
 
 	var total int64
-	var records []types.Monitor
+	var records []types.MonitorRecordVO
 
-	dbQuery := db.GormDB.Model(&types.Monitor{}).
-		Where("asset_id = ?", params.AssetId).
-		Where("detection_time BETWEEN ? AND ?", startTime, endTime)
+	dbQuery := db.GormDB.Table("monitor AS m").
+		Select("m.monitor_id, m.asset_id, a.asset_code, m.gateway_id, g.gateway_name, DATE_FORMAT(m.detection_time, '%Y-%m-%d %H:%i:%s') as detection_time").
+		Joins("LEFT JOIN asset AS a ON m.asset_id = a.asset_id").
+		Joins("LEFT JOIN gateways AS g ON m.gateway_id = g.id").
+		Where("m.detection_time BETWEEN ? AND ?", startTime, endTime)
+	if params.AssetCode != "" {
+		dbQuery = dbQuery.Where("a.asset_code = ?", params.AssetCode)
+	} else if params.AssetId > 0 {
+		dbQuery = dbQuery.Where("m.asset_id = ?", params.AssetId)
+	}
 
 	// 计算总数
 	if err := dbQuery.Count(&total).Error; err != nil {
@@ -305,28 +313,17 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 
 	// 分页查询
 	if err := dbQuery.
-		Order("detection_time ASC").
+		Order("m.detection_time ASC").
 		Limit(params.Limit).
 		Offset(params.Offset).
-		Find(&records).Error; err != nil {
+		Scan(&records).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
 utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
-	// 转换成 VO 格式
-	list := make([]types.MonitorRecordVO, 0, len(records))
-	for _, r := range records {
-		list = append(list, types.MonitorRecordVO{
-			MonitorId:     r.MonitorId,
-			AssetId:       r.AssetId,
-			GatewayId:     r.GatewayId,
-			DetectionTime: r.DetectionTime.Format("2006-01-02 15:04:05"),
-		})
-	}
-
 	result := types.HasTotalResponseData{
-		List:  list,
+		List:  records,
 		Total: int(total),
 	}
 
@@ -335,18 +332,27 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 
 func (a *assetController) GetLocation(ctx *gin.Context) {
 	var params struct {
-		AssetId int64 `json:"assetId"`
+		AssetId   int64  `json:"assetId"`
+		AssetCode string `json:"assetCode"`
 	}
 	if err := ctx.ShouldBindJSON(&params); err != nil {
 		utils.Response.ParameterTypeError(ctx, err.Error())
 		return
 	}
 
-	var monitor types.Monitor
-	err := db.GormDB.
-		Where("asset_id = ?", params.AssetId).
-		Order("detection_time DESC").
-		First(&monitor).Error
+	var monitor types.MonitorRecordVO
+	query := db.GormDB.Table("monitor AS m").
+		Select("m.monitor_id, m.asset_id, a.asset_code, m.gateway_id, g.gateway_name, DATE_FORMAT(m.detection_time, '%Y-%m-%d %H:%i:%s') as detection_time").
+		Joins("LEFT JOIN asset AS a ON m.asset_id = a.asset_id").
+		Joins("LEFT JOIN gateways AS g ON m.gateway_id = g.id")
+	if params.AssetCode != "" {
+		query = query.Where("a.asset_code = ?", params.AssetCode)
+	} else if params.AssetId > 0 {
+		query = query.Where("m.asset_id = ?", params.AssetId)
+	}
+	err := query.
+		Order("m.detection_time DESC").
+		Take(&monitor).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -569,7 +575,9 @@ func (a *assetController) QueryFlow(ctx *gin.Context) {
 	// 校验分页参数
 	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
 
-	dbQuery := db.GormDB.Table("exception_records")
+	dbQuery := db.GormDB.Table("exception_records AS e").
+		Select("e.id, e.exception_type, e.asset_id, a.asset_code, e.detection_time, e.status, e.exception_note, e.remark, e.create_time, e.update_time").
+		Joins("LEFT JOIN asset AS a ON e.asset_id = a.asset_id")
 
 	// 查询条件
 	if params.ExceptionType != nil {
@@ -578,8 +586,10 @@ func (a *assetController) QueryFlow(ctx *gin.Context) {
 	if params.Status != nil {
 		dbQuery = dbQuery.Where("status = ?", *params.Status)
 	}
-	if params.AssetID != nil {
-		dbQuery = dbQuery.Where("asset_id = ?", *params.AssetID)
+	if params.AssetCode != nil && *params.AssetCode != "" {
+		dbQuery = dbQuery.Where("a.asset_code = ?", *params.AssetCode)
+	} else if params.AssetID != nil {
+		dbQuery = dbQuery.Where("e.asset_id = ?", *params.AssetID)
 	}
 	if params.StartTime != "" && params.EndTime != "" {
 		dbQuery = dbQuery.Where("detection_time BETWEEN ? AND ?", params.StartTime, params.EndTime)
@@ -598,11 +608,11 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 	}
 
 	// 查询数据
-	var list []types.ExceptionRecord
+	var list []types.ExceptionRecordVO
 	if err := dbQuery.Order("detection_time DESC").
 		Limit(params.Limit).
 		Offset(params.Offset).
-		Find(&list).Error; err != nil {
+		Scan(&list).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
 utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
@@ -680,7 +690,8 @@ func (a *assetController) ExportException(ctx *gin.Context) {
 	}
 
 	// 查询异常记录
-	dbQuery := db.GormDB.Table("exception_records")
+	dbQuery := db.GormDB.Table("exception_records AS e").
+		Joins("LEFT JOIN asset AS a ON e.asset_id = a.asset_id")
 
 	// 查询条件
 	if params.ExceptionType != nil {
@@ -689,8 +700,10 @@ func (a *assetController) ExportException(ctx *gin.Context) {
 	if params.Status != nil {
 		dbQuery = dbQuery.Where("status = ?", *params.Status)
 	}
-	if params.AssetID != nil {
-		dbQuery = dbQuery.Where("asset_id = ?", *params.AssetID)
+	if params.AssetCode != nil && *params.AssetCode != "" {
+		dbQuery = dbQuery.Where("a.asset_code = ?", *params.AssetCode)
+	} else if params.AssetID != nil {
+		dbQuery = dbQuery.Where("e.asset_id = ?", *params.AssetID)
 	}
 	if params.StartTime != "" && params.EndTime != "" {
 		dbQuery = dbQuery.Where("detection_time BETWEEN ? AND ?", params.StartTime, params.EndTime)
@@ -701,7 +714,7 @@ func (a *assetController) ExportException(ctx *gin.Context) {
 	}
 
 	var list []types.ExceptionRecord
-	if err := dbQuery.Order("detection_time DESC").Find(&list).Error; err != nil {
+	if err := dbQuery.Order("e.detection_time DESC").Find(&list).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
 utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return

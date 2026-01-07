@@ -103,11 +103,6 @@ export const useBuzzersPageHooks = () => {
 
   const roleColumns: TableProps<IBuzzersResponse>['columns'] = [
     {
-        title: '蜂鸣器ID',
-        dataIndex: 'buzzerId',
-        key: 'buzzerId',
-    },
-    {
         title: '蜂鸣器规则',
         dataIndex: 'buzzerRule',
         key: 'buzzerRule',

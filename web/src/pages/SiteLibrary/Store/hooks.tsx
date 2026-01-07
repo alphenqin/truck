@@ -1,5 +1,5 @@
 import { Key, ReactNode, useEffect, useState } from 'react';
-import { Button, Input, TableProps, Modal, message, InputNumber } from 'antd';
+import { Button, Input, TableProps, Modal, message, Select } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import {
   createStoreRequest,
@@ -11,6 +11,7 @@ import {
   IUpdateStoreParams,
   updateStoreRequest,
 } from './index.ts';
+import { getgarendsRequest, IgarendsResponse } from '@/pages/SiteLibrary/Garden/index.ts';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 
@@ -25,6 +26,7 @@ export const useStorePageHooks = () => {
   const [currentEditStore, setCurrentEditStore] = useState<IStoreResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editStoreModalOpen, setEditStoreModalOpen] = useState(false);
+  const [gardens, setGardens] = useState<IgarendsResponse[]>([]);
 
   const searchConfig: { label: string; name: keyof IQueryStoreParams; component: ReactNode }[] = [
     {
@@ -62,6 +64,12 @@ export const useStorePageHooks = () => {
     ),
     formName: 'storeSearchForm',
   });
+
+  useEffect(() => {
+    getgarendsRequest({ limit: 1000, offset: 0 }).then((res) => {
+      setGardens(res.data.list || []);
+    });
+  }, []);
 
   const getPageData = (values?: IQueryStoreParams) => {
     setLoading(true);
@@ -136,20 +144,19 @@ export const useStorePageHooks = () => {
 
   const columns: TableProps<IStoreResponse>['columns'] = [
     {
-      title: '场库ID',
-      dataIndex: 'storeId',
-      key: 'storeId',
-    },
-    {
       title: '场库名称',
       dataIndex: 'storeName',
       key: 'storeName',
     },
     {
-        title: '园区ID',
-        dataIndex: 'gardenId',
-        key: 'gardenId',
+      title: '园区名称',
+      dataIndex: 'gardenId',
+      key: 'gardenName',
+      render: (gardenId?: number) => {
+        const garden = gardens.find((item) => item.gardenId === gardenId);
+        return garden?.gardenName || '-';
       },
+    },
     {
       title: '操作',
       key: 'action',
@@ -183,5 +190,6 @@ export const useStorePageHooks = () => {
     selectedRowKeys,
     setEditStoreModalOpen,
     onFinish,
+    gardens,
   };
 };

@@ -50,6 +50,7 @@ type Monitor struct {
 
 type QueryTrackParams struct {
 	AssetId   int64  `json:"assetId"`
+	AssetCode string `json:"assetCode"`
 	StartTime string `json:"startTime"`
 	EndTime   string `json:"endTime"`
 
@@ -60,7 +61,9 @@ type QueryTrackParams struct {
 type MonitorRecordVO struct {
 	MonitorId     int64  `json:"monitorId"`
 	AssetId       int64  `json:"assetId"`
+	AssetCode     string `json:"assetCode"`
 	GatewayId     int64  `json:"gatewayId"`
+	GatewayName   string `json:"gatewayName"`
 	DetectionTime string `json:"detectionTime"`
 }
 
@@ -72,6 +75,7 @@ type QueryLostAssetParams struct {
 
 type LostAssetRecordVO struct {
 	AssetId    int64      `json:"assetId"`
+	AssetCode  string     `json:"assetCode"`
 	ActionType int        `json:"actionType"`
 	ActionTime *time.Time `json:"actionTime"`
 	StoreFrom  int64      `json:"storeFrom"`
@@ -111,9 +115,24 @@ type QueryExceptionParams struct {
 	ExceptionType *int   `json:"exceptionType" form:"exceptionType"` // 异常类型（可选）
 	Status        *int   `json:"status" form:"status"`               // 处理状态（可选）
 	AssetID       *int   `json:"assetId" form:"assetId"`             // 资产ID（可选）
+	AssetCode     *string `json:"assetCode" form:"assetCode"`        // 资产编码（可选）
 
 	Limit  int `json:"limit"`
 	Offset int `json:"offset"`
+}
+
+// ExceptionRecordVO 异常记录返回结构（包含资产编码）
+type ExceptionRecordVO struct {
+	ID            int64     `json:"id"`
+	ExceptionType int       `json:"exceptionType"`
+	AssetId       int       `json:"assetId"`
+	AssetCode     string    `json:"assetCode"`
+	DetectionTime time.Time `json:"detectionTime"`
+	Status        int       `json:"status"`
+	ExceptionNote string    `json:"exceptionNote"`
+	Remark        string    `json:"remark"`
+	CreateTime    time.Time `json:"createTime"`
+	UpdateTime    time.Time `json:"updateTime"`
 }
 
 // ExceptionRecord 异常记录表 exception_records

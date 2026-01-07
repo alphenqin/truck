@@ -190,3 +190,4 @@ type QueryGatewaysParams = iotRespModules.QueryGatewaysParams
 type RfidTag = iotRespModules.RfidTag
 type RfidTagDTO = iotRespModules.RfidTagDTO
 type QueryRfidTagsParams = iotRespModules.QueryRfidTagsParams
+type InventoryRecord = iotRespModules.InventoryRecord

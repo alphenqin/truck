@@ -13,7 +13,7 @@ export interface IQueryExceptionParams extends IPage {
   endTime?: string;        // 结束时间
   exceptionType?: number;  // 异常类型
   status?: number;         // 处理状态
-  assetId?: number;        // 资产ID
+  assetCode?: string;      // 资产编码
 }
 
 // 异常类型映射
@@ -34,6 +34,7 @@ export interface IExceptionRecord {
   id: number;                 // 异常记录ID (后端返回的是 number)
   exceptionType: number;      // 异常类型
   assetId: number;            // 相关的资产id
+  assetCode: string;          // 资产编码
   detectionTime: string;      // 检测时间
   status: number;             // 处理状态
   exceptionNote?: string;     // 异常内容

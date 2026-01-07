@@ -103,13 +103,6 @@ export const usegarendsPageHooks = () => {
 
   const roleColumns: TableProps<IgarendsResponse>['columns'] = [
     {
-      title: '园区ID',
-      dataIndex: 'gardenId',
-      key: 'gardenId',
-      align: 'center',
-    },
-    
-    {
         title: '园区名称',
         dataIndex: 'gardenName',
         key: 'gardenName',

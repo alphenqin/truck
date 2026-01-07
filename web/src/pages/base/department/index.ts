@@ -12,6 +12,7 @@ export interface IQueryDepartmentsParams extends IPage {
   departmentId?: number;
   departmentName?: string;
   storeId?: number;
+  storeName?: string;
 }
 
 // 部门响应数据接口 - 对应 Go 的 Department 结构体
@@ -19,6 +20,7 @@ export interface IDepartmentsResponse {
   departmentId: number; // 自增主键
   departmentName: string;
   storeId: number;
+  storeName?: string;
 }
 
 // 带总数的响应数据接口

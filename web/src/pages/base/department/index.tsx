@@ -61,10 +61,10 @@ const DepartmentsPage: FC = () => {
           </Form.Item>
           <Form.Item<IUpdateDepartmentsParams> 
             name='storeId' 
-            label='场库ID' 
-            rules={[{ required: true, message: '请输入场库ID' }]}
+            label='场库名称' 
+            rules={[{ required: true, message: '请选择场库' }]}
           >
-            <Input type="number" />
+            <Input placeholder="请输入场库名称" />
           </Form.Item>
         </Form>
       </Modal>

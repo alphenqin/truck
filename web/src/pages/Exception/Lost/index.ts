@@ -21,6 +21,7 @@ export const actionTypeMap: Record<number, string> = {
 // 异常资产记录接口
 export interface ILostAssetRecord {
   assetId: number;     // 资产ID
+  assetCode: string;   // 资产编码
   actionType: number;  // 操作类型
   actionTime: string;  // 操作时间
   storeFrom: number;   // 起始场库

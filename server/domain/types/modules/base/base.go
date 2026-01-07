@@ -4,12 +4,14 @@ type Department struct {
 	DepartmentId   int64  `gorm:"primaryKey;autoIncrement" json:"departmentId"`
 	DepartmentName string `json:"departmentName"`
 	StoreId        int64  `json:"storeId"`
+	StoreName      string `json:"storeName"`
 }
 
 type QueryDepartmentsParams struct {
 	DepartmentId   int64  `json:"departmentId"`
 	DepartmentName string `json:"departmentName"`
 	StoreId        int64  `json:"storeId"`
+	StoreName      string `json:"storeName"`
 
 	Limit  int `json:"limit"`
 	Offset int `json:"offset"`

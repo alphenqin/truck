@@ -164,7 +164,6 @@ const VehiclePage: React.FC = () => {
   };
 
   const assetColumns = [
-    { title: '资产ID', dataIndex: 'assetId', key: 'assetId' },
     { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
     {
       title: '所属班组',
@@ -186,7 +185,6 @@ const VehiclePage: React.FC = () => {
   ];
 
   const groupColumns = [
-    { title: '班组ID', dataIndex: 'groupId', key: 'groupId' },
     { title: '班组名称', dataIndex: 'groupName', key: 'groupName' },
     {
       title: '所属场库',

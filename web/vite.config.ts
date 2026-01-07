@@ -34,24 +34,28 @@ export default defineConfig({
     exclude: ['monaco-editor'],
   },
   build: {
+    // 关闭 modulepreload，避免跨 chunk 的预加载助手形成循环依赖
+    modulePreload: false,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           // Monaco Editor 分块
           if (id.includes(`${prefix}/language/typescript/ts.worker`)) return 'tsWorker';
           if (id.includes(`${prefix}/editor/editor.worker`)) return 'editorWorker';
-          // React 核心库
-          if (id.includes('node_modules/react') && !id.includes('react-router')) return 'vendor-react';
-          if (id.includes('node_modules/react-router')) return 'vendor-router';
-          if (id.includes('node_modules/redux') || id.includes('node_modules/@reduxjs')) return 'vendor-redux';
-          // Ant Design 生态合并
-          if (id.includes('node_modules/antd') || id.includes('node_modules/@ant-design')) return 'vendor-antd';
-          // ECharts 单独分块
-          if (id.includes('node_modules/echarts')) return 'vendor-echarts';
           // Monaco Editor
           if (id.includes('node_modules/monaco-editor')) return 'vendor-monaco';
-          // 其他第三方库统一打包
-          if (id.includes('node_modules')) return 'vendor-common';
+          // ECharts 单独分块
+          if (id.includes('node_modules/echarts')) return 'vendor-echarts';
+          // AntV 图表相关单独分块，避免与入口 chunk 形成循环依赖
+          if (
+            id.includes('/node_modules/@antv/') ||
+            id.includes('/node_modules/@ant-design/plots/') ||
+            id.includes('/node_modules/@ant-design/charts/')
+          ) {
+            return 'vendor-charts';
+          }
+          // 其余第三方统一合并，避免 vendor 之间互相引用造成循环依赖
+          if (id.includes('node_modules')) return 'vendor-core';
           // 路由页面分块
           if (id.includes('/src/pages/Login')) return 'route-login';
           if (id.includes('/src/LayOut')) return 'route-layout';

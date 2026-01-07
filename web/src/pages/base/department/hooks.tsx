@@ -11,6 +11,7 @@ import {
   IUpdateDepartmentsParams,
   updateDepartmentsRequest,
 } from './index.ts';
+import { getStoreMapRequest, StoreMap } from '@/pages/Asset/index.ts';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 
@@ -25,6 +26,7 @@ export const useDepartmentsPageHooks = () => {
   const [currentEditDepartments, setCurrentEditDepartments] = useState<IDepartmentsResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editDepartmentsModalOpen, setEditDepartmentsModalOpen] = useState(false);
+  const [storeMap, setStoreMap] = useState<StoreMap[]>([]);
   const searchConfig: { label: string; name: keyof IQueryDepartmentsParams; component: ReactNode }[] = [
     {
       label: '部门名称',
@@ -147,6 +149,12 @@ export const useDepartmentsPageHooks = () => {
   ];
 
   useEffect(() => {
+    getStoreMapRequest().then((res) => {
+      setStoreMap(res.data || []);
+    });
+  }, []);
+
+  useEffect(() => {
     if (editDepartmentsModalOpen && isEdit && currentEditDepartments) {
       formRef.setFieldsValue(currentEditDepartments);
     }
@@ -171,5 +179,6 @@ export const useDepartmentsPageHooks = () => {
     setSelected,
     setEditDepartmentsModalOpen,
     onFinish,
+    storeMap,
   };
 };

@@ -1,6 +1,6 @@
 import React, { FC, memo } from 'react';
 import { useDepartmentsPageHooks } from './hooks.tsx'
-import { Form, Input, Modal, Pagination, Table } from 'antd';
+import { Form, Input, Modal, Pagination, Table, Select } from 'antd';
 import { IUpdateDepartmentsParams } from './index.ts';
 
 const DepartmentsPage: FC = () => {
@@ -19,7 +19,13 @@ const DepartmentsPage: FC = () => {
     setSelected,
     setEditDepartmentsModalOpen,
     onFinish,
+    storeMap,
   } = useDepartmentsPageHooks();
+
+  const storeOptions = storeMap.map((store) => ({
+    label: store.storeName,
+    value: store.storeId,
+  }));
 
   return (
     <>
@@ -64,7 +70,7 @@ const DepartmentsPage: FC = () => {
             label='场库名称' 
             rules={[{ required: true, message: '请选择场库' }]}
           >
-            <Input placeholder="请输入场库名称" />
+            <Select options={storeOptions} placeholder="请选择场库" />
           </Form.Item>
         </Form>
       </Modal>

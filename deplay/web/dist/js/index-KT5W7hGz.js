@@ -1,1 +1,0 @@
-import{A as t}from"./route-login-p179xrQD.js";const a=e=>t.get({url:`/interface/page/${e}`}),n=()=>t.get({url:"/interface"}),s=e=>t.delete({url:`/interface/${e}`}),u=e=>t.post({url:"/interface",data:e}),c=e=>t.patch({url:`/interface/${e.id}`,data:e});export{u as a,a as b,s as d,n as g,c as u};

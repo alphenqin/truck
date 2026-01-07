@@ -31,4 +31,10 @@ func IotAuthRoutes(r *gin.RouterGroup) {
 
 		groupTag.GET("/map", controllers.IotController.GetTagMap)
 	}
+
+	groupInventoryDetail := r.Group("/iot/inventory-detail")
+	{
+		// 查 - 盘点详情
+		groupInventoryDetail.POST("/query", controllers.IotController.GetInventoryDetails)
+	}
 }

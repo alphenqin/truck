@@ -40,8 +40,8 @@ cp web/nginx.conf deplay/web/
 
 ```bash
 cd /path/to/project/web
-pnpm install
-pnpm run build
+npm install
+npm run build
 cp -R dist ../deplay/web/dist
 ```
 
@@ -179,3 +179,14 @@ server {
 - 前端请求 404：检查 `baseurl` 与前端 `VITE_APP_BASE_URL` 是否一致。
 - 授权失败：确认 `license.secret` 与生成授权时的 `--secret` 一致，且 `license.json` 路径正确。
 - 数据库连接失败：检查 `db.host`、端口、防火墙与账号权限。
+
+
+
+
+
+把 mysql的cms数据库导出覆盖到 server/sql/cms.sql
+
+mysqladmin -u root -p drop cms
+
+mysqladmin -u root -p create cms
+mysql -u root -p cms < cms.sql

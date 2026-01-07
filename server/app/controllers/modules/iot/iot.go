@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Xi-Yuer/cms/domain/types"
+	iotResponsiesModules "github.com/Xi-Yuer/cms/domain/types/modules/iot"
 	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/infra/tcpserver"
 	"github.com/Xi-Yuer/cms/support/utils"
@@ -302,4 +303,50 @@ func (c iotController) GetTagMap(context *gin.Context) {
 	}
 
 	utils.Response.Success(context, tags)
+}
+
+func (c iotController) GetInventoryDetails(context *gin.Context) {
+	var params iotResponsiesModules.QueryInventoryDetailParams
+	if err := context.ShouldBindJSON(&params); err != nil {
+		utils.Log.Warn("参数绑定失败", "error", err)
+		utils.Response.ParameterTypeError(context, "参数格式错误")
+		return
+	}
+	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
+
+	query := db.GormDB.Table("inventory_records AS r").
+		Select(`
+			r.id, r.tag_code, r.asset_id, r.store_id, r.gateway_id,
+			r.inventory_time, r.rssi, r.antenna_num, r.battery_level,
+			r.pc_value, r.additional_category, r.inventory_status, r.remark,
+			r.created_at, a.asset_code
+		`).
+		Joins("LEFT JOIN asset AS a ON r.asset_id = a.asset_id")
+
+	if params.AssetCode != "" {
+		query = query.Where("a.asset_code = ?", params.AssetCode)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		utils.Log.Error("查询盘点详情失败", "error", err)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
+		return
+	}
+
+	var inventoryDetails []iotResponsiesModules.InventoryDetail
+	if err := query.
+		Order("r.inventory_time DESC").
+		Offset(params.Offset).
+		Limit(params.Limit).
+		Scan(&inventoryDetails).Error; err != nil {
+		utils.Log.Error("查询盘点详情失败", "error", err)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
+		return
+	}
+
+	utils.Response.Success(context, gin.H{
+		"list":  inventoryDetails,
+		"total": total,
+	})
 }

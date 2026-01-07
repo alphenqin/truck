@@ -182,22 +182,22 @@ func bcdToDec(b byte) int {
 
 func printLine(uid, pcValue, batStr string, rssi, antenna, addCat int, ts, deviceAddr string) {
 	gwType := getGatewayType(deviceAddr)
-	
+
 	switch gwType {
 	case 1: // 入库
 		fmt.Printf("[入库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
 			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-		enqueueRecord(uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
+		enqueueRecord(uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
 
 	case 2: // 出库
 		fmt.Printf("[出库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
 			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-		enqueueRecord(uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
+		enqueueRecord(uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
 
 	case 3: // 盘点
 		fmt.Printf("[盘点设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
 			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-		enqueueRecord(uid, pcValue, batStr, rssi, antenna, ts, deviceAddr)
+		enqueueRecord(uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
 
 	default:
 		// 如果没找到类型，打印警告
@@ -207,13 +207,14 @@ func printLine(uid, pcValue, batStr string, rssi, antenna, addCat int, ts, devic
 }
 
 type recordJob struct {
-	uid        string
-	pcValue    string
-	batStr     string
-	rssi       int
-	antenna    int
-	ts         string
-	deviceAddr string
+	uid                string
+	pcValue            string
+	batStr             string
+	rssi               int
+	antenna            int
+	additionalCategory int
+	ts                 string
+	deviceAddr         string
 }
 
 func ensureRecordWorkers() {
@@ -226,7 +227,7 @@ func ensureRecordWorkers() {
 	})
 }
 
-func enqueueRecord(uid, pcValue, batStr string, rssi, antenna int, ts, deviceAddr string) {
+func enqueueRecord(uid, pcValue, batStr string, rssi, antenna, addCat int, ts, deviceAddr string) {
 	ensureRecordWorkers()
 	recordQueueMu.RLock()
 	if recordClosing {
@@ -235,13 +236,14 @@ func enqueueRecord(uid, pcValue, batStr string, rssi, antenna int, ts, deviceAdd
 		return
 	}
 	job := recordJob{
-		uid:        uid,
-		pcValue:    pcValue,
-		batStr:     batStr,
-		rssi:       rssi,
-		antenna:    antenna,
-		ts:         ts,
-		deviceAddr: deviceAddr,
+		uid:                uid,
+		pcValue:            pcValue,
+		batStr:             batStr,
+		rssi:               rssi,
+		antenna:            antenna,
+		additionalCategory: addCat,
+		ts:                 ts,
+		deviceAddr:         deviceAddr,
 	}
 	recordWg.Add(1)
 	select {
@@ -279,39 +281,59 @@ func ShutdownRecordQueue() {
 }
 
 func saveRecordToDB(job recordJob) {
-	// 1. 根据网关类型判断动作类型
-	var actionType int // 1=入库，2=出库，3=盘点
 	gwType := getGatewayType(job.deviceAddr)
 
-	switch gwType {
-	case 1: // 入库
-		actionType = 1
-	case 2: // 出库
-		actionType = 2
-	case 3: // 盘点
-		actionType = 3
-	default:
-		return
-	}
-
-	// 2. 解析时间字符串为 time.Time
+	// 解析时间字符串为 time.Time
 	t, err := time.Parse("2006-01-02 15:04:05", job.ts)
 	if err != nil {
 		t = time.Now()
 	}
 
-	// 3. 生成入库对象
-	record := types.IoRecord{
-		TagCode:    job.uid,
-		ActionType: actionType,
-		ActionTime: &t,
-	}
+	switch gwType {
+	case 1: // 入库
+		record := types.IoRecord{
+			TagCode:    job.uid,
+			ActionType: 1,
+			ActionTime: &t,
+		}
+		if err := db.GormDB.Create(&record).Error; err != nil {
+			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", record.TagCode, "actionType", record.ActionType)
+		} else {
+			utils.Log.Info("成功写入入库记录", "assetId", record.AssetId, "tagCode", record.TagCode)
+		}
 
-	// 4. 写入数据库
-	if err := db.GormDB.Create(&record).Error; err != nil {
-		utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", record.TagCode, "actionType", record.ActionType)
-	} else {
-		utils.Log.Info("成功写入IoRecord", "assetId", record.AssetId, "actionType", record.ActionType, "tagCode", record.TagCode)
+	case 2: // 出库
+		record := types.IoRecord{
+			TagCode:    job.uid,
+			ActionType: 2,
+			ActionTime: &t,
+		}
+		if err := db.GormDB.Create(&record).Error; err != nil {
+			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", record.TagCode, "actionType", record.ActionType)
+		} else {
+			utils.Log.Info("成功写入出库记录", "assetId", record.AssetId, "tagCode", record.TagCode)
+		}
+
+	case 3: // 盘点
+		inventoryRecord := types.InventoryRecord{
+			TagCode:            job.uid,
+			InventoryTime:      t,
+			Rssi:               job.rssi,
+			AntennaNum:         job.antenna,
+			BatteryLevel:       job.batStr,
+			PcValue:            job.pcValue,
+			AdditionalCategory: job.additionalCategory,
+			InventoryStatus:    1, // 默认正常
+			CreatedAt:          time.Now(),
+		}
+		if err := db.GormDB.Create(&inventoryRecord).Error; err != nil {
+			utils.Log.Error("写入InventoryRecord失败", "error", err, "uid", job.uid, "tagCode", inventoryRecord.TagCode)
+		} else {
+			utils.Log.Info("成功写入盘点记录", "assetId", inventoryRecord.AssetId, "tagCode", inventoryRecord.TagCode)
+		}
+
+	default:
+		return
 	}
 }
 

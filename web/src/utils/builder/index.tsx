@@ -49,6 +49,7 @@ const BaseNotice = lazy(() => import('@/pages/base/notice/index.tsx'));
 // iot
 const IotGateway = lazy(() => import('@/pages/Iot/Gateway/index.tsx'));
 const IotRfidTag = lazy(() => import('@/pages/Iot/RfidTag/index.tsx'));
+const IotInventoryDetail = lazy(() => import('@/pages/Iot/InventoryDetail/index.tsx'));
 const Panel = lazy(() => import('@/pages/Panel/index.tsx'));
 
 // 页面路径与组件映射表
@@ -90,6 +91,7 @@ const pagesMap: Record<string, React.ReactNode | null> = {
   // iot
   '/iot/gateway': <IotGateway/>,
   '/iot/tag': <IotRfidTag/>,
+  '/iot/inventory-detail': <IotInventoryDetail/>,
 
   '/panel': <Panel/>,
 };

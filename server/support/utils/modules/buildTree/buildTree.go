@@ -7,15 +7,19 @@ import (
 
 // BuildMenu 构建菜单树
 func BuildMenu(pages []*types.SinglePageResponse) []*types.SinglePageResponse {
-	// 构建完整的树形结构
-	pageMap := make(map[string]*types.SinglePageResponse)
+	// 构建完整的树形结构（先建索引，再挂载子节点，避免因顺序导致子节点丢失）
+	pageMap := make(map[string]*types.SinglePageResponse, len(pages))
 	for _, page := range pages {
+		page.Children = nil
 		pageMap[page.PageID] = page
-		if page.ParentPage != nil {
-			parent := pageMap[*page.ParentPage]
-			if parent != nil {
-				parent.Children = append(parent.Children, page)
-			}
+	}
+	for _, page := range pages {
+		if page.ParentPage == nil {
+			continue
+		}
+		parent := pageMap[*page.ParentPage]
+		if parent != nil {
+			parent.Children = append(parent.Children, page)
 		}
 	}
 	// 找到所有根节点

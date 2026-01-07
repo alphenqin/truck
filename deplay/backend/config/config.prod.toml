@@ -4,9 +4,6 @@ session_secret = "dev_session_secret"
 jwt_secret = "dev_jwt_secret"
 baseurl = "/cms"
 domain = "localhost"
-tcp_addr = ":9000"
-remote_addrs = ""
-tcp_enable = false
 
 [db]
 user = "root"
@@ -17,4 +14,4 @@ port = "3306"
 
 [license]
 path = "C:\\truck\\deplay\\backend\\license.json"
-secret = "prod_license_secret"
+secret = "YOUR_SECRET"

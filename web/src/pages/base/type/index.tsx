@@ -46,9 +46,6 @@ const AssetTypesPage: FC = () => {
         onShowSizeChange={(_, size) => setLimit(size)}></Pagination>
       <Modal open={editAssetTypesModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditAssetTypesModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
-          <Form.Item<IUpdateAssetTypesParams> name='typeId' label='类型ID' rules={[{ required: true, message: '请输入类型ID' }]}>
-            <Input type="number" disabled={isEdit} min={1} />
-          </Form.Item>
           <Form.Item<IUpdateAssetTypesParams> name='typeName' label='类型名称' rules={[{ required: true, message: '请输入类型名称' }]}>
             <Input />
           </Form.Item>

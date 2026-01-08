@@ -1,5 +1,5 @@
 import { Key, ReactNode, useEffect, useState } from 'react';
-import { Button, Input, TableProps, Select, Modal } from 'antd';
+import { Button, Input, TableProps, Select, Modal, message } from 'antd';
 import {
   createAssetRequest,
   deleteAssetRequest,
@@ -7,13 +7,17 @@ import {
   IQueryAssetParams,
   IAssetResponse,
   IUpdateAssetParams,
+  IUpdateAssetStatusParams,
   updateAssetRequest,
+  updateAssetStatus,
   getStoreMapRequest,
   StoreMap,
   assetTypeMap,
   statusMap,
   getTagMapRequest,
   TagMap,
+  getAssetRepairRecordsRequest,
+  IAssetRepairRecord,
 } from './index.ts';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
@@ -32,6 +36,14 @@ export const useAssetPageHooks = () => {
   const [editAssetModalOpen, setEditAssetModalOpen] = useState(false);
   const [storeMap, setStoreMap] = useState<StoreMap[]>([]);
   const [tagMap, setTagMap] = useState<TagMap[]>([]);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [repairModalOpen, setRepairModalOpen] = useState(false);
+  const [repairAssetId, setRepairAssetId] = useState<number | null>(null);
+  const [repairReason, setRepairReason] = useState<string>('');
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailAsset, setDetailAsset] = useState<IAssetResponse | null>(null);
+  const [repairRecords, setRepairRecords] = useState<IAssetRepairRecord[]>([]);
+  const [repairRecordsLoading, setRepairRecordsLoading] = useState(false);
 
   // 获取场库映射
   useEffect(() => {
@@ -136,6 +148,63 @@ export const useAssetPageHooks = () => {
     });
   };
 
+  const handleUpdateStatus = async (assetId: number, status: number, reason?: string) => {
+    setUpdateLoading(true);
+    try {
+      const params: IUpdateAssetStatusParams = {
+        assetId,
+        status,
+        repairReason: reason,
+      };
+      const res: any = await updateAssetStatus(params);
+      if (res?.code === 200 || res?.data?.code === 200) {
+        message.success('资产状态更新成功！');
+        getPageData();
+      } else {
+        message.error(`资产状态更新失败: ${res?.msg || res?.data?.msg || '未知错误'}`);
+      }
+    } catch (error) {
+      message.error('更新资产状态失败。');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const openRepairModal = (assetId: number) => {
+    setRepairAssetId(assetId);
+    setRepairReason('');
+    setRepairModalOpen(true);
+  };
+
+  const submitRepair = async () => {
+    if (!repairAssetId) {
+      return;
+    }
+    if (!repairReason) {
+      message.error('请选择报修原因');
+      return;
+    }
+    await handleUpdateStatus(repairAssetId, 3, repairReason);
+    setRepairModalOpen(false);
+  };
+
+  const openDetailModal = (row: IAssetResponse) => {
+    setDetailAsset(row);
+    setDetailModalOpen(true);
+    setRepairRecords([]);
+    setRepairRecordsLoading(true);
+    getAssetRepairRecordsRequest(row.assetId)
+      .then((res) => {
+        setRepairRecords(res.data.list || []);
+      })
+      .catch(() => {
+        message.error('获取报修记录失败');
+      })
+      .finally(() => {
+        setRepairRecordsLoading(false);
+      });
+  };
+
   const roleColumns: TableProps<IAssetResponse>['columns'] = [
     {
         title: '资产编码',
@@ -204,9 +273,16 @@ export const useAssetPageHooks = () => {
       render: (_, row) => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
+            <span onClick={() => openDetailModal(row)}>详情</span>
             <span onClick={() => editAssetAction(row)}>编辑</span>
             <span className='text-red-500' onClick={() => deleteAssetAction(row.assetId)}>
               删除
+            </span>
+            <span className='text-red-500' onClick={() => openRepairModal(row.assetId)}>
+              报修
+            </span>
+            <span className='text-red-500' onClick={() => handleUpdateStatus(row.assetId, 5)}>
+              报废
             </span>
           </div>
         );
@@ -245,5 +321,23 @@ export const useAssetPageHooks = () => {
     },
     onFinish,
     tagMap,
+    repairModalOpen,
+    setRepairModalOpen,
+    repairReason,
+    setRepairReason,
+    submitRepair,
+    updateLoading,
+    detailModalOpen,
+    detailAsset,
+    storeMap,
+    repairRecords,
+    repairRecordsLoading,
+    setDetailModalOpen: (open: boolean) => {
+      setDetailModalOpen(open);
+      if (!open) {
+        setDetailAsset(null);
+        setRepairRecords([]);
+      }
+    },
   };
 };

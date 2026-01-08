@@ -46,11 +46,6 @@ const LinesPage: FC = () => {
         onShowSizeChange={(_, size) => setLimit(size)}></Pagination>
       <Modal open={editLinesModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditLinesModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
-          {isEdit && (
-            <Form.Item<IUpdateLinesParams> name='lineId' label='线路ID' rules={[{ required: true, message: '请输入线路ID' }]}>
-              <Input type="number" disabled={true} min={1} />
-          </Form.Item>
-          )}
           <Form.Item<IUpdateLinesParams> name='lineName' label='线路名称' rules={[{ required: true, message: '请输入线路名称' }]}>
             <Input />
           </Form.Item>

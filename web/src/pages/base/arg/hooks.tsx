@@ -111,11 +111,6 @@ export const useArgsPageHooks = () => {
 
   const roleColumns: TableProps<IArgsResponse>['columns'] = [
     {
-      title: 'ID',
-        dataIndex: 'id',
-        key: 'id',
-    },
-    {
       title: '参数键',
       dataIndex: 'argKey',
       key: 'argKey',

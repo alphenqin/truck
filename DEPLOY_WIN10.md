@@ -190,3 +190,7 @@ mysqladmin -u root -p drop cms
 
 mysqladmin -u root -p create cms
 mysql -u root -p cms < cms.sql
+
+
+
+docker exec wms-mysql mysqldump -uroot -p123456 wms> wms.sql

@@ -39,6 +39,7 @@ type AssetVO struct {
 type UpdateAssetStatusParams struct {
 	AssetId int64 `json:"assetId"`
 	Status  int   `json:"status"`
+	RepairReason string `json:"repairReason"`
 }
 
 type Monitor struct {
@@ -146,4 +147,12 @@ type ExceptionRecord struct {
 	Remark        string    `gorm:"column:remark" json:"remark"`                         // 备注
 	CreateTime    time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"` // 创建时间
 	UpdateTime    time.Time `gorm:"column:update_time;autoUpdateTime" json:"updateTime"` // 更新时间
+}
+
+// AssetRepairRecord 资产报修记录表 asset_repairs
+type AssetRepairRecord struct {
+	ID           int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	AssetID      int64     `gorm:"column:asset_id" json:"assetId"`
+	RepairReason string    `gorm:"column:repair_reason" json:"repairReason"`
+	CreateTime   time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"`
 }

@@ -46,6 +46,7 @@ export const useIoRecordPageHooks = () => {
 
   const columns: TableProps<IIoRecordResponse>['columns'] = [
     { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
+    { title: '标签编码', dataIndex: 'tagCode', key: 'tagCode' },
     { title: '操作类型', dataIndex: 'actionType', key: 'actionType', render: (value: number) => actionTypeMap[value] || value },
     { title: '操作时间', dataIndex: 'actionTime', key: 'actionTime', render: (value: string) => value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-' },
   ];

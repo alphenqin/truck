@@ -20,6 +20,7 @@ type QueryIoRecordsParams struct {
 type IoRecordVO struct {
 	AssetId    int64      `json:"assetId"`
 	AssetCode  string     `json:"assetCode"`
+	TagCode    string     `json:"tagCode"`
 	ActionType int        `json:"actionType"`
 	ActionTime *time.Time `json:"actionTime"`
 	StoreTo    int64      `json:"storeTo"`

@@ -13,6 +13,7 @@ export interface IQueryIoRecordParams {
 // 出入库记录响应数据接口
 export interface IIoRecordResponse {
   assetCode: string;
+  tagCode: string;
   actionType: number;
   actionTime: string; // ISO 字符串
 }

@@ -141,8 +141,10 @@ type QueryAssetParams = assetResponsiesModules.QueryAssetParams
 
 type AssetVO = assetResponsiesModules.AssetVO
 type UpdateAssetStatusParams = assetResponsiesModules.UpdateAssetStatusParams
+type AssetRepairRecord = assetResponsiesModules.AssetRepairRecord
 type QueryLostAssetParams = assetResponsiesModules.QueryLostAssetParams
 type LostAssetRecordVO = assetResponsiesModules.LostAssetRecordVO
+type ExceptionRecordVO = assetResponsiesModules.ExceptionRecordVO
 type Group = assetResponsiesModules.Group
 type GroupVO = assetResponsiesModules.GroupVO
 type QueryGroupParams = assetResponsiesModules.QueryGroupParams

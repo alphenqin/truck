@@ -30,7 +30,7 @@ func (c *ioRecordController) GetIoRecords(ctx *gin.Context) {
 	// 构建查询
 	query := db.GormDB.Table("io_records AS r").
 		Select(`
-			r.asset_id, r.action_type, r.action_time, r.store_to, r.store_from,
+			r.asset_id, r.tag_code, r.action_type, r.action_time, r.store_to, r.store_from,
 			a.asset_code, a.asset_type
 		`).
 		Joins("LEFT JOIN asset AS a ON r.asset_id = a.asset_id")

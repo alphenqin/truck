@@ -107,11 +107,6 @@ export const useNoticePageHooks = () => {
 
   const noticeColumns: TableProps<INoticeResponse>['columns'] = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
       title: '规则名称',
       dataIndex: 'ruleName',
       key: 'ruleName',

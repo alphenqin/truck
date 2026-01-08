@@ -152,11 +152,6 @@ export const useGatewayPageHooks = () => {
 
   const gatewayColumns: TableProps<IGatewayResponse>['columns'] = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
       title: '网关名称',
       dataIndex: 'gatewayName',
       key: 'gatewayName',

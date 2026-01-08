@@ -48,6 +48,21 @@ export interface IUpdateAssetParams {
   tagId: number;
 }
 
+// 修改资产状态请求参数
+export interface IUpdateAssetStatusParams {
+  assetId: number;
+  status: number;
+  repairReason?: string;
+}
+
+// 资产报修记录
+export interface IAssetRepairRecord {
+  id: number;
+  assetId: number;
+  repairReason: string;
+  createTime: string;
+}
+
 // 获取资产列表
 export const getAssetRequest = (params: IQueryAssetParams) => {
   return request.post<AxiosResponse<IHasTotalResponse<IAssetResponse[]>>>({
@@ -77,6 +92,21 @@ export const deleteAssetRequest = (ids: number[]) => {
   return request.delete({
     url: '/asset/batch-delete',
     data: ids,
+  });
+};
+
+// 修改资产状态
+export const updateAssetStatus = (params: IUpdateAssetStatusParams) => {
+  return request.post({
+    url: '/asset/update/type',
+    data: params,
+  });
+};
+
+// 获取资产报修记录
+export const getAssetRepairRecordsRequest = (assetId: number) => {
+  return request.get<AxiosResponse<{ list: IAssetRepairRecord[] }>>({
+    url: `/asset/repairs/${assetId}`,
   });
 };
 

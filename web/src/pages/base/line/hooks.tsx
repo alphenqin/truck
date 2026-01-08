@@ -27,11 +27,6 @@ export const useLinesPageHooks = () => {
   const [editLinesModalOpen, setEditLinesModalOpen] = useState(false);
   const searchConfig: { label: string; name: keyof IQueryLinesParams; component: ReactNode }[] = [
     {
-      label: '线路ID',
-      name: 'lineId',
-      component: <Input type="number" allowClear min={1} />,
-    },
-    {
       label: '线路名称',
       name: 'lineName',
         component: <Input allowClear />,
@@ -39,12 +34,6 @@ export const useLinesPageHooks = () => {
   ];
   const { SearchFormComponent } = useSearchFrom({
     getDataRequestFn: (values) => {
-      // Handle lineId
-      if (values.lineId === '' || values.lineId === undefined || values.lineId === null) {
-        delete values.lineId;
-      } else {
-        values.lineId = Number(values.lineId);
-      }
       getPageData(values as IQueryLinesParams);
     },
     onNewRecordFn: () => {
@@ -68,12 +57,6 @@ export const useLinesPageHooks = () => {
       offset: (page - 1) * limit,
       ...values,
     } as IQueryLinesParams;
-    
-    // Convert lineId to number if it exists
-    if (params.lineId) {
-      params.lineId = Number(params.lineId);
-    }
-    
     getLinesRequest(params)
       .then((res) => {
         setLines(res.data.list);
@@ -121,11 +104,6 @@ export const useLinesPageHooks = () => {
   };
 
   const roleColumns: TableProps<ILinesResponse>['columns'] = [
-    {
-      title: '线路ID',
-      dataIndex: 'lineId',
-      key: 'lineId',
-    },
     {
       title: '线路名称',
       dataIndex: 'lineName',

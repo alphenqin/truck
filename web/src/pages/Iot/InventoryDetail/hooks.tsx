@@ -40,7 +40,6 @@ export const useInventoryDetailPageHooks = () => {
   };
 
   const columns: TableProps<IInventoryDetailResponse>['columns'] = [
-    { title: '资产ID', dataIndex: 'assetId', key: 'assetId' },
     { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
     { title: '标签码', dataIndex: 'tagCode', key: 'tagCode' },
     { title: '操作类型', dataIndex: 'actionType', key: 'actionType', render: (value: number) => actionTypeMap[value] || value },

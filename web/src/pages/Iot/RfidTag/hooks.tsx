@@ -155,11 +155,6 @@ export const useRfidTagPageHooks = () => {
 
   const rfidTagColumns: TableProps<IRfidTagResponse>['columns'] = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
       title: '标签编码',
       dataIndex: 'tagCode',
       key: 'tagCode',

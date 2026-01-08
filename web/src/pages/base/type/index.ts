@@ -27,7 +27,7 @@ export interface IHasTotalResponse<T> {
 
 // 创建/更新资产类型参数接口
 export interface IUpdateAssetTypesParams {
-  typeId: number;
+  typeId?: number;
   typeName: string;
 }
 

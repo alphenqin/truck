@@ -27,11 +27,6 @@ export const useAssetTypesPageHooks = () => {
   const [editAssetTypesModalOpen, setEditAssetTypesModalOpen] = useState(false);
   const searchConfig: { label: string; name: keyof IQueryAssetTypesParams; component: ReactNode }[] = [
     {
-      label: '类型ID',
-        name: 'typeId',
-      component: <Input type="number" allowClear min={1} />,
-    },
-    {
       label: '类型名称',
         name: 'typeName',
         component: <Input allowClear />,
@@ -60,11 +55,6 @@ export const useAssetTypesPageHooks = () => {
       offset: (page - 1) * limit,
       ...values,
     } as IQueryAssetTypesParams;
-    
-    // Convert typeId to number if it exists
-    if (params.typeId) {
-      params.typeId = Number(params.typeId);
-    }
     
     getAssetTypesRequest(params)
       .then((res) => {
@@ -104,19 +94,7 @@ export const useAssetTypesPageHooks = () => {
         });
       } else {
         // 新增
-        if (!values.typeId) {
-          formRef.setFields([{
-            name: 'typeId',
-            errors: ['请输入类型ID']
-          }]);
-          return;
-        }
-        // 确保typeId是数字类型
-        const params = {
-          ...values,
-          typeId: Number(values.typeId)
-        } as IUpdateAssetTypesParams;
-        createAssetTypesRequest(params).then(() => {
+        createAssetTypesRequest(values as IUpdateAssetTypesParams).then(() => {
           setEditAssetTypesModalOpen(false);
           getPageData();
         });
@@ -125,12 +103,6 @@ export const useAssetTypesPageHooks = () => {
   };
 
   const roleColumns: TableProps<IAssetTypesResponse>['columns'] = [
-    {
-        title: '类型ID',
-        dataIndex: 'typeId',
-        key: 'typeId',
-    },
-    
     {
         title: '类型名称',
         dataIndex: 'typeName',

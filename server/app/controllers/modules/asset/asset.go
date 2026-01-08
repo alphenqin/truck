@@ -2,6 +2,7 @@ package assetControllersModules
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -219,7 +220,47 @@ func (a *assetController) UpdateType(ctx *gin.Context) {
 utils.Response.ServerError(ctx, "更新失败，请稍后重试")
 		return
 	}
+
+	if params.Status == 3 && params.RepairReason != "" {
+		repair := types.AssetRepairRecord{
+			AssetID:      params.AssetId,
+			RepairReason: params.RepairReason,
+		}
+		if err := db.GormDB.Table("asset_repairs").Create(&repair).Error; err != nil {
+			utils.Log.Error("报修原因写入失败", "error", err, "assetId", params.AssetId)
+			utils.Response.ServerError(ctx, "报修原因保存失败，请稍后重试")
+			return
+		}
+	}
 	utils.Response.SuccessNoData(ctx)
+}
+
+// GetAssetRepairs 获取资产报修记录
+func (a *assetController) GetAssetRepairs(ctx *gin.Context) {
+	assetIdStr := ctx.Param("assetId")
+	if assetIdStr == "" {
+		utils.Response.ParameterTypeError(ctx, "assetId不能为空")
+		return
+	}
+	assetId, err := strconv.ParseInt(assetIdStr, 10, 64)
+	if err != nil || assetId <= 0 {
+		utils.Response.ParameterTypeError(ctx, "assetId格式错误")
+		return
+	}
+
+	var repairs []types.AssetRepairRecord
+	if err := db.GormDB.Table("asset_repairs").
+		Where("asset_id = ?", assetId).
+		Order("create_time DESC").
+		Find(&repairs).Error; err != nil {
+		utils.Log.Error("获取报修记录失败", "error", err, "assetId", assetId)
+		utils.Response.ServerError(ctx, "获取报修记录失败")
+		return
+	}
+
+	utils.Response.Success(ctx, gin.H{
+		"list": repairs,
+	})
 }
 
 func (a *assetController) QueryLost(ctx *gin.Context) {

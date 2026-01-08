@@ -4,7 +4,7 @@ type Department struct {
 	DepartmentId   int64  `gorm:"primaryKey;autoIncrement" json:"departmentId"`
 	DepartmentName string `json:"departmentName"`
 	StoreId        int64  `json:"storeId"`
-	StoreName      string `json:"storeName"`
+	StoreName      string `gorm:"column:store_name;->" json:"storeName"`
 }
 
 type QueryDepartmentsParams struct {
@@ -18,7 +18,7 @@ type QueryDepartmentsParams struct {
 }
 
 type AssetType struct {
-	TypeId   int64  `gorm:"primaryKey" json:"typeId"`
+	TypeId   int64  `gorm:"primaryKey;autoIncrement" json:"typeId"`
 	TypeName string `json:"typeName"`
 }
 

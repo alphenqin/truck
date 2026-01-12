@@ -1,6 +1,5 @@
 import { FC, memo, useState } from 'react';
-import { useTheme } from '@/hooks/useTheme.ts';
-import { Footer, ThemeBar } from '@/components/index';
+import { Footer } from '@/components/index';
 import { Button, Form, Input, message } from 'antd';
 import { EyeInvisibleOutlined, EyeTwoTone, UserOutlined } from '@ant-design/icons';
 import { getUserMenusRequest, LoginParamsType, loginRequest } from '@/service';
@@ -9,7 +8,6 @@ import { changeAllInterfaceDic, changeMenus, changeToken, changeUserInfo } from 
 import { useAppDispatch } from '@/store';
 import { sleep } from '@/utils';
 import Logo from '@/assets/image/logo.svg';
-import classNames from 'classnames';
 import { constants } from '@/constant';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,7 +16,6 @@ const Login: FC = () => {
   const [loading, setLoading] = useState(false); // 登录按钮加载状态
   const dispatch = useAppDispatch(); // Redux 派发器
   const [formRef] = Form.useForm(); // Ant Design 表单实例
-  const { themeMode } = useTheme(); // 当前主题（暗/亮）
 
   // 默认表单初始值（仅供测试，生产可删）
   const form: FieldType = {
@@ -62,45 +59,18 @@ const Login: FC = () => {
     <div className='min-h-screen flex flex-col select-none'>
       {/* 主登录区域 */}
       <div
-        className={classNames(
-          'relative w-full flex flex-1 items-center justify-center overflow-hidden tran',
-          {
-            'bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100': themeMode === 'light',
-            'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950': themeMode === 'dark',
-          },
-        )}
+        className='relative w-full flex flex-1 items-center justify-center overflow-hidden tran bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100'
       >
-        {/* 顶部主题切换 */}
-        <div className='absolute top-0 left-0 right-0 z-10 flex justify-end p-6'>
-          <ThemeBar />
-        </div>
-
         {/* 背景装饰 - 优化后的渐变球 */}
         <div className='pointer-events-none absolute -top-32 -right-32 h-80 w-80 rounded-full bg-blue-400/20 blur-[100px]' />
         <div className='pointer-events-none absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-indigo-400/15 blur-[120px]' />
         <div className='pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-gradient-to-r from-blue-500/5 to-teal-500/5 blur-[80px]' />
 
         {/* 登录卡片 */}
-        <div
-          className={classNames(
-            'relative z-10 w-full max-w-[1000px] mx-6 overflow-hidden rounded-3xl border shadow-2xl',
-            {
-              'bg-white/95 border-slate-200/80 backdrop-blur-xl shadow-slate-200/50': themeMode === 'light',
-              'bg-slate-900/95 border-slate-700/50 backdrop-blur-xl shadow-black/40': themeMode === 'dark',
-            },
-          )}
-        >
+        <div className='relative z-10 w-full max-w-[1000px] mx-6 overflow-hidden rounded-3xl border shadow-2xl bg-white/95 border-slate-200/80 backdrop-blur-xl shadow-slate-200/50'>
           <div className='grid grid-cols-1 md:grid-cols-2'>
             {/* 左侧品牌区 - 使用主题色 */}
-            <div
-              className={classNames(
-                'hidden md:flex flex-col justify-between p-12 relative overflow-hidden',
-                {
-                  'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white': themeMode === 'light',
-                  'bg-gradient-to-br from-blue-900 via-slate-800 to-slate-900 text-white': themeMode === 'dark',
-                }
-              )}
-            >
+            <div className='hidden md:flex flex-col justify-between p-12 relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white'>
               {/* 装饰元素 */}
               <div className='absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl' />
               <div className='absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl' />

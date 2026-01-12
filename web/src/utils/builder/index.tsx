@@ -22,6 +22,7 @@ const About = lazy(() => import('@/pages/About'));
 
 // 我的
 const Asset = lazy(() => import('@/pages/Asset/index.tsx'));
+const AssetBind = lazy(() => import('@/pages/AssetBind/index.tsx'));
 const Garden = lazy(() => import('@/pages/SiteLibrary/Garden/index.tsx'));
 const Store = lazy(() => import('@/pages/SiteLibrary/Store/index.tsx'));
 const IoRecordLedger = lazy(() => import('@/pages/ioRecord/ledger/index'));
@@ -63,6 +64,7 @@ const pagesMap: Record<string, React.ReactNode | null> = {
   '/about': <About />,
 
   '/asset': <Asset />,
+  '/asset/bind': <AssetBind />,
   '/site/garden': <Garden />,
   '/site/store': <Store />,
   '/io-record/ledger': <IoRecordLedger/>,

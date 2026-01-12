@@ -11,7 +11,6 @@ import dayjs from 'dayjs';
 
 const Dashboard: FC = () => {
   const { menus } = useAppSelector((state) => state.UserStore);
-  const { themeMode } = useAppSelector((state) => state.UIStore);
   const { loading, totalOption, cpuUsageOption, allMenUsageOption, gitCommits, commitCount, gitCommitFrequency, navigateToPage } = useDashBoard();
 
   const cardStyle = 'app-card p-5 no-scrollbar w-full';
@@ -23,9 +22,9 @@ const Dashboard: FC = () => {
   ];
 
   const statCards = [
-    { chart: <ReactECharts option={totalOption} theme={themeMode} style={{ height: '120px', width: '100%' }} /> },
-    { chart: <ReactECharts option={cpuUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} /> },
-    { chart: <ReactECharts option={allMenUsageOption} theme={themeMode} style={{ height: '120px', width: '100%' }} /> },
+    { chart: <ReactECharts option={totalOption} theme='light' style={{ height: '120px', width: '100%' }} /> },
+    { chart: <ReactECharts option={cpuUsageOption} theme='light' style={{ height: '120px', width: '100%' }} /> },
+    { chart: <ReactECharts option={allMenUsageOption} theme='light' style={{ height: '120px', width: '100%' }} /> },
     {
       chart: (
         <div className='flex h-[120px] justify-center items-center gap-3'>
@@ -105,7 +104,7 @@ const Dashboard: FC = () => {
                 <span className='text-[var(--app-accent)] mr-2'>{commitCount}</span>
                 最近一年贡献
               </h3>
-              <ReactECharts option={gitCommitFrequency} theme={themeMode} style={{ width: '100%', height: '250px' }} />
+              <ReactECharts option={gitCommitFrequency} theme='light' style={{ width: '100%', height: '250px' }} />
             </div>
           </div>
         </Col>

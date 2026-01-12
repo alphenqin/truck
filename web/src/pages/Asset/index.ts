@@ -15,6 +15,7 @@ export interface TimeRange {
 
 // 查询参数接口
 export interface IQueryAssetParams extends IPage {
+  assetId?: number;
   assetCode?: string;
   storeId?: number;
 }

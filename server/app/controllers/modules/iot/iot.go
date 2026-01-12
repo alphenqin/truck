@@ -350,3 +350,29 @@ func (c iotController) GetInventoryDetails(context *gin.Context) {
 		"total": total,
 	})
 }
+
+func (c iotController) GetInventoryStatusTrend(context *gin.Context) {
+	var trendItems []iotResponsiesModules.InventoryStatusTrendItem
+	query := `
+		SELECT
+			DATE_FORMAT(r.inventory_time, '%Y-%m-%d %H:00') AS time,
+			r.inventory_status AS inventory_status,
+			IFNULL(a.asset_type, 0) AS asset_type,
+			COUNT(*) AS count
+		FROM inventory_records r
+		LEFT JOIN asset a ON r.asset_id = a.asset_id
+		WHERE r.inventory_time >= DATE_SUB(NOW(), INTERVAL 12 HOUR)
+		GROUP BY time, inventory_status, asset_type
+		ORDER BY time ASC, inventory_status ASC, asset_type ASC
+	`
+
+	if err := db.GormDB.Raw(query).Scan(&trendItems).Error; err != nil {
+		utils.Log.Error("查询盘点状态趋势失败", "error", err)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
+		return
+	}
+
+	utils.Response.Success(context, gin.H{
+		"list": trendItems,
+	})
+}

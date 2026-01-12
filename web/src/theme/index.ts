@@ -1,13 +1,11 @@
-import { MenuTheme, theme, ThemeConfig } from 'antd';
-import { useAppSelector } from '@/store';
+import { theme, ThemeConfig } from 'antd';
 import { Monaco } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import IStandaloneThemeData = editor.IStandaloneThemeData;
 
 export const useTheme: () => [ThemeConfig] = () => {
-  const { themeMode } = useAppSelector((state) => state.UIStore);
-  const isDark = themeMode === 'dark';
-  const algorithm = themeMode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  const isDark = false;
+  const algorithm = theme.defaultAlgorithm;
   
   // 统一的主色调
   const primaryColor = isDark ? '#3b82f6' : '#2563eb';
@@ -152,8 +150,8 @@ export const useTheme: () => [ThemeConfig] = () => {
   ];
 };
 
-export function defineMonacoTheme(monaco: Monaco, themeMode: MenuTheme | undefined) {
-  monaco.editor.defineTheme('naruto', themeMode === 'dark' ? monacoDarkTheme : monacoLightTheme);
+export function defineMonacoTheme(monaco: Monaco) {
+  monaco.editor.defineTheme('naruto', monacoLightTheme);
 }
 
 export const monacoLightTheme: IStandaloneThemeData = {
@@ -172,23 +170,5 @@ export const monacoLightTheme: IStandaloneThemeData = {
     'editorCursor.foreground': '#d4b886', // 焦点颜色
     'editor.lineHighlightBackground': '#00000000', // 焦点所在的一行的背景颜色
     'editorLineNumber.foreground': '#008800', // 行号字体颜色
-  },
-};
-
-export const monacoDarkTheme: IStandaloneThemeData = {
-  base: 'vs-dark', // 使用vs-dark作为基础主题
-  inherit: true,
-  rules: [
-    { token: 'identifier', foreground: '#819ee9' }, // 修改标识符颜色为黄色
-    { token: 'number', foreground: '#6bbeeb' }, // 数字颜色保持不变
-    { token: 'keyword', foreground: '#ff79c6' }, // 修改关键字颜色为粉色
-  ],
-  colors: {
-    'scrollbarSlider.background': '#819ee9', // 修改滚动条滑块背景颜色
-    'editor.foreground': '#819ee9', // 修改字体颜色为灰白色
-    'editor.background': '#1e1f33', // 修改背景颜色为深灰色
-    'editorCursor.foreground': '#bbbbbb', // 修改光标颜色为浅灰色
-    'editor.lineHighlightBackground': '#00000000', // 修改焦点行背景颜色为深灰色
-    'editorLineNumber.foreground': '#819ee9', // 修改行号颜色为灰色
   },
 };

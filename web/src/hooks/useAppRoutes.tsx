@@ -52,6 +52,8 @@ export const useAppRouter = () => {
     setIsLoading(false);
   }, [menus, pathname, navigate]);
 
+  const routesElement = useRoutes(routesWithMenus);
+
   // 如果正在加载且不是登录页，显示加载状态
   if (isLoading && pathname !== constants.routePath.login) {
     return {
@@ -65,6 +67,6 @@ export const useAppRouter = () => {
 
   return {
     // 根据当前动态路由生成可用的路由元素（用于渲染）
-    element: useRoutes(routesWithMenus),
+    element: routesElement,
   };
 };

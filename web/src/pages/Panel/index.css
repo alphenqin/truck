@@ -92,6 +92,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .panel-card-title {
@@ -104,6 +106,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .panel-search {
@@ -113,6 +116,17 @@
 
 .panel-icon-btn {
   border-radius: 999px;
+}
+
+.panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 13px;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 12px;
+  background: #f8fafc;
 }
 
 @media (max-width: 768px) {

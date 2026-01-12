@@ -1,21 +1,17 @@
 import { FC, memo, Suspense, useEffect, useRef, useState } from 'react';
 import { useFullscreen } from 'ahooks';
 import { useMainPage } from '@/LayOut/hooks.tsx';
-import { useTheme } from '@/hooks/useTheme';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Image, Layout, Menu, Popover, Spin, Badge, Tooltip } from 'antd';
-import { AppBreadcrumb, ThemeBar } from '@/components';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { AppBreadcrumb } from '@/components';
+import { useAppSelector } from '@/store';
 import { 
   FullscreenOutlined, 
   FullscreenExitOutlined,
-  MenuFoldOutlined, 
-  MenuUnfoldOutlined, 
   BellOutlined,
   UserOutlined,
   LogoutOutlined
 } from '@ant-design/icons';
-import { changeFold } from '@/store/UIStore';
 import { cache } from '@/utils';
 import Logo from '@/assets/svg/logo.svg';
 import classNames from 'classnames';
@@ -23,21 +19,15 @@ import { constants } from '@/constant';
 import LoadingGIF from '@/assets/image/loading.gif';
 
 const Main: FC = () => {
-  const dispatch = useAppDispatch();
   const fullscreenRef = useRef();
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const { Sider, Header, Content, menus, onSelect, onOpenChange, navigateHome } = useMainPage();
-  const { defaultSelectedKeys, defaultOpenKeys, isFold } = useAppSelector((state) => state.UIStore);
-  const { themeMode } = useTheme();
+  const { defaultSelectedKeys, defaultOpenKeys } = useAppSelector((state) => state.UIStore);
   const navigate = useNavigate();
   const { userInfo } = useAppSelector((state) => state.UserStore);
   const [_, { toggleFullscreen }] = useFullscreen(fullscreenRef);
-
-  const changeFoldAction = () => {
-    dispatch(changeFold(!isFold));
-  };
 
   const handleFullscreen = () => {
     toggleFullscreen();
@@ -61,18 +51,14 @@ const Main: FC = () => {
     <Layout className='h-screen overflow-hidden select-none'>
       {/* 左侧菜单栏 */}
       <Sider 
-        width={260}
-        collapsedWidth={72}
-        theme={themeMode} 
+        width={200}
+        theme='light' 
         className='hidden md:block app-sider' 
         style={{ 
           height: '100vh',
           display: 'flex',
           flexDirection: 'column',
         }} 
-        trigger={null} 
-        collapsible 
-        collapsed={isFold}
       >
         {/* Logo 区域 */}
         <div
@@ -81,11 +67,11 @@ const Main: FC = () => {
         >
           <Image 
             src={Logo} 
-            width={isFold ? 32 : 28} 
+            width={28} 
             preview={false}
             className='tran-fast'
           />
-          {!isFold && <span className='brand-text'>工装车管理系统</span>}
+          <span className='brand-text'>工装车管理系统</span>
         </div>
 
         {/* 左侧菜单内容 */}
@@ -93,11 +79,11 @@ const Main: FC = () => {
           <Menu
             onSelect={onSelect}
             mode='inline'
-            theme={themeMode}
+            theme='light'
             items={menus}
             onOpenChange={onOpenChange}
             selectedKeys={defaultSelectedKeys}
-            openKeys={isFold ? [] : defaultOpenKeys}
+            openKeys={defaultOpenKeys}
             inlineIndent={20}
           />
         </div>
@@ -106,21 +92,9 @@ const Main: FC = () => {
       {/* 右侧主区域 */}
       <Layout className='flex flex-col min-h-0'>
         {/* 顶部导航栏 */}
-        <Header className='app-header flex items-center justify-between px-5 h-[60px] shrink-0'>
-          {/* 左侧：折叠按钮 + 面包屑 */}
+        <Header className='app-header flex items-center justify-between px-5 h-[52px] shrink-0'>
+          {/* 左侧：面包屑 */}
           <div className='flex items-center gap-4'>
-            <Tooltip title={isFold ? '展开菜单' : '收起菜单'}>
-              <div 
-                className='app-header-action press-scale' 
-                onClick={changeFoldAction}
-              >
-                {isFold ? (
-                  <MenuUnfoldOutlined className='text-lg' />
-                ) : (
-                  <MenuFoldOutlined className='text-lg' />
-                )}
-              </div>
-            </Tooltip>
             <AppBreadcrumb />
           </div>
 
@@ -176,11 +150,6 @@ const Main: FC = () => {
                 )}
               </div>
             </Tooltip>
-
-            {/* 主题切换 */}
-            <div className='px-2'>
-              <ThemeBar />
-            </div>
 
             {/* 用户信息 */}
             <Popover

@@ -8,7 +8,6 @@ type Asset struct {
 	AssetType int       `json:"assetType"`
 	Status    int       `json:"status"`
 	Quantity  int64     `json:"quantity"`
-	TagId     int64     `json:"tagId"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -34,6 +33,38 @@ type AssetVO struct {
 	TagId     int64  `json:"tagId"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
+}
+
+// AssetTag 资产-标签关系表 asset_tags
+type AssetTag struct {
+	ID      int64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	AssetId int64 `json:"assetId"`
+	TagId   int64 `json:"tagId"`
+}
+
+type AssetBindQueryParams struct {
+	AssetCode string `json:"assetCode"`
+	TagCode   string `json:"tagCode"`
+	Limit     int    `json:"limit"`
+	Offset    int    `json:"offset"`
+}
+
+type AssetBindResponse struct {
+	ID        int64  `json:"id"`
+	AssetId   int64  `json:"assetId"`
+	AssetCode string `json:"assetCode"`
+	TagId     int64  `json:"tagId"`
+	TagCode   string `json:"tagCode"`
+}
+
+type AssetBindCreateParams struct {
+	AssetCode string `json:"assetCode"`
+	TagCode   string `json:"tagCode"`
+}
+
+type AssetBindUpdateParams struct {
+	AssetCode string `json:"assetCode"`
+	TagCode   string `json:"tagCode"`
 }
 
 type UpdateAssetStatusParams struct {

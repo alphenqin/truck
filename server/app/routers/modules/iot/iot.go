@@ -37,4 +37,10 @@ func IotAuthRoutes(r *gin.RouterGroup) {
 		// 查 - 盘点详情
 		groupInventoryDetail.POST("/query", controllers.IotController.GetInventoryDetails)
 	}
+
+	groupInventoryRecords := r.Group("/iot/inventory-records")
+	{
+		// 查 - 近24小时盘点状态趋势
+		groupInventoryRecords.GET("/status-trend", controllers.IotController.GetInventoryStatusTrend)
+	}
 }

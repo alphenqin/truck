@@ -13,8 +13,16 @@ export interface IInventoryDetailResponse {
   assetId: number;
   assetCode: string;
   tagCode: string;
+  batteryLevel?: string;
   actionType: number;
   actionTime: string; // ISO 字符串
+}
+
+export interface IInventoryStatusTrendItem {
+  time: string;
+  inventoryStatus: number;
+  assetType: number;
+  count: number;
 }
 
 // 带总数的响应数据接口
@@ -34,5 +42,12 @@ export const getInventoryDetailRequest = (params: IQueryInventoryDetailParams) =
   return request.post<AxiosResponse<IHasTotalResponse<IInventoryDetailResponse[]>>>({
     url: '/iot/inventory-detail/query',
     data: params,
+  });
+};
+
+// 获取近24小时资产状态趋势
+export const getInventoryStatusTrend24hRequest = () => {
+  return request.get<AxiosResponse<{ list: IInventoryStatusTrendItem[] }>>({
+    url: '/iot/inventory-records/status-trend',
   });
 };

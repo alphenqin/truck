@@ -1,8 +1,7 @@
 import { Suspense, memo, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useAppSelector } from '@/store';
 import { ConfigProvider, Image, Spin, message } from 'antd';
 import { constants } from '@/constant';
-import { changeThemeMode } from '@/store/UIStore';
 import { useAppRouter } from '@/hooks/useAppRoutes.tsx';
 import 'dayjs/locale/zh-cn';
 import dayjs from 'dayjs';
@@ -16,12 +15,8 @@ dayjs.locale('zh-cn');
 const APP = () => {
   const [theme] = useTheme();
   const [api, contextHolder] = message.useMessage();
-  const { langMode, themeMode } = useAppSelector((state) => state.UIStore);
-  const dispatch = useAppDispatch();
+  const { langMode } = useAppSelector((state) => state.UIStore);
   const { element } = useAppRouter();
-  useEffect(() => {
-    dispatch(changeThemeMode(themeMode));
-  }, [dispatch, themeMode]);
 
   useEffect(() => {
     const bindEvent = (e: CustomEvent | any) => {

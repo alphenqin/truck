@@ -39,37 +39,8 @@
         --app-transition: 0s;
         --app-transition-slow: 0s;
 
-        --sider-width: 260px;
-        --sider-collapsed-width: 72px;
-        --header-height: 60px;
-    }
-
-    .dark {
-        --app-primary: #60a5fa;
-        --app-primary-light: #60a5fa;
-        --app-primary-dark: #60a5fa;
-
-        --app-bg: #0b0b0b;
-        --app-surface: #111827;
-        --app-surface-2: #1f2937;
-        --app-surface-elevated: #111827;
-
-        --app-border: #374151;
-        --app-border-strong: #4b5563;
-        --app-border-focus: #60a5fa;
-
-        --app-text: #f9fafb;
-        --app-text-secondary: #e5e7eb;
-        --app-muted: #9ca3af;
-
-        --app-accent: #60a5fa;
-        --app-accent-2: #60a5fa;
-        --app-accent-soft: #1f2937;
-
-        --app-shadow-sm: none;
-        --app-shadow: none;
-        --app-shadow-lg: none;
-        --app-shadow-xl: none;
+        --sider-width: 200px;
+        --header-height: 52px;
     }
 
     body {

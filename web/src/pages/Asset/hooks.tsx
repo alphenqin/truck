@@ -12,13 +12,13 @@ import {
   updateAssetStatus,
   getStoreMapRequest,
   StoreMap,
-  assetTypeMap,
   statusMap,
   getTagMapRequest,
   TagMap,
   getAssetRepairRecordsRequest,
   IAssetRepairRecord,
 } from './index.ts';
+import { getAssetTypesRequest, IAssetTypesResponse } from '@/pages/base/type/index.ts';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
 import dayjs from 'dayjs';
@@ -36,6 +36,8 @@ export const useAssetPageHooks = () => {
   const [editAssetModalOpen, setEditAssetModalOpen] = useState(false);
   const [storeMap, setStoreMap] = useState<StoreMap[]>([]);
   const [tagMap, setTagMap] = useState<TagMap[]>([]);
+  const [assetTypeOptions, setAssetTypeOptions] = useState<{ label: string; value: number }[]>([]);
+  const [assetTypeLabelMap, setAssetTypeLabelMap] = useState<Record<number, string>>({});
   const [updateLoading, setUpdateLoading] = useState(false);
   const [repairModalOpen, setRepairModalOpen] = useState(false);
   const [repairAssetId, setRepairAssetId] = useState<number | null>(null);
@@ -52,12 +54,30 @@ export const useAssetPageHooks = () => {
     });
   }, []);
 
-  // 获取标签映射
+  // 获取标签映射（用于详情展示）
   useEffect(() => {
     getTagMapRequest().then((res) => {
-      setTagMap(res.data);
+      setTagMap(res.data || []);
     });
   }, []);
+
+  // 获取资产类型（从表里读）
+  useEffect(() => {
+    getAssetTypesRequest({ limit: 999, offset: 0 }).then((res) => {
+      const list = (res.data?.list || []) as IAssetTypesResponse[];
+      const options = list.map((item) => ({
+        label: item.typeName,
+        value: item.typeId,
+      }));
+      const map: Record<number, string> = {};
+      list.forEach((item) => {
+        map[item.typeId] = item.typeName;
+      });
+      setAssetTypeOptions(options);
+      setAssetTypeLabelMap(map);
+    });
+  }, []);
+
 
   const searchConfig: { label: string; name: keyof IQueryAssetParams; component: ReactNode }[] = [
     {
@@ -116,9 +136,24 @@ export const useAssetPageHooks = () => {
   };
 
   const editAssetAction = async (row: IAssetResponse) => {
-    setCurrentEditAsset(row);
     setIsEdit(true);
+    setCurrentEditAsset(undefined);
+    formRef.resetFields();
     setEditAssetModalOpen(true);
+    getAssetRequest({ limit: 1, offset: 0, assetId: row.assetId } as IQueryAssetParams)
+      .then((res) => {
+        const asset = res?.data?.list?.[0];
+        if (asset) {
+          setCurrentEditAsset(asset);
+        } else {
+          message.error('获取资产详情失败');
+          setEditAssetModalOpen(false);
+        }
+      })
+      .catch(() => {
+        message.error('获取资产详情失败');
+        setEditAssetModalOpen(false);
+      });
   };
 
   const onFinish = () => {
@@ -127,7 +162,6 @@ export const useAssetPageHooks = () => {
       const params = {
         ...values,
         quantity: Number(values.quantity),
-        tagId: Number(values.tagId),
       };
 
       // 编辑
@@ -174,6 +208,18 @@ export const useAssetPageHooks = () => {
     setRepairAssetId(assetId);
     setRepairReason('');
     setRepairModalOpen(true);
+    setRepairRecords([]);
+    setRepairRecordsLoading(true);
+    getAssetRepairRecordsRequest(assetId)
+      .then((res) => {
+        setRepairRecords(res.data.list || []);
+      })
+      .catch(() => {
+        message.error('获取报修记录失败');
+      })
+      .finally(() => {
+        setRepairRecordsLoading(false);
+      });
   };
 
   const submitRepair = async () => {
@@ -189,10 +235,22 @@ export const useAssetPageHooks = () => {
   };
 
   const openDetailModal = (row: IAssetResponse) => {
-    setDetailAsset(row);
     setDetailModalOpen(true);
+    setDetailAsset(null);
     setRepairRecords([]);
     setRepairRecordsLoading(true);
+    getAssetRequest({ limit: 1, offset: 0, assetId: row.assetId } as IQueryAssetParams)
+      .then((res) => {
+        const asset = res?.data?.list?.[0];
+        if (asset) {
+          setDetailAsset(asset);
+        } else {
+          message.error('获取资产详情失败');
+        }
+      })
+      .catch(() => {
+        message.error('获取资产详情失败');
+      });
     getAssetRepairRecordsRequest(row.assetId)
       .then((res) => {
         setRepairRecords(res.data.list || []);
@@ -216,7 +274,7 @@ export const useAssetPageHooks = () => {
         title: '资产类型',
         dataIndex: 'assetType',
         key: 'assetType',
-        render: (type: number) => assetTypeMap[type] || '-',
+        render: (type: number) => assetTypeLabelMap[type] || '-',
     },
     
     {
@@ -233,37 +291,13 @@ export const useAssetPageHooks = () => {
     },
     
     {
-        title: '标签编码',
-        dataIndex: 'tagId',
-        key: 'tagCode',
-        render: (tagId: number) => {
-          const tag = tagMap.find((t) => Number(t.id) === tagId);
-          return tag?.tagCode || '未设置';
-        },
-    },
-    
-    {
-        title: '场库名称',
+        title: '所在场库',
         dataIndex: 'storeId',
         key: 'storeName',
         render: (storeId: number) => {
           const store = storeMap.find((s) => s.storeId === storeId);
           return store?.storeName || '未设置';
         },
-    },
-    
-    {
-        title: '创建时间',
-        dataIndex: 'createdAt',
-        key: 'createdAt',
-        render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm:ss'),
-    },
-    
-    {
-        title: '更新时间',
-        dataIndex: 'updatedAt',
-        key: 'updatedAt',
-        render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm:ss'),
     },
     
     {
@@ -291,10 +325,10 @@ export const useAssetPageHooks = () => {
   ];
 
   useEffect(() => {
-    if (editAssetModalOpen && isEdit) {
+    if (editAssetModalOpen && isEdit && currentEditAsset) {
       formRef.setFieldsValue(currentEditAsset);
     }
-  }, [editAssetModalOpen]);
+  }, [editAssetModalOpen, isEdit, currentEditAsset]);
 
   useEffect(() => {
     getPageData();
@@ -320,7 +354,6 @@ export const useAssetPageHooks = () => {
       }
     },
     onFinish,
-    tagMap,
     repairModalOpen,
     setRepairModalOpen,
     repairReason,
@@ -330,6 +363,9 @@ export const useAssetPageHooks = () => {
     detailModalOpen,
     detailAsset,
     storeMap,
+    tagMap,
+    assetTypeOptions,
+    assetTypeLabelMap,
     repairRecords,
     repairRecordsLoading,
     setDetailModalOpen: (open: boolean) => {

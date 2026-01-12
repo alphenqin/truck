@@ -1,7 +1,7 @@
 import React, { FC, memo } from 'react';
 import { useAssetPageHooks } from './hooks'
 import { Descriptions, DescriptionsProps, Form, Input, Modal, Pagination, Table, Select } from 'antd';
-import { IUpdateAssetParams, assetTypeMap, statusMap } from './index.ts';
+import { IUpdateAssetParams, statusMap } from './index.ts';
 import dayjs from 'dayjs';
 
 const AssetPage: FC = () => {
@@ -20,7 +20,6 @@ const AssetPage: FC = () => {
     setSelected,
     setEditAssetModalOpen,
     onFinish,
-    tagMap,
     repairModalOpen,
     setRepairModalOpen,
     repairReason,
@@ -30,16 +29,13 @@ const AssetPage: FC = () => {
     detailModalOpen,
     detailAsset,
     storeMap,
+    tagMap,
+    assetTypeOptions,
+    assetTypeLabelMap,
     repairRecords,
     repairRecordsLoading,
     setDetailModalOpen,
   } = useAssetPageHooks();
-
-// 资产类型选项
-const assetTypeOptions = Object.entries(assetTypeMap).map(([value, label]) => ({
-  label,
-  value: parseInt(value, 10),
-}));
 
 // 资产状态选项
 const statusOptions = Object.entries(statusMap).map(([value, label]) => ({
@@ -48,27 +44,21 @@ const statusOptions = Object.entries(statusMap).map(([value, label]) => ({
 }));
 
   // 标签选项
-  const tagOptions = tagMap.map((tag) => ({
-    label: tag.tagCode,
-    value: tag.id,
-  }));
-
   const detailStore = storeMap.find((store) => store.storeId === detailAsset?.storeId);
-  const detailTag = tagMap.find((tag) => Number(tag.id) === detailAsset?.tagId);
+  const detailTag = tagMap.find((tag) => Number(tag.id) === Number(detailAsset?.tagId));
   const latestRepair = repairRecords[0];
   const repairReasonText = repairRecordsLoading ? '加载中...' : latestRepair?.repairReason || '无';
   const detailItems: DescriptionsProps['items'] = detailAsset
     ? [
         { key: 'assetId', label: '资产ID', children: detailAsset.assetId },
         { key: 'assetCode', label: '资产编码', children: detailAsset.assetCode },
-        { key: 'assetType', label: '资产类型', children: assetTypeMap[detailAsset.assetType] || '-' },
+        { key: 'assetType', label: '资产类型', children: assetTypeLabelMap[detailAsset.assetType] || '-' },
         { key: 'status', label: '资产状态', children: statusMap[detailAsset.status] || '-' },
         { key: 'repairReason', label: '报修原因', children: repairReasonText },
         { key: 'quantity', label: '数量', children: detailAsset.quantity },
-        { key: 'tagId', label: '标签ID', children: detailAsset.tagId },
-        { key: 'tagCode', label: '标签编码', children: detailTag?.tagCode || '未设置' },
         { key: 'storeId', label: '场库ID', children: detailAsset.storeId },
-        { key: 'storeName', label: '场库名称', children: detailStore?.storeName || '未设置' },
+        { key: 'storeName', label: '所在场库', children: detailStore?.storeName || '未设置' },
+        { key: 'tagCode', label: '标签编码', children: detailTag?.tagCode || '未设置' },
         { key: 'createdAt', label: '创建时间', children: dayjs(detailAsset.createdAt).format('YYYY-MM-DD HH:mm:ss') },
         { key: 'updatedAt', label: '更新时间', children: dayjs(detailAsset.updatedAt).format('YYYY-MM-DD HH:mm:ss') },
       ]
@@ -112,9 +102,6 @@ const statusOptions = Object.entries(statusMap).map(([value, label]) => ({
           <Form.Item<IUpdateAssetParams> name='quantity' label='数量' rules={[{ required: true, message: '请输入数量' }]}>
             <Input type="number" placeholder="请输入数量" />
           </Form.Item>
-          <Form.Item<IUpdateAssetParams> name='tagId' label='标签' rules={[{ required: true, message: '请选择标签' }]}>
-            <Select placeholder="请选择标签" options={tagOptions} />
-          </Form.Item>
         </Form>
       </Modal>
       <Modal
@@ -126,6 +113,23 @@ const statusOptions = Object.entries(statusMap).map(([value, label]) => ({
         cancelText="取消"
         confirmLoading={updateLoading}
       >
+        <div className="mb-3">
+          <div className="mb-2 font-medium">历史报修记录</div>
+          {repairRecordsLoading ? (
+            <div className="text-gray-400">加载中...</div>
+          ) : repairRecords.length === 0 ? (
+            <div className="text-gray-400">暂无报修记录</div>
+          ) : (
+            <div className="max-h-40 overflow-auto space-y-2">
+              {repairRecords.slice(0, 3).map((record) => (
+                <div key={record.id} className="rounded border border-gray-200 p-2 text-sm">
+                  <div className="text-gray-500">{dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss')}</div>
+                  <div className="mt-1 text-gray-700">{record.repairReason}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <Input.TextArea
           placeholder="请输入报修原因"
           value={repairReason}

@@ -40,8 +40,9 @@ export const useInventoryDetailPageHooks = () => {
   };
 
   const columns: TableProps<IInventoryDetailResponse>['columns'] = [
-    { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
+    { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode', render: (value?: string) => value || '-' },
     { title: '标签码', dataIndex: 'tagCode', key: 'tagCode' },
+    { title: '电量', dataIndex: 'batteryLevel', key: 'batteryLevel', render: (value?: string) => value || '-' },
     { title: '操作类型', dataIndex: 'actionType', key: 'actionType', render: (value: number) => actionTypeMap[value] || value },
     { title: '操作时间', dataIndex: 'actionTime', key: 'actionTime', render: (value: string) => value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-' },
   ];

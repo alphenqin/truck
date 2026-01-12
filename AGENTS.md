@@ -1,1 +1,1 @@
-数据库为cms,数据在 caab89565437   mysql:8.0        "docker-entrypoint.s…"   13 days ago   Up 2 days   0.0.0.0:3306->3306/tcp, [::]:3306->3306/tcp, 33060/tcp   mysql8
+数据库为cms,用户名root 密码123456数据在docker中的mysql8容器内

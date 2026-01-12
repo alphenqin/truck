@@ -92,6 +92,10 @@ export default defineConfig({
         '/src/styles/index.css',
       ],
     },
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
     proxy: {
       '/cms': {
         target: 'http://localhost:8081',

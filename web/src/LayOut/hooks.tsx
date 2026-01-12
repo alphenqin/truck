@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Layout, MenuProps } from 'antd';
 import { menuType } from '@/types/menus';
-import { Icon } from '@/components';
 import { useAppSelector } from '@/store';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getFirstMenu, getTheCurrentRoutePathAllMenuPath } from '@/utils';
@@ -67,7 +66,6 @@ export const useMainPage = () => {
 
 type returnType = {
   key: string;
-  icon: any;
   label: string;
   children?: returnType[];
 };
@@ -77,7 +75,6 @@ function getItem(menu: menuType[]): returnType[] {
   return menu?.map((item) => {
     return {
       key: item.pagePath,
-      icon: <Icon name={item.pageIcon as any} />,
       label: item.pageName,
       children: item.children && getItem(item.children),
     };

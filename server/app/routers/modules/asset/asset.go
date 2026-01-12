@@ -12,8 +12,14 @@ func AssetRoutes(r *gin.RouterGroup) {
 		groupAsset.PATCH("/update/:assetId", controllers.AssetController.UpdateAsset)
 		groupAsset.DELETE("/batch-delete", controllers.AssetController.DelAsset)
 		groupAsset.POST("/query", controllers.AssetController.GetAssets)
+		groupAsset.POST("/bind/query", controllers.AssetController.GetAssetBinds)
+		groupAsset.POST("/bind", controllers.AssetController.CreateAssetBind)
+		groupAsset.PATCH("/bind/:id", controllers.AssetController.UpdateAssetBind)
+		groupAsset.DELETE("/bind/:id", controllers.AssetController.DeleteAssetBind)
+		groupAsset.DELETE("/bind/batch-delete", controllers.AssetController.BatchDeleteAssetBind)
 
 		groupAsset.GET("/status", controllers.AssetController.GetStatus)
+		groupAsset.GET("/in-storage/distribution", controllers.AssetController.GetInStorageDistribution)
 		groupAsset.POST("/update/type", controllers.AssetController.UpdateType)
 		groupAsset.GET("/repairs/:assetId", controllers.AssetController.GetAssetRepairs)
 

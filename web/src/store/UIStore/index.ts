@@ -1,12 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { constants } from '@/constant';
-import { cache } from '@/utils';
-import { MenuTheme } from 'antd';
 
 interface IUIStore {
   isFold: boolean;
   langMode: 'enUS' | 'zhCN';
-  themeMode: MenuTheme | undefined;
   defaultSelectedKeys: string[];
   defaultOpenKeys: string[];
 }
@@ -16,7 +12,6 @@ const useUIStoreSlice = createSlice({
   initialState: {
     isFold: false,
     langMode: 'zhCN',
-    themeMode: 'light',
     defaultSelectedKeys: [],
     defaultOpenKeys: [],
   } as IUIStore,
@@ -29,16 +24,6 @@ const useUIStoreSlice = createSlice({
       state.langMode = action.payload;
     },
 
-    changeThemeMode(state, action: { payload: 'dark' | 'light' | undefined; type: string }) {
-      state.themeMode = action.payload;
-      if (action.payload === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      cache.set(constants.localStorage.lang, action.payload);
-    },
-
     changeDefaultOpenKeys(state, action: { payload: string[]; type: string }) {
       state.defaultOpenKeys = action.payload;
     },
@@ -49,11 +34,6 @@ const useUIStoreSlice = createSlice({
   },
 });
 
-export const {
-  changeFold,
-  changeLang,
-  changeThemeMode,
-  changeDefaultOpenKeys,
-  changeDefaultSelectedKeys,
-} = useUIStoreSlice.actions;
+export const { changeFold, changeLang, changeDefaultOpenKeys, changeDefaultSelectedKeys } =
+  useUIStoreSlice.actions;
 export default useUIStoreSlice.reducer;

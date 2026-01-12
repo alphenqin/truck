@@ -93,6 +93,14 @@ type InventoryRecord struct {
 	CreatedAt           time.Time  `json:"createdAt"`
 }
 
+// InventoryStatusTrendItem 近24小时资产状态趋势
+type InventoryStatusTrendItem struct {
+	Time            string `json:"time"`
+	InventoryStatus int    `json:"inventoryStatus"`
+	AssetType       int    `json:"assetType"`
+	Count           int64  `json:"count"`
+}
+
 // QueryInventoryRecordsParams 盘点记录查询参数
 type QueryInventoryRecordsParams struct {
 	TagCode        string    `json:"tagCode"`

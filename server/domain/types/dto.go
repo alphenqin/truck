@@ -149,7 +149,12 @@ type Group = assetResponsiesModules.Group
 type GroupVO = assetResponsiesModules.GroupVO
 type QueryGroupParams = assetResponsiesModules.QueryGroupParams
 type AssetGroup = assetResponsiesModules.AssetGroup
+type AssetTag = assetResponsiesModules.AssetTag
 type GroupStore = assetResponsiesModules.GroupStore
+type AssetBindQueryParams = assetResponsiesModules.AssetBindQueryParams
+type AssetBindResponse = assetResponsiesModules.AssetBindResponse
+type AssetBindCreateParams = assetResponsiesModules.AssetBindCreateParams
+type AssetBindUpdateParams = assetResponsiesModules.AssetBindUpdateParams
 
 // 异常流转
 

@@ -2,13 +2,13 @@ package tcpserver
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/Xi-Yuer/cms/domain/types"
 	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/support/utils"
 )
@@ -288,53 +288,74 @@ func saveRecordToDB(job recordJob) {
 	if err != nil {
 		t = time.Now()
 	}
+	assetId := resolveAssetIdByTagCode(job.uid)
 
 	switch gwType {
 	case 1: // 入库
-		record := types.IoRecord{
-			TagCode:    job.uid,
-			ActionType: 1,
-			ActionTime: &t,
+		record := map[string]interface{}{
+			"tag_code":    job.uid,
+			"asset_id":    assetId,
+			"action_type": 1,
+			"action_time": &t,
 		}
-		if err := db.GormDB.Create(&record).Error; err != nil {
-			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", record.TagCode, "actionType", record.ActionType)
+		if err := db.GormDB.Table("io_records").Create(&record).Error; err != nil {
+			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", job.uid, "actionType", 1)
 		} else {
-			utils.Log.Info("成功写入入库记录", "assetId", record.AssetId, "tagCode", record.TagCode)
+			utils.Log.Info("成功写入入库记录", "assetId", assetId, "tagCode", job.uid)
 		}
 
 	case 2: // 出库
-		record := types.IoRecord{
-			TagCode:    job.uid,
-			ActionType: 2,
-			ActionTime: &t,
+		record := map[string]interface{}{
+			"tag_code":    job.uid,
+			"asset_id":    assetId,
+			"action_type": 2,
+			"action_time": &t,
 		}
-		if err := db.GormDB.Create(&record).Error; err != nil {
-			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", record.TagCode, "actionType", record.ActionType)
+		if err := db.GormDB.Table("io_records").Create(&record).Error; err != nil {
+			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", job.uid, "actionType", 2)
 		} else {
-			utils.Log.Info("成功写入出库记录", "assetId", record.AssetId, "tagCode", record.TagCode)
+			utils.Log.Info("成功写入出库记录", "assetId", assetId, "tagCode", job.uid)
 		}
 
 	case 3: // 盘点
-		inventoryRecord := types.InventoryRecord{
-			TagCode:            job.uid,
-			InventoryTime:      t,
-			Rssi:               job.rssi,
-			AntennaNum:         job.antenna,
-			BatteryLevel:       job.batStr,
-			PcValue:            job.pcValue,
-			AdditionalCategory: job.additionalCategory,
-			InventoryStatus:    1, // 默认正常
-			CreatedAt:          time.Now(),
+		inventoryRecord := map[string]interface{}{
+			"tag_code":            job.uid,
+			"asset_id":            assetId,
+			"inventory_time":      t,
+			"rssi":                job.rssi,
+			"antenna_num":         job.antenna,
+			"battery_level":       job.batStr,
+			"pc_value":            job.pcValue,
+			"additional_category": job.additionalCategory,
+			"inventory_status":    1, // 默认正常
+			"created_at":          time.Now(),
 		}
-		if err := db.GormDB.Create(&inventoryRecord).Error; err != nil {
-			utils.Log.Error("写入InventoryRecord失败", "error", err, "uid", job.uid, "tagCode", inventoryRecord.TagCode)
+		if err := db.GormDB.Table("inventory_records").Create(&inventoryRecord).Error; err != nil {
+			utils.Log.Error("写入InventoryRecord失败", "error", err, "uid", job.uid, "tagCode", job.uid)
 		} else {
-			utils.Log.Info("成功写入盘点记录", "assetId", inventoryRecord.AssetId, "tagCode", inventoryRecord.TagCode)
+			utils.Log.Info("成功写入盘点记录", "assetId", assetId, "tagCode", job.uid)
 		}
 
 	default:
 		return
 	}
+}
+
+func resolveAssetIdByTagCode(tagCode string) interface{} {
+	var assetId sql.NullInt64
+	if err := db.GormDB.Table("rfid_tags").
+		Select("asset_tags.asset_id").
+		Joins("JOIN asset_tags ON asset_tags.tag_id = rfid_tags.id").
+		Where("rfid_tags.tag_code = ?", tagCode).
+		Limit(1).
+		Scan(&assetId).Error; err != nil {
+		utils.Log.Warn("查询资产关联失败", "error", err, "tagCode", tagCode)
+		return nil
+	}
+	if !assetId.Valid {
+		return nil
+	}
+	return assetId.Int64
 }
 
 // --------------------
@@ -348,4 +369,3 @@ func handle9100(conn net.Conn, data []byte) {
 func handle9200(conn net.Conn, data []byte) {
 	// TODO: 在这里实现 127.0.0.1:9200 的协议解析 / 入库 / 回 ACK
 }
-

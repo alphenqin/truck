@@ -214,11 +214,15 @@ const PanelPage: React.FC = () => {
       min: 0,
     },
     label: false,
-    tooltip: true,
-    interaction: {
-      tooltip: {
-        shared: true,
-      },
+    tooltip: {
+      items: [
+        (datum) => {
+          return {
+            name: datum.status,
+            value: datum.count,
+          };
+        },
+      ],
     },
     legend: { position: 'top-right' },
     height: 220,
@@ -232,9 +236,15 @@ const PanelPage: React.FC = () => {
     radius: 0.9,
     innerRadius: 0.55,
     label: false,
-    tooltip: true,
-    interaction: {
-      tooltip: {},
+    tooltip: {
+      items: [
+        (datum) => {
+          return {
+            name: `${datum.store}`,
+            value: datum.count,
+          };
+        },
+      ],
     },
     legend: { position: 'bottom' },
     height: 220,
@@ -265,11 +275,15 @@ const PanelPage: React.FC = () => {
       max: 24, // 假设时间范围是0-24小时
     },
     label: false,
-    tooltip: true,
-    interaction: {
-      tooltip: {
-        shared: true,
-      },
+    tooltip: {
+      items: [
+        (datum) => {
+          return {
+            name: `${datum.asset} (${datum.type})`,
+            value: `停留时间: ${datum.startTime}:00 - ${datum.endTime}:00`,
+          };
+        },
+      ],
     },
     legend: false,
     height: 220,
@@ -295,11 +309,15 @@ const PanelPage: React.FC = () => {
       radiusTopLeft: 10,
       radiusTopRight: 10,
     },
-    tooltip: true,
-    interaction: {
-      tooltip: {
-        shared: true,
-      },
+    tooltip: {
+      items: [
+        (datum) => {
+          return {
+            name: `时间: ${datum.time}`,
+            value: datum.count,
+          };
+        },
+      ],
     },
     height: 220,
     color: '#ef4444',
@@ -322,10 +340,15 @@ const PanelPage: React.FC = () => {
       shapeField: 'circle',
       sizeField: 4,
     },
-    interaction: {
-      tooltip: {
-        marker: false,
-      },
+    tooltip: {
+      items: [
+        (datum) => {
+          return {
+            name: `${datum.statusType}`,
+            value: datum.value,
+          };
+        },
+      ],
     },
     style: {
       lineWidth: 2, // 线宽
@@ -384,11 +407,15 @@ const PanelPage: React.FC = () => {
       min: 0,
     },
     label: false,
-    tooltip: true,
-    interaction: {
-      tooltip: {
-        shared: true,
-      },
+    tooltip: {
+      items: [
+        (datum) => {
+          return {
+            name: datum.type,
+            value: datum.count,
+          };
+        },
+      ],
     },
     legend: false,
     height: 220,

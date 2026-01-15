@@ -75,3 +75,31 @@ export const getGitCommitCountRequest = () => {
     url: '/log/commits/count',
   });
 };
+
+export interface ISystemLogItem {
+  id: string;
+  level: string;
+  message: string;
+  timestamp: string;
+  user?: string;
+  ip?: string;
+}
+
+export interface ISystemLogsResponse {
+  list: ISystemLogItem[];
+  total: number;
+}
+
+export const getSystemLogsRequest = (params?: {
+  page?: number;
+  limit?: number;
+  level?: string;
+  search?: string;
+  startTime?: string;
+  endTime?: string;
+}) => {
+  return request.post<AxiosResponse<ISystemLogsResponse>>({
+    url: '/log/system',
+    data: params || {},
+  });
+};

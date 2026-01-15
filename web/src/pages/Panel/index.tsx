@@ -1,68 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Row, Col, Card, Modal, Button, Input } from 'antd';
+import { Row, Col, Card, Modal, Button, Input, InputNumber } from 'antd';
 import { FullscreenOutlined } from '@ant-design/icons';
 import { Column, Bar, Line, Pie } from '@ant-design/plots';
 import dayjs from 'dayjs';
 import { getInventoryStatusTrend24hRequest, IInventoryStatusTrendItem } from '@/service/api/inventory';
-import { getAssetStatusStatisticsRequest, getInStorageDistributionRequest } from '@/service/api/asset';
+import { getAssetStatusStatisticsRequest, getInStorageDistributionRequest, getLostStatsRequest } from '@/service/api/asset';
+import { getIoRecordFlowStatsRequest, actionTypeMap, getAssetStayRequest } from '@/service/api/ioRecord';
 import './index.css';
 
-// 资产状态图表 mock 数据
-const assetStatusColumnData = [
-  { status: '正常在库', type: '工装车', count: 8 },
-  { status: '正常在库', type: '牵引车', count: 5 },
-  { status: '正常出库', type: '工装车', count: 3 },
-  { status: '正常出库', type: '牵引车', count: 2 },
-  { status: '异常待修', type: '工装车', count: 1 },
-  { status: '异常待修', type: '牵引车', count: 1 },
-  { status: '维修中', type: '工装车', count: 2 },
-  { status: '维修中', type: '牵引车', count: 1 },
-  { status: '报废', type: '工装车', count: 1 },
-  { status: '报废', type: '牵引车', count: 0 },
-  { status: '呆滞', type: '工装车', count: 1 },
-  { status: '呆滞', type: '牵引车', count: 0 },
-  { status: '疑似丢失', type: '工装车', count: 0 },
-  { status: '疑似丢失', type: '牵引车', count: 1 },
-];
+const emptyAssetStatusData = () =>
+  Object.values(inventoryStatusMap).map((status) => ({
+    status,
+    count: 0,
+  }));
+const assetStayHours = 24;
 
-// 资产停留分布 Bar 图 mock 数据
-// 模拟单个工装车/牵引车在特定地点停留的时间段
-const assetStayBarData = [
-  { asset: '工装车-A001', location: '12号库', type: '工装车', startTime: 8, endTime: 12 },
-  { asset: '工装车-A001', location: '大门A', type: '工装车', startTime: 13, endTime: 13.5 },
-  { asset: '牵引车-B002', location: '14号库', type: '牵引车', startTime: 9, endTime: 11 },
-  { asset: '牵引车-B002', location: '大门B', type: '牵引车', startTime: 11.5, endTime: 12 },
-  { asset: '工装车-A003', location: '12号库', type: '工装车', startTime: 10, endTime: 14 },
-  { asset: '牵引车-B004', location: '维修车间', type: '牵引车', startTime: 14, endTime: 16 },
-];
-
-// 疑似丢失统计 mock 数据（近 24 小时）
-const lostStatsColumnData = [
-  { time: '1h', count: 2 },
-  { time: '2h', count: 3 },
-  { time: '3h', count: 1 },
-  { time: '4h', count: 0 },
-  { time: '5h', count: 1 },
-  { time: '6h', count: 2 },
-  { time: '7h', count: 0 },
-  { time: '8h', count: 1 },
-  { time: '9h', count: 2 },
-  { time: '10h', count: 1 },
-  { time: '11h', count: 0 },
-  { time: '12h', count: 2 },
-  { time: '13h', count: 1 },
-  { time: '14h', count: 3 },
-  { time: '15h', count: 2 },
-  { time: '16h', count: 1 },
-  { time: '17h', count: 0 },
-  { time: '18h', count: 2 },
-  { time: '19h', count: 1 },
-  { time: '20h', count: 0 },
-  { time: '21h', count: 1 },
-  { time: '22h', count: 2 },
-  { time: '23h', count: 1 },
-  { time: '24h', count: 0 },
-];
+const buildEmptyLostStats = (hours = 24) =>
+  Array.from({ length: hours }, (_, idx) => ({ time: `${hours - idx}h`, count: 0 }));
 
 const inventoryStatusMap: Record<number, string> = {
   1: '正常在库',
@@ -87,15 +41,10 @@ const statusColorDomain = Object.keys(statusColorMap);
 const statusColorRange = statusColorDomain.map((key) => statusColorMap[key]);
 
 
-// 流转分析 mock 数据
-const circulationAnalysisData = [
-  { type: '入库', count: 10, gateway: 'GW001' },
-  { type: '出库', count: 5, gateway: 'GW001' },
-  { type: '入库', count: 8, gateway: 'GW002' },
-  { type: '出库', count: 7, gateway: 'GW002' },
-  { type: '入库', count: 12, gateway: 'GW003' },
-  { type: '出库', count: 6, gateway: 'GW003' },
-];
+const buildEmptyCirculation = () => ([
+  { type: '入库', count: 0 },
+  { type: '出库', count: 0 },
+]);
 
 const PanelPage: React.FC = () => {
   // 控制模态框的显示与隐藏
@@ -107,13 +56,17 @@ const PanelPage: React.FC = () => {
 
   // 搜索框状态
   const [searchTermAssetStay, setSearchTermAssetStay] = useState('');
-  const [searchTermCirculation, setSearchTermCirculation] = useState('');
   const [assetStatusTrendData, setAssetStatusTrendData] = useState<{ time: string; statusType: string; value: number }[]>([]);
   const [assetStatusTrendLoading, setAssetStatusTrendLoading] = useState(false);
-  const [assetStatusData, setAssetStatusData] = useState<{ status: string; count: number }[]>([]);
+  const [assetStatusData, setAssetStatusData] = useState<{ status: string; count: number }[]>(emptyAssetStatusData());
   const [assetStatusLoading, setAssetStatusLoading] = useState(false);
   const [inStorageData, setInStorageData] = useState<{ store: string; count: number }[]>([]);
   const [inStorageLoading, setInStorageLoading] = useState(false);
+  const [lostStatsData, setLostStatsData] = useState<{ time: string; count: number }[]>(buildEmptyLostStats());
+  const [circulationAnalysisData, setCirculationAnalysisData] = useState<{ type: string; count: number }[]>(buildEmptyCirculation());
+  const [circulationHoursInput, setCirculationHoursInput] = useState<number>(24);
+  const [circulationHours, setCirculationHours] = useState<number>(24);
+  const [assetStayData, setAssetStayData] = useState<{ asset: string; location: string; type: string; startTime: number; endTime: number }[]>([]);
 
   useEffect(() => {
     const fetchTrend = async () => {
@@ -182,19 +135,71 @@ const PanelPage: React.FC = () => {
       }
     };
 
+    const fetchLostStats = async () => {
+      const res: any = await getLostStatsRequest(24);
+      const list = res?.data?.list || res?.data?.data?.list || [];
+      if (!list.length) {
+        setLostStatsData(buildEmptyLostStats());
+        return;
+      }
+      const data = list.map((item: { time: string; count: number }) => ({
+        time: item.time,
+        count: Number(item.count || 0),
+      }));
+      setLostStatsData(data);
+    };
+
+    const fetchAssetStay = async () => {
+      const res: any = await getAssetStayRequest(assetStayHours, 200, searchTermAssetStay || undefined);
+      const list = res?.data?.list || res?.data?.data?.list || [];
+      setAssetStayData(
+        list.map((item: { asset: string; location: string; type: string; startTime: number; endTime: number }) => ({
+          asset: item.asset,
+          location: item.location,
+          type: item.type,
+          startTime: Number(item.startTime || 0),
+          endTime: Number(item.endTime || 0),
+        }))
+      );
+    };
+
     fetchStatus();
     fetchInStorage();
-  }, []);
+    fetchLostStats();
+    fetchAssetStay();
+  }, [searchTermAssetStay]);
+
+  useEffect(() => {
+    const fetchCirculation = async () => {
+      const res: any = await getIoRecordFlowStatsRequest(circulationHours);
+      const list = res?.data?.list || res?.data?.data?.list || [];
+      if (!list.length) {
+        setCirculationAnalysisData(buildEmptyCirculation());
+        return;
+      }
+      const map = new Map<string, number>();
+      list.forEach((item: { actionType: number; count: number }) => {
+        const label = actionTypeMap[item.actionType] || String(item.actionType);
+        map.set(label, Number(item.count || 0));
+      });
+      setCirculationAnalysisData([
+        { type: '入库', count: map.get('入库') || 0 },
+        { type: '出库', count: map.get('出库') || 0 },
+      ]);
+    };
+
+    fetchCirculation();
+  }, [circulationHours]);
 
   // KPI 统计
   const kpiStats = useMemo(() => {
-    const totalAssets = assetStatusColumnData.reduce((sum, item) => sum + item.count, 0);
-    const inStorage = assetStatusColumnData
+    const totalAssets = assetStatusData.reduce((sum, item) => sum + item.count, 0);
+    const inStorage = assetStatusData
       .filter((item) => item.status.includes('在库'))
       .reduce((sum, item) => sum + item.count, 0);
-    const lostTotal = lostStatsColumnData.reduce((sum, item) => sum + item.count, 0);
+    const lostTotal = lostStatsData.reduce((sum, item) => sum + item.count, 0);
     return { totalAssets, inStorage, lostTotal };
-  }, []);
+  }, [assetStatusData, lostStatsData]);
 
   // "资产状态" Column 图表配置
   const assetStatusColumnConfig = useMemo(() => ({
@@ -252,8 +257,8 @@ const PanelPage: React.FC = () => {
 
   // 过滤后的资产停留分布数据
   const filteredAssetStayData = useMemo(() => (
-    assetStayBarData.filter((item) => item.asset.includes(searchTermAssetStay))
-  ), [searchTermAssetStay]);
+    assetStayData
+  ), [assetStayData]);
 
   // "资产停留分布" Bar 图表配置
   const assetStayBarConfig = useMemo(() => ({
@@ -272,7 +277,7 @@ const PanelPage: React.FC = () => {
       title: null,
       label: { autoRotate: true },
       min: 0,
-      max: 24, // 假设时间范围是0-24小时
+      max: assetStayHours,
     },
     label: false,
     tooltip: {
@@ -291,7 +296,7 @@ const PanelPage: React.FC = () => {
 
   // "疑似丢失统计" Column 图表配置
   const lostStatsColumnConfig = useMemo(() => ({
-    data: lostStatsColumnData,
+    data: lostStatsData,
     xField: 'time', // X轴为时间间隔
     yField: 'count', // Y轴为数量
     axis: {
@@ -321,7 +326,7 @@ const PanelPage: React.FC = () => {
     },
     height: 220,
     color: '#ef4444',
-  }), []);
+  }), [lostStatsData]);
 
   // "资产状态趋势" Line 图表配置
   const assetStatusTrendConfig = useMemo(() => ({
@@ -369,26 +374,9 @@ const PanelPage: React.FC = () => {
     height: 220,
   }), [assetStatusTrendData]);
 
-  // 聚合流转分析数据
-  const getAggregatedCirculationData = (data: typeof circulationAnalysisData) => {
-    const filteredData = data.filter(item => item.gateway.includes(searchTermCirculation));
-    const aggregated: { [key: string]: number } = { '入库': 0, '出库': 0 };
-    filteredData.forEach(item => {
-      aggregated[item.type] += item.count;
-    });
-    return Object.keys(aggregated).map(type => ({
-      type,
-      count: aggregated[type],
-    }));
-  };
-  const aggregatedCirculationData = useMemo(
-    () => getAggregatedCirculationData(circulationAnalysisData),
-    [searchTermCirculation]
-  );
-
   // "流转分析" Column 图表配置
   const circulationAnalysisConfig = useMemo(() => ({
-    data: aggregatedCirculationData,
+    data: circulationAnalysisData,
     xField: 'type',
     yField: 'count',
     colorField: 'type',
@@ -420,7 +408,7 @@ const PanelPage: React.FC = () => {
     legend: false,
     height: 220,
     color: ['#22c55e', '#ef4444'],
-  }), [aggregatedCirculationData]);
+  }), [circulationAnalysisData]);
 
   // 处理放大按钮点击事件
   const handleMaximize = (title: string, chartConfig: any, chartType: string) => {
@@ -466,19 +454,33 @@ const PanelPage: React.FC = () => {
         <div className="panel-card-actions">
           {showSearch === 'assetStay' && (
             <Input.Search
-              placeholder="搜索资产编号"
-              onChange={(e) => setSearchTermAssetStay(e.target.value)}
+              placeholder="资产编号"
+              onSearch={(value) => setSearchTermAssetStay(value.trim())}
+              onChange={(e) => {
+                if (!e.target.value) setSearchTermAssetStay('');
+              }}
               className="panel-search"
               allowClear
             />
           )}
           {showSearch === 'circulation' && (
-            <Input.Search
-              placeholder="搜索网关"
-              onChange={(e) => setSearchTermCirculation(e.target.value)}
-              className="panel-search"
-              allowClear
-            />
+            <>
+              <InputNumber
+                min={1}
+                max={168}
+                precision={0}
+                value={circulationHoursInput}
+                onChange={(value) => setCirculationHoursInput(Number(value) || 1)}
+                className="panel-search"
+              />
+              <span style={{ margin: '0 8px' }}>小时前</span>
+              <Button
+                type="default"
+                onClick={() => setCirculationHours(circulationHoursInput)}
+              >
+                查询
+              </Button>
+            </>
           )}
           <Button
             type="text"

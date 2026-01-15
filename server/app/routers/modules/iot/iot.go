@@ -16,6 +16,8 @@ func IotAuthRoutes(r *gin.RouterGroup) {
 		groupGateway.PATCH("/update/:id", controllers.IotController.UpdateGateway)
 		// 查
 		groupGateway.POST("/query", controllers.IotController.GetGateways)
+		// 开启但离线的网关
+		groupGateway.GET("/offline", controllers.IotController.GetOfflineGateways)
 	}
 
 	groupTag := r.Group("/iot/tag")

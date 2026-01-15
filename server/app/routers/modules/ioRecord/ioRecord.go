@@ -11,6 +11,8 @@ func IoRecordRoutes(r *gin.RouterGroup) {
 		group.POST("/query", controllers.IoRecordController.GetIoRecords)
 		group.GET("/panel", controllers.IoRecordController.GetPanel)
 		group.GET("/panel-v2", controllers.IoRecordController.GetPanelV2)
+		group.GET("/flow/stats", controllers.IoRecordController.GetFlowStats)
+		group.GET("/stay", controllers.IoRecordController.GetAssetStay)
 
 		group.POST("/buzzer", controllers.IoRecordController.AddBuzzer)
 		group.DELETE("/buzzer/batch-delete", controllers.IoRecordController.DelBuzzers)

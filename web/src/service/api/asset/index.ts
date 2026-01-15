@@ -20,6 +20,15 @@ export interface IInStorageDistributionResponse {
   list: IInStorageDistributionItem[];
 }
 
+export interface ILostStatsItem {
+  time: string;
+  count: number;
+}
+
+export interface ILostStatsResponse {
+  list: ILostStatsItem[];
+}
+
 export const getAssetStatusStatisticsRequest = () => {
   return request.get<AxiosResponse<IAssetStatusStatisticsResponse>>({
     url: '/asset/status',
@@ -29,5 +38,12 @@ export const getAssetStatusStatisticsRequest = () => {
 export const getInStorageDistributionRequest = () => {
   return request.get<AxiosResponse<IInStorageDistributionResponse>>({
     url: '/asset/in-storage/distribution',
+  });
+};
+
+export const getLostStatsRequest = (hours = 24) => {
+  return request.get<AxiosResponse<ILostStatsResponse>>({
+    url: '/asset/exception/lost/stats',
+    params: { hours },
   });
 };

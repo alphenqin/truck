@@ -86,6 +86,45 @@ export const getIoRecordPanelStatsV2Request = () => {
   });
 };
 
+export interface IFlowStatsItem {
+  actionType: number;
+  count: number;
+}
+
+export interface IFlowStatsResponse {
+  startTime: string;
+  endTime: string;
+  list: IFlowStatsItem[];
+}
+
+export const getIoRecordFlowStatsRequest = (hours = 24) => {
+  return request.get<AxiosResponse<IFlowStatsResponse>>({
+    url: '/io-record/flow/stats',
+    params: { hours },
+  });
+};
+
+export interface IAssetStayItem {
+  asset: string;
+  location: string;
+  type: string;
+  startTime: number;
+  endTime: number;
+}
+
+export interface IAssetStayResponse {
+  startTime: string;
+  endTime: string;
+  list: IAssetStayItem[];
+}
+
+export const getAssetStayRequest = (hours = 24, limit = 200, assetCode?: string) => {
+  return request.get<AxiosResponse<IAssetStayResponse>>({
+    url: '/io-record/stay',
+    params: { hours, limit, assetCode },
+  });
+};
+
 // 蜂鸣器部分
 
 // 查询参数接口

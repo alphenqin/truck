@@ -24,6 +24,7 @@ func AssetRoutes(r *gin.RouterGroup) {
 		groupAsset.GET("/repairs/:assetId", controllers.AssetController.GetAssetRepairs)
 
 		groupAsset.POST("/exception/lost", controllers.AssetController.QueryLost)
+		groupAsset.GET("/exception/lost/stats", controllers.AssetController.QueryLostStats)
 		groupAsset.POST("/exception/flow/list", controllers.AssetController.QueryFlow)
 		groupAsset.POST("/exception/handle", controllers.AssetController.HandleException)
 		groupAsset.POST("/exception/batchHandle", controllers.AssetController.BatchHandleException)

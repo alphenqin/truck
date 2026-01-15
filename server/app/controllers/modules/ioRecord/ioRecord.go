@@ -2,6 +2,8 @@ package ioRecordControllersModules
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Xi-Yuer/cms/domain/types"
@@ -305,6 +307,210 @@ func (c *ioRecordController) GetPanelV2(ctx *gin.Context) {
 		"intervals": intervals,
 	}
 	utils.Response.Success(ctx, response)
+}
+
+func (c *ioRecordController) GetFlowStats(ctx *gin.Context) {
+	type FlowStatsItem struct {
+		ActionType int   `json:"actionType"`
+		Count      int64 `json:"count"`
+	}
+
+	hours := int64(24)
+	if hoursStr := strings.TrimSpace(ctx.Query("hours")); hoursStr != "" {
+		parsed, err := strconv.ParseInt(hoursStr, 10, 64)
+		if err != nil || parsed <= 0 {
+			utils.Response.ParameterTypeError(ctx, "hours格式错误")
+			return
+		}
+		hours = parsed
+	}
+	if hours > 168 {
+		hours = 168
+	}
+
+	end := time.Now()
+	start := end.Add(-time.Duration(hours) * time.Hour)
+
+	type row struct {
+		ActionType int   `gorm:"column:action_type"`
+		Count      int64 `gorm:"column:count"`
+	}
+	var rows []row
+	if err := db.GormDB.
+		Table("io_records").
+		Select("action_type, COUNT(*) AS count").
+		Where("action_time >= ? AND action_time <= ? AND action_type IN ?", start, end, []int{1, 2}).
+		Group("action_type").
+		Scan(&rows).Error; err != nil {
+		utils.Log.Error("查询流转统计失败", "error", err)
+		utils.Response.ServerError(ctx, "查询失败，请稍后重试")
+		return
+	}
+
+	countMap := map[int]int64{1: 0, 2: 0}
+	for _, r := range rows {
+		countMap[r.ActionType] = r.Count
+	}
+
+	list := []FlowStatsItem{
+		{ActionType: 1, Count: countMap[1]},
+		{ActionType: 2, Count: countMap[2]},
+	}
+
+	utils.Response.Success(ctx, gin.H{
+		"startTime": start.Format("2006-01-02 15:04:05"),
+		"endTime":   end.Format("2006-01-02 15:04:05"),
+		"list":      list,
+	})
+}
+
+func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
+	type StayItem struct {
+		Asset    string  `json:"asset"`
+		Location string  `json:"location"`
+		Type     string  `json:"type"`
+		Start    float64 `json:"startTime"`
+		End      float64 `json:"endTime"`
+	}
+
+	hours := int64(24)
+	if hoursStr := strings.TrimSpace(ctx.Query("hours")); hoursStr != "" {
+		parsed, err := strconv.ParseInt(hoursStr, 10, 64)
+		if err != nil || parsed <= 0 {
+			utils.Response.ParameterTypeError(ctx, "hours格式错误")
+			return
+		}
+		hours = parsed
+	}
+	if hours > 168 {
+		hours = 168
+	}
+
+	limit := int64(200)
+	if limitStr := strings.TrimSpace(ctx.Query("limit")); limitStr != "" {
+		parsed, err := strconv.ParseInt(limitStr, 10, 64)
+		if err != nil || parsed <= 0 {
+			utils.Response.ParameterTypeError(ctx, "limit格式错误")
+			return
+		}
+		limit = parsed
+	}
+	if limit > 1000 {
+		limit = 1000
+	}
+
+	assetCode := strings.TrimSpace(ctx.Query("assetCode"))
+
+	end := time.Now()
+	start := end.Add(-time.Duration(hours) * time.Hour)
+
+	type row struct {
+		AssetID    int64     `gorm:"column:asset_id"`
+		AssetCode  string    `gorm:"column:asset_code"`
+		AssetType  int       `gorm:"column:asset_type"`
+		StartTime  time.Time `gorm:"column:start_time"`
+		EndTime    time.Time `gorm:"column:end_time"`
+		StoreID    int64     `gorm:"column:store_id"`
+		StoreName  string    `gorm:"column:store_name"`
+	}
+
+	var rows []row
+	baseSQL := `
+		SELECT
+			r.asset_id,
+			a.asset_code,
+			a.asset_type,
+			r.action_time AS start_time,
+			r.next_action_time AS end_time,
+			COALESCE(r.store_to, r.store_from) AS store_id,
+			s.store_name
+		FROM (
+			SELECT
+				asset_id,
+				action_type,
+				action_time,
+				store_to,
+				store_from,
+				LEAD(action_type) OVER (PARTITION BY asset_id ORDER BY action_time) AS next_action_type,
+				LEAD(action_time) OVER (PARTITION BY asset_id ORDER BY action_time) AS next_action_time
+			FROM io_records
+			WHERE action_time IS NOT NULL
+		) r
+		LEFT JOIN asset a ON a.asset_id = r.asset_id
+		LEFT JOIN stores s ON s.store_id = COALESCE(r.store_to, r.store_from)
+		WHERE r.action_type = 1
+		  AND r.next_action_type = 2
+		  AND r.next_action_time IS NOT NULL
+		  AND r.action_time < ?
+		  AND r.next_action_time > ?
+	`
+
+	var err error
+	if assetCode != "" {
+		baseSQL += " AND a.asset_code = ? ORDER BY r.action_time DESC LIMIT ?"
+		err = db.GormDB.Raw(baseSQL, end, start, assetCode, limit).Scan(&rows).Error
+	} else {
+		baseSQL += " ORDER BY r.action_time DESC LIMIT ?"
+		err = db.GormDB.Raw(baseSQL, end, start, limit).Scan(&rows).Error
+	}
+	if err != nil {
+		utils.Log.Error("查询资产停留分布失败", "error", err)
+		utils.Response.ServerError(ctx, "查询失败，请稍后重试")
+		return
+	}
+
+	items := make([]StayItem, 0, len(rows))
+	for _, r := range rows {
+		overlapStart := r.StartTime
+		if overlapStart.Before(start) {
+			overlapStart = start
+		}
+		overlapEnd := r.EndTime
+		if overlapEnd.After(end) {
+			overlapEnd = end
+		}
+		if !overlapEnd.After(overlapStart) {
+			continue
+		}
+		startHour := overlapStart.Sub(start).Hours()
+		endHour := overlapEnd.Sub(start).Hours()
+
+		typeLabel := "未知"
+		if r.AssetType == 1 {
+			typeLabel = "工装车"
+		} else if r.AssetType == 0 {
+			typeLabel = "牵引车"
+		}
+
+		assetLabel := r.AssetCode
+		if strings.TrimSpace(assetLabel) == "" {
+			assetLabel = fmt.Sprintf("资产-%d", r.AssetID)
+		}
+		assetLabel = fmt.Sprintf("%s-%s", typeLabel, assetLabel)
+
+		location := r.StoreName
+		if strings.TrimSpace(location) == "" {
+			if r.StoreID > 0 {
+				location = fmt.Sprintf("场库-%d", r.StoreID)
+			} else {
+				location = "未知"
+			}
+		}
+
+		items = append(items, StayItem{
+			Asset:    assetLabel,
+			Location: location,
+			Type:     typeLabel,
+			Start:    startHour,
+			End:      endHour,
+		})
+	}
+
+	utils.Response.Success(ctx, gin.H{
+		"startTime": start.Format("2006-01-02 15:04:05"),
+		"endTime":   end.Format("2006-01-02 15:04:05"),
+		"list":      items,
+	})
 }
 
 func (c *ioRecordController) GetFlows(ctx *gin.Context) {

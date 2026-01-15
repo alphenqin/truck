@@ -700,6 +700,73 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 	utils.Response.Success(ctx, result)
 }
 
+func (a *assetController) QueryLostStats(ctx *gin.Context) {
+	type LostStatsItem struct {
+		Time  string `json:"time"`
+		Count int64  `json:"count"`
+	}
+	type LostStatsVO struct {
+		List []LostStatsItem `json:"list"`
+	}
+
+	hours := int64(24)
+	if hoursStr := strings.TrimSpace(ctx.Query("hours")); hoursStr != "" {
+		parsed, err := strconv.ParseInt(hoursStr, 10, 64)
+		if err != nil || parsed <= 0 {
+			utils.Response.ParameterTypeError(ctx, "hours格式错误")
+			return
+		}
+		hours = parsed
+	}
+	if hours > 168 {
+		hours = 168
+	}
+
+	now := time.Now().Truncate(time.Hour)
+	start := now.Add(-time.Duration(hours) * time.Hour)
+
+	type row struct {
+		Hour  string `gorm:"column:hour"`
+		Count int64  `gorm:"column:count"`
+	}
+	var rows []row
+	err := db.GormDB.Raw(`
+		SELECT DATE_FORMAT(r.action_time, '%Y-%m-%d %H:00:00') AS hour, COUNT(*) AS count
+		FROM io_records r
+		JOIN (
+			SELECT asset_id, MAX(action_time) AS action_time
+			FROM io_records
+			GROUP BY asset_id
+		) latest ON latest.asset_id = r.asset_id AND latest.action_time = r.action_time
+		WHERE r.action_type = 2 AND r.action_time >= ? AND r.action_time < ?
+		GROUP BY hour
+		ORDER BY hour ASC
+	`, start, now).Scan(&rows).Error
+	if err != nil {
+		utils.Log.Error("查询疑似丢失统计失败", "error", err)
+		utils.Response.ServerError(ctx, "查询失败，请稍后重试")
+		return
+	}
+
+	countMap := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		countMap[r.Hour] = r.Count
+	}
+
+	list := make([]LostStatsItem, 0, hours)
+	for i := int64(0); i < hours; i++ {
+		bucket := start.Add(time.Duration(i) * time.Hour)
+		hourKey := bucket.Format("2006-01-02 15:00:00")
+		label := strconv.FormatInt(hours-i, 10) + "h"
+		list = append(list, LostStatsItem{
+			Time:  label,
+			Count: countMap[hourKey],
+		})
+	}
+
+	utils.Response.Success(ctx, LostStatsVO{List: list})
+}
+
 func (a *assetController) GetTrack(ctx *gin.Context) {
 	var params types.QueryTrackParams
 	if err := ctx.ShouldBindJSON(&params); err != nil {

@@ -17,6 +17,7 @@ import Logo from '@/assets/svg/logo.svg';
 import classNames from 'classnames';
 import { constants } from '@/constant';
 import LoadingGIF from '@/assets/image/loading.gif';
+import { getOfflineGatewaysRequest } from '@/service/api/iot';
 
 const Main: FC = () => {
   const fullscreenRef = useRef();
@@ -40,11 +41,35 @@ const Main: FC = () => {
   };
 
   useEffect(() => {
-    setErrorMessages([
-      '系统检测到异常数据',
-      '设备连接不稳定',
-      '数据同步延迟'
-    ]);
+    let mounted = true;
+    const minutes = 10;
+    const fetchOffline = async () => {
+      try {
+        const res: any = await getOfflineGatewaysRequest(minutes);
+        const list = res?.data?.list || res?.data?.data?.list || [];
+        const messages = list.map((item: { gatewayName: string; gatewayCode: string; lastSeen?: string | null }) => {
+          const name = item.gatewayName || item.gatewayCode || '未知网关';
+          if (item.lastSeen) {
+            return `网关 ${name} 离线（最后上报 ${item.lastSeen}）`;
+          }
+          return `网关 ${name} 离线（无上报记录）`;
+        });
+        if (mounted) {
+          setErrorMessages(messages);
+        }
+      } catch {
+        if (mounted) {
+          setErrorMessages([]);
+        }
+      }
+    };
+
+    fetchOffline();
+    const timer = window.setInterval(fetchOffline, 60 * 1000);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   return (

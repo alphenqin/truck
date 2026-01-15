@@ -1,6 +1,8 @@
 package iotControllersModules
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Xi-Yuer/cms/domain/types"
@@ -141,6 +143,53 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 	utils.Response.Success(context, gin.H{
 		"list":  gateways,
 		"total": total,
+	})
+}
+
+func (c iotController) GetOfflineGateways(context *gin.Context) {
+	minutes := int64(10)
+	if raw := strings.TrimSpace(context.Query("minutes")); raw != "" {
+		parsed, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || parsed <= 0 {
+			utils.Response.ParameterTypeError(context, "minutes格式错误")
+			return
+		}
+		minutes = parsed
+	}
+	if minutes > 1440 {
+		minutes = 1440
+	}
+
+	type OfflineGateway struct {
+		ID       int64      `json:"id"`
+		Name     string     `json:"gatewayName"`
+		Code     string     `json:"gatewayCode"`
+		LastSeen *time.Time `json:"lastSeen"`
+	}
+
+	cutoff := time.Now().Add(-time.Duration(minutes) * time.Minute)
+	var list []OfflineGateway
+	if err := db.GormDB.Raw(`
+		SELECT
+			g.id AS id,
+			g.gateway_name AS gateway_name,
+			g.gateway_code AS gateway_code,
+			MAX(m.detection_time) AS last_seen
+		FROM gateways g
+		LEFT JOIN monitors m ON m.gateway_id = g.id
+		WHERE g.status = 1
+		GROUP BY g.id
+		HAVING last_seen IS NULL OR last_seen < ?
+		ORDER BY last_seen ASC
+	`, cutoff).Scan(&list).Error; err != nil {
+		utils.Log.Error("查询离线网关失败", "error", err)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
+		return
+	}
+
+	utils.Response.Success(context, gin.H{
+		"list":    list,
+		"minutes": minutes,
 	})
 }
 

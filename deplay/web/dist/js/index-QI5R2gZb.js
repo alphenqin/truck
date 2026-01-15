@@ -1,1 +1,0 @@
-import{j as e}from"./vendor-core-BL9Phd6R.js";const t=()=>e.jsx("div",{className:"mb-3 flex justify-between items-center app-card-flat p-4",children:e.jsx("span",{className:"font-bold",children:"系统日志"})});export{t as default};

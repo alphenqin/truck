@@ -64,3 +64,30 @@ export const batchDeleteAssetBindRequest = (ids: number[]) => {
     data: ids,
   });
 };
+
+export interface IAssetBindImportFail {
+  row: number;
+  assetCode: string;
+  tagCode: string;
+  storeName: string;
+  reason: string;
+}
+
+export interface IAssetBindImportResult {
+  total: number;
+  success: number;
+  failed: number;
+  failures: IAssetBindImportFail[];
+}
+
+export const importAssetBindRequest = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<AxiosResponse<IAssetBindImportResult>>({
+    url: '/asset/bind/import',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};

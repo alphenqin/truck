@@ -1,7 +1,10 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { Button, Form, Input, Modal, TableProps, message } from 'antd';
+import { Button, Form, Input, Modal, TableProps, Upload, message } from 'antd';
+import type { UploadProps } from 'antd';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
-import { createAssetBindRequest, deleteAssetBindRequest, getAssetBindRequest, IAssetBindResponse, IQueryAssetBindParams, batchDeleteAssetBindRequest, updateAssetBindRequest } from '@/service/api/assetBind';
+import { createAssetBindRequest, deleteAssetBindRequest, getAssetBindRequest, IAssetBindResponse, IQueryAssetBindParams, batchDeleteAssetBindRequest, updateAssetBindRequest, importAssetBindRequest, IAssetBindImportFail } from '@/service/api/assetBind';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 export const useAssetBindPageHooks = () => {
   const [limit, setLimit] = useState(10);
@@ -15,6 +18,7 @@ export const useAssetBindPageHooks = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editingRow, setEditingRow] = useState<IAssetBindResponse | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
   const [formRef] = Form.useForm();
   const [editFormRef] = Form.useForm();
 
@@ -124,6 +128,67 @@ export const useAssetBindPageHooks = () => {
     });
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = ['资产编码', '资产名称', '标签号', '所属仓库'];
+    const example = ['001~999', 'Dolly车', '12345678', '12#'];
+    const rows = [headers, example];
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    rows.forEach((row, rIndex) => {
+      row.forEach((value, cIndex) => {
+        const cellAddress = XLSX.utils.encode_cell({ r: rIndex, c: cIndex });
+        const cell = worksheet[cellAddress];
+        if (cell) {
+          cell.t = 's';
+          cell.v = String(value);
+        }
+      });
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '资产绑定');
+    const data = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    saveAs(new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '资产绑定模板.xlsx');
+  };
+
+  const handleImport = async (file: File) => {
+    setImportLoading(true);
+    try {
+      const res = await importAssetBindRequest(file);
+      const result = res.data;
+      message.success(`导入完成：共${result.total}条，成功${result.success}条，失败${result.failed}条`);
+      if (result.failed > 0 && result.failures?.length) {
+        Modal.info({
+          title: '导入失败明细',
+          width: 720,
+          content: (
+            <div className='max-h-80 overflow-auto'>
+              {result.failures.map((item: IAssetBindImportFail, index: number) => (
+                <div key={`${item.row}-${index}`} className='text-sm mb-1'>
+                  第{item.row}行（资产编码：{item.assetCode || '-'}，标签号：{item.tagCode || '-'}，所属仓库：{item.storeName || '-'}）：{item.reason}
+                </div>
+              ))}
+            </div>
+          ),
+        });
+      }
+      getPageData();
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const uploadProps: UploadProps = {
+    accept: '.xlsx,.xls',
+    showUploadList: false,
+    customRequest: async (options) => {
+      try {
+        await handleImport(options.file as File);
+        options.onSuccess?.({}, new XMLHttpRequest());
+      } catch (error) {
+        options.onError?.(error as Error);
+      }
+    },
+  };
+
   const columns: TableProps<IAssetBindResponse>['columns'] = [
     { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
     { title: '标签编码', dataIndex: 'tagCode', key: 'tagCode' },
@@ -161,8 +226,10 @@ export const useAssetBindPageHooks = () => {
     operateComponent: (
       <div className='flex gap-2 items-center flex-wrap md:flex-nowrap'>
         <Button type='primary' onClick={openCreate} size='small' className='h-8 md:h-10 text-xs md:text-sm px-3 md:px-4'>新增</Button>
-        <Button size='small' className='h-8 md:h-10 text-xs md:text-sm px-3 md:px-4'>导入</Button>
-        <Button type='link' size='small' className='h-8 md:h-10 text-xs md:text-sm px-3 md:px-4'>模板下载</Button>
+        <Upload {...uploadProps}>
+          <Button loading={importLoading} size='small' className='h-8 md:h-10 text-xs md:text-sm px-3 md:px-4'>导入</Button>
+        </Upload>
+        <Button type='link' onClick={handleDownloadTemplate} size='small' className='h-8 md:h-10 text-xs md:text-sm px-3 md:px-4'>模板下载</Button>
         <Button danger onClick={handleBatchDelete} size='small' className='h-8 md:h-10 text-xs md:text-sm px-3 md:px-4'>批量删除</Button>
       </div>
     ),

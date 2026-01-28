@@ -194,3 +194,8 @@ mysql -u root -p cms < cms.sql
 
 
 docker exec wms-mysql mysqldump -uroot -p123456 wms> wms.sql
+
+getmac /v /fo list
+go run ./support/tools/gen_license.go --mac "D4-3D-7E-5B-A5-F5,CA-18-C5-79-2A-90" --days 90 --secret "YOUR_SECRET" 
+
+taskkill /f /im nginx.exe

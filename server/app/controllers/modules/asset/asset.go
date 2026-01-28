@@ -10,6 +10,7 @@ import (
 	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/support/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -582,6 +583,122 @@ func (a *assetController) BatchDeleteAssetBind(ctx *gin.Context) {
 	utils.Response.SuccessNoData(ctx)
 }
 
+type assetBindImportFail struct {
+	Row       int    `json:"row"`
+	AssetCode string `json:"assetCode"`
+	TagCode   string `json:"tagCode"`
+	StoreName string `json:"storeName"`
+	Reason    string `json:"reason"`
+}
+
+type assetBindImportResult struct {
+	Total    int                   `json:"total"`
+	Success  int                   `json:"success"`
+	Failed   int                   `json:"failed"`
+	Failures []assetBindImportFail `json:"failures"`
+}
+
+func (a *assetController) ImportAssetBind(ctx *gin.Context) {
+	fileHeader, err := ctx.FormFile("file")
+	if err != nil {
+		utils.Response.ParameterTypeError(ctx, "请上传文件")
+		return
+	}
+	file, err := fileHeader.Open()
+	if err != nil {
+		utils.Response.ServerError(ctx, "文件读取失败")
+		return
+	}
+	defer file.Close()
+
+	excelFile, err := excelize.OpenReader(file)
+	if err != nil {
+		utils.Response.ParameterTypeError(ctx, "文件解析失败")
+		return
+	}
+	defer func() {
+		_ = excelFile.Close()
+	}()
+	sheetName := excelFile.GetSheetName(0)
+	if sheetName == "" {
+		utils.Response.ParameterTypeError(ctx, "文件没有可用的工作表")
+		return
+	}
+	rows, err := excelFile.GetRows(sheetName)
+	if err != nil {
+		utils.Response.ParameterTypeError(ctx, "读取表格失败")
+		return
+	}
+
+	result := assetBindImportResult{
+		Failures: make([]assetBindImportFail, 0),
+	}
+
+	for rowIndex, row := range rows {
+		if isEmptyRow(row) {
+			continue
+		}
+		if rowIndex == 0 && isAssetBindHeaderRow(row) {
+			continue
+		}
+		result.Total++
+
+		assetCode := normalizeCell(row, 0)
+		tagCode := normalizeCell(row, 2)
+		storeName := normalizeCell(row, 3)
+
+		if assetCode == "" || tagCode == "" {
+			result.Failures = append(result.Failures, assetBindImportFail{
+				Row:       rowIndex + 1,
+				AssetCode: assetCode,
+				TagCode:   tagCode,
+				StoreName: storeName,
+				Reason:    "资产编码或标签号不能为空",
+			})
+			continue
+		}
+
+		tx := db.GormDB.Begin()
+		if tx.Error != nil {
+			result.Failures = append(result.Failures, assetBindImportFail{
+				Row:       rowIndex + 1,
+				AssetCode: assetCode,
+				TagCode:   tagCode,
+				StoreName: storeName,
+				Reason:    "开启事务失败",
+			})
+			continue
+		}
+
+		if err := importAssetBindRow(tx, assetCode, tagCode, storeName); err != nil {
+			tx.Rollback()
+			result.Failures = append(result.Failures, assetBindImportFail{
+				Row:       rowIndex + 1,
+				AssetCode: assetCode,
+				TagCode:   tagCode,
+				StoreName: storeName,
+				Reason:    err.Error(),
+			})
+			continue
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			result.Failures = append(result.Failures, assetBindImportFail{
+				Row:       rowIndex + 1,
+				AssetCode: assetCode,
+				TagCode:   tagCode,
+				StoreName: storeName,
+				Reason:    "提交事务失败",
+			})
+			continue
+		}
+		result.Success++
+	}
+
+	result.Failed = result.Total - result.Success
+	utils.Response.Success(ctx, result)
+}
+
 func (a *assetController) UpdateType(ctx *gin.Context) {
 	var params types.UpdateAssetStatusParams
 	if err := ctx.ShouldBindJSON(&params); err != nil {
@@ -616,6 +733,109 @@ utils.Response.ServerError(ctx, "更新失败，请稍后重试")
 		}
 	}
 	utils.Response.SuccessNoData(ctx)
+}
+
+func importAssetBindRow(tx *gorm.DB, assetCode, tagCode, storeName string) error {
+	var storeId int64
+	if storeName != "" {
+		var store types.Store
+		if err := tx.Table("stores").Where("store_name = ?", storeName).First(&store).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				store = types.Store{
+					StoreName: storeName,
+				}
+				if err := tx.Table("stores").Create(&store).Error; err != nil {
+					return errors.New("创建场库失败")
+				}
+			} else {
+				return errors.New("查询场库失败")
+			}
+		}
+		storeId = store.StoreId
+	}
+
+	var assetId int64
+	if err := tx.Table("asset").Select("asset_id").Where("asset_code = ?", assetCode).Scan(&assetId).Error; err != nil {
+		return errors.New("查询资产失败")
+	}
+	now := time.Now()
+	if assetId == 0 {
+		insert := map[string]interface{}{
+			"asset_code": assetCode,
+			"status":     1,
+			"created_at": now,
+			"updated_at": now,
+		}
+		if storeName != "" {
+			insert["store_id"] = storeId
+		}
+		if err := tx.Table("asset").Create(insert).Error; err != nil {
+			return errors.New("创建资产失败")
+		}
+		if err := tx.Table("asset").Select("asset_id").Where("asset_code = ?", assetCode).Scan(&assetId).Error; err != nil {
+			return errors.New("获取资产ID失败")
+		}
+	} else if storeName != "" {
+		if err := tx.Table("asset").Where("asset_id = ?", assetId).Updates(map[string]interface{}{
+			"store_id":   storeId,
+			"updated_at": now,
+		}).Error; err != nil {
+			return errors.New("更新资产场库失败")
+		}
+	}
+
+	if assetId == 0 {
+		return errors.New("资产写入失败")
+	}
+
+	var tagId int64
+	if err := tx.Table("rfid_tags").Select("id").Where("tag_code = ?", tagCode).Scan(&tagId).Error; err != nil {
+		return errors.New("查询标签失败")
+	}
+	if tagId == 0 {
+		if err := tx.Table("rfid_tags").Create(map[string]interface{}{
+			"tag_code": tagCode,
+		}).Error; err != nil {
+			return errors.New("创建标签失败")
+		}
+		if err := tx.Table("rfid_tags").Select("id").Where("tag_code = ?", tagCode).Scan(&tagId).Error; err != nil {
+			return errors.New("获取标签ID失败")
+		}
+	}
+
+	if err := tx.Table("asset_tags").Where("asset_id = ? OR tag_id = ?", assetId, tagId).Delete(&types.AssetTag{}).Error; err != nil {
+		return errors.New("清理旧绑定失败")
+	}
+	if err := tx.Table("asset_tags").Create(&types.AssetTag{
+		AssetId: assetId,
+		TagId:   tagId,
+	}).Error; err != nil {
+		return errors.New("创建绑定失败")
+	}
+	return nil
+}
+
+func normalizeCell(row []string, index int) string {
+	if index >= len(row) {
+		return ""
+	}
+	value := strings.TrimSpace(row[index])
+	return strings.TrimPrefix(value, "\ufeff")
+}
+
+func isEmptyRow(row []string) bool {
+	for _, cell := range row {
+		if strings.TrimSpace(strings.TrimPrefix(cell, "\ufeff")) != "" {
+			return false
+		}
+	}
+	return true
+}
+
+func isAssetBindHeaderRow(row []string) bool {
+	assetHeader := normalizeCell(row, 0)
+	tagHeader := normalizeCell(row, 2)
+	return strings.Contains(assetHeader, "资产") || strings.Contains(tagHeader, "标签")
 }
 
 // GetAssetRepairs 获取资产报修记录

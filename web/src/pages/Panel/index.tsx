@@ -221,7 +221,7 @@ const PanelPage: React.FC = () => {
     label: false,
     tooltip: {
       items: [
-        (datum) => {
+        (datum: { status: string; count: number }) => {
           return {
             name: datum.status,
             value: datum.count,
@@ -243,7 +243,7 @@ const PanelPage: React.FC = () => {
     label: false,
     tooltip: {
       items: [
-        (datum) => {
+        (datum: { store: string; count: number }) => {
           return {
             name: `${datum.store}`,
             value: datum.count,
@@ -282,7 +282,7 @@ const PanelPage: React.FC = () => {
     label: false,
     tooltip: {
       items: [
-        (datum) => {
+        (datum: { asset: string; type: string; startTime: number; endTime: number }) => {
           return {
             name: `${datum.asset} (${datum.type})`,
             value: `停留时间: ${datum.startTime}:00 - ${datum.endTime}:00`,
@@ -316,7 +316,7 @@ const PanelPage: React.FC = () => {
     },
     tooltip: {
       items: [
-        (datum) => {
+        (datum: { time: string; count: number }) => {
           return {
             name: `时间: ${datum.time}`,
             value: datum.count,
@@ -347,7 +347,7 @@ const PanelPage: React.FC = () => {
     },
     tooltip: {
       items: [
-        (datum) => {
+        (datum: { statusType: string; value: number }) => {
           return {
             name: `${datum.statusType}`,
             value: datum.value,
@@ -397,7 +397,7 @@ const PanelPage: React.FC = () => {
     label: false,
     tooltip: {
       items: [
-        (datum) => {
+        (datum: { type: string; count: number }) => {
           return {
             name: datum.type,
             value: datum.count,

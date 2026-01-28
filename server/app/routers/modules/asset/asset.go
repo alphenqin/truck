@@ -14,6 +14,7 @@ func AssetRoutes(r *gin.RouterGroup) {
 		groupAsset.POST("/query", controllers.AssetController.GetAssets)
 		groupAsset.POST("/bind/query", controllers.AssetController.GetAssetBinds)
 		groupAsset.POST("/bind", controllers.AssetController.CreateAssetBind)
+		groupAsset.POST("/bind/import", controllers.AssetController.ImportAssetBind)
 		groupAsset.PATCH("/bind/:id", controllers.AssetController.UpdateAssetBind)
 		groupAsset.DELETE("/bind/:id", controllers.AssetController.DeleteAssetBind)
 		groupAsset.DELETE("/bind/batch-delete", controllers.AssetController.BatchDeleteAssetBind)

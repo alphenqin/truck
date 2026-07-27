@@ -66,7 +66,16 @@ const PanelPage: React.FC = () => {
   const [circulationAnalysisData, setCirculationAnalysisData] = useState<{ type: string; count: number }[]>(buildEmptyCirculation());
   const [circulationHoursInput, setCirculationHoursInput] = useState<number>(24);
   const [circulationHours, setCirculationHours] = useState<number>(24);
-  const [assetStayData, setAssetStayData] = useState<{ asset: string; location: string; type: string; startTime: number; endTime: number }[]>([]);
+  const [assetStayData, setAssetStayData] = useState<{
+    asset: string;
+    location: string;
+    type: string;
+    startTime: number;
+    endTime: number;
+    startLabel: string;
+    endLabel: string;
+    ongoing: boolean;
+  }[]>([]);
 
   useEffect(() => {
     const fetchTrend = async () => {
@@ -77,7 +86,7 @@ const PanelPage: React.FC = () => {
         const now = dayjs();
         const timeKeys: string[] = [];
         const timeLabelMap = new Map<string, string>();
-        for (let i = 11; i >= 0; i -= 1) {
+        for (let i = 23; i >= 0; i -= 1) {
           const key = now.subtract(i, 'hour').format('YYYY-MM-DD HH:00');
           const label = `${i + 1}h`;
           timeKeys.push(key);
@@ -153,12 +162,24 @@ const PanelPage: React.FC = () => {
       const res: any = await getAssetStayRequest(assetStayHours, 200, searchTermAssetStay || undefined);
       const list = res?.data?.list || res?.data?.data?.list || [];
       setAssetStayData(
-        list.map((item: { asset: string; location: string; type: string; startTime: number; endTime: number }) => ({
+        list.map((item: {
+          asset: string;
+          location: string;
+          type: string;
+          startTime: number;
+          endTime: number;
+          startLabel: string;
+          endLabel: string;
+          ongoing: boolean;
+        }) => ({
           asset: item.asset,
           location: item.location,
           type: item.type,
           startTime: Number(item.startTime || 0),
           endTime: Number(item.endTime || 0),
+          startLabel: item.startLabel,
+          endLabel: item.endLabel,
+          ongoing: Boolean(item.ongoing),
         }))
       );
     };
@@ -262,10 +283,10 @@ const PanelPage: React.FC = () => {
 
   // "资产停留分布" Bar 图表配置
   const assetStayBarConfig = useMemo(() => ({
-    data: filteredAssetStayData, // 使用过滤后的数据
-    xField: 'location', // x轴是停留地点
-    yField: ['startTime', 'endTime'], // y轴是时间段
-    colorField: 'location', // 根据停留地点区分颜色
+    data: filteredAssetStayData,
+    xField: 'asset',
+    yField: ['startTime', 'endTime'],
+    colorField: 'location',
     style: {
       inset: 5,
     },
@@ -282,10 +303,17 @@ const PanelPage: React.FC = () => {
     label: false,
     tooltip: {
       items: [
-        (datum: { asset: string; type: string; startTime: number; endTime: number }) => {
+        (datum: {
+          asset: string;
+          location: string;
+          type: string;
+          startLabel: string;
+          endLabel: string;
+          ongoing: boolean;
+        }) => {
           return {
             name: `${datum.asset} (${datum.type})`,
-            value: `停留时间: ${datum.startTime}:00 - ${datum.endTime}:00`,
+            value: `${datum.location}：${datum.startLabel} - ${datum.endLabel}${datum.ongoing ? '（仍在库）' : ''}`,
           };
         },
       ],

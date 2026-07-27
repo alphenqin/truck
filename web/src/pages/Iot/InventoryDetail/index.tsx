@@ -12,6 +12,8 @@ const InventoryDetailPage: FC = () => {
     loading,
     setPage,
     setLimit,
+    selectedRowKeys,
+    setSelectedRowKeys,
   } = useInventoryDetailPageHooks();
 
   return (
@@ -23,7 +25,11 @@ const InventoryDetailPage: FC = () => {
         columns={columns}
         bordered={true}
         pagination={false}
-        rowKey='recordId'
+        rowKey='id'
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
       />
       <Pagination
         total={total}

@@ -23,7 +23,7 @@ type Server struct {
 }
 
 var (
-	srv *Server
+	srv   *Server
 	srvMu sync.Mutex // 保护srv变量的并发访问
 )
 
@@ -151,6 +151,9 @@ func (s *Server) handleConn(conn net.Conn, confAddr string) {
 
 // Shutdown 优雅关闭
 func Shutdown(ctx context.Context) {
+	ShutdownClients()
+	ShutdownRecordQueue()
+
 	// 使用原子操作保护srv的访问
 	srvMu.Lock()
 	currentSrv := srv
@@ -160,7 +163,6 @@ func Shutdown(ctx context.Context) {
 	if currentSrv == nil {
 		return
 	}
-	ShutdownRecordQueue()
 	close(currentSrv.closed)
 	for _, item := range currentSrv.listeners {
 		_ = item.ln.Close()
@@ -252,4 +254,3 @@ func snapshotRemoteHandlers() map[string]DataHandler {
 	}
 	return dst
 }
-

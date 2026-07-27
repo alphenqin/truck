@@ -25,27 +25,41 @@ func (c iotController) AddGateway(context *gin.Context) {
 		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
-
-	insertData := map[string]interface{}{
-		"gateway_name": gateway.GatewayName,
-		"gateway_code": gateway.GatewayCode,
-		"gateway_type": gateway.GatewayType,
-		"ip_address":   gateway.IpAddress,
-		"port":         gateway.Port,
+	gateway.IpAddress = strings.TrimSpace(gateway.IpAddress)
+	gateway.GatewayCode = strings.TrimSpace(gateway.GatewayCode)
+	if gateway.GatewayType < 1 || gateway.GatewayType > 3 || gateway.IpAddress == "" || gateway.Port < 1 || gateway.Port > 65535 {
+		utils.Response.ParameterTypeError(context, "网关类型、IP地址或端口无效")
+		return
 	}
 
-	// Only include status if it's not nil
+	type gatewayRow struct {
+		ID          int64  `gorm:"column:id;primaryKey;autoIncrement"`
+		GatewayName string `gorm:"column:gateway_name"`
+		GatewayCode string `gorm:"column:gateway_code"`
+		GatewayType int    `gorm:"column:gateway_type"`
+		IPAddress   string `gorm:"column:ip_address"`
+		Port        int    `gorm:"column:port"`
+		Status      int    `gorm:"column:status"`
+	}
+	row := gatewayRow{
+		GatewayName: gateway.GatewayName,
+		GatewayCode: gateway.GatewayCode,
+		GatewayType: gateway.GatewayType,
+		IPAddress:   gateway.IpAddress,
+		Port:        gateway.Port,
+	}
 	if gateway.Status != nil {
-		insertData["status"] = *gateway.Status
+		row.Status = *gateway.Status
 	}
 
-	if err := db.GormDB.Table("gateways").Create(insertData).Error; err != nil {
+	if err := db.GormDB.Table("gateways").Create(&row).Error; err != nil {
 		utils.Log.Error("添加网关失败", "error", err, "gateway", gateway)
 		utils.Response.ServerError(context, "添加失败，请稍后重试")
 		return
 	}
 
 	// 触发即时连接（如果是启用状态）
+	gateway.Id = strconv.FormatInt(row.ID, 10)
 	tcpserver.ConnectGateway(gateway)
 
 	utils.Response.SuccessNoData(context)
@@ -64,6 +78,9 @@ func (c iotController) DelGateway(context *gin.Context) {
 		utils.Response.ServerError(context, "删除失败，请稍后重试")
 		return
 	}
+	for _, id := range ids {
+		tcpserver.StopGateway(id)
+	}
 	utils.Response.SuccessNoData(context)
 }
 
@@ -73,6 +90,12 @@ func (c iotController) UpdateGateway(context *gin.Context) {
 	if err != nil {
 		utils.Log.Warn("更新网关参数绑定失败", "error", err)
 		utils.Response.ParameterTypeError(context, "参数格式错误")
+		return
+	}
+	gateway.IpAddress = strings.TrimSpace(gateway.IpAddress)
+	gateway.GatewayCode = strings.TrimSpace(gateway.GatewayCode)
+	if gateway.GatewayType < 1 || gateway.GatewayType > 3 || gateway.IpAddress == "" || gateway.Port < 1 || gateway.Port > 65535 {
+		utils.Response.ParameterTypeError(context, "网关类型、IP地址或端口无效")
 		return
 	}
 
@@ -114,7 +137,7 @@ func (c iotController) GetGateways(context *gin.Context) {
 	var params types.QueryGatewaysParams
 	if err := context.ShouldBindJSON(&params); err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
@@ -198,7 +221,12 @@ func (c iotController) AddTag(context *gin.Context) {
 	err := context.ShouldBindJSON(&rfidTag)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
+		return
+	}
+	rfidTag.TagCode = strings.ToLower(strings.TrimSpace(rfidTag.TagCode))
+	if rfidTag.TagCode == "" {
+		utils.Response.ParameterTypeError(context, "标签码不能为空")
 		return
 	}
 
@@ -215,10 +243,10 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 	}
 
 	if rfidTag.ReportTime != nil && *rfidTag.ReportTime != "" {
-		parsedTime, err := time.Parse("2006-01-02 15:04:05", *rfidTag.ReportTime)
+		parsedTime, err := time.ParseInLocation("2006-01-02 15:04:05", *rfidTag.ReportTime, time.Local)
 		if err != nil {
 			utils.Log.Warn("时间格式错误", "error", err)
-utils.Response.ParameterTypeError(context, "时间格式错误")
+			utils.Response.ParameterTypeError(context, "时间格式错误")
 			return
 		}
 		insertData["report_time"] = parsedTime
@@ -239,7 +267,7 @@ func (c iotController) DelTag(context *gin.Context) {
 	err := context.ShouldBindJSON(&ids)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	if err := db.GormDB.Table("rfid_tags").Delete(&types.RfidTag{}, ids).Error; err != nil {
@@ -255,7 +283,12 @@ func (c iotController) UpdateTag(context *gin.Context) {
 	err := context.ShouldBindJSON(&rfidTag)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
+		return
+	}
+	rfidTag.TagCode = strings.ToLower(strings.TrimSpace(rfidTag.TagCode))
+	if rfidTag.TagCode == "" {
+		utils.Response.ParameterTypeError(context, "标签码不能为空")
 		return
 	}
 
@@ -278,10 +311,10 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 	}
 
 	if rfidTag.ReportTime != nil && *rfidTag.ReportTime != "" {
-		parsedTime, err := time.Parse("2006-01-02 15:04:05", *rfidTag.ReportTime)
+		parsedTime, err := time.ParseInLocation("2006-01-02 15:04:05", *rfidTag.ReportTime, time.Local)
 		if err != nil {
 			utils.Log.Warn("时间格式错误", "error", err)
-utils.Response.ParameterTypeError(context, "时间格式错误")
+			utils.Response.ParameterTypeError(context, "时间格式错误")
 			return
 		}
 		updates["report_time"] = parsedTime
@@ -301,7 +334,7 @@ func (c iotController) GetTags(context *gin.Context) {
 	var params types.QueryRfidTagsParams
 	if err := context.ShouldBindJSON(&params); err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
@@ -354,6 +387,31 @@ func (c iotController) GetTagMap(context *gin.Context) {
 	utils.Response.Success(context, tags)
 }
 
+// BatchDeleteInventoryDetails 删除选中资产与标签组合的全部历史重复记录。
+func (c iotController) BatchDeleteInventoryDetails(context *gin.Context) {
+	var ids []int64
+	if err := context.ShouldBindJSON(&ids); err != nil || len(ids) == 0 {
+		utils.Response.ParameterTypeError(context, "请选择要删除的盘点记录")
+		return
+	}
+
+	result := db.GormDB.Exec(`
+		DELETE target
+		FROM inventory_records AS target
+		INNER JOIN inventory_records AS selected
+			ON selected.id IN ?
+			AND target.tag_code = selected.tag_code
+			AND target.asset_id <=> selected.asset_id
+	`, ids)
+	if result.Error != nil {
+		utils.Log.Error("批量删除盘点记录失败", "error", result.Error, "ids", ids)
+		utils.Response.ServerError(context, "删除失败，请稍后重试")
+		return
+	}
+
+	utils.Response.Success(context, gin.H{"deleted": result.RowsAffected})
+}
+
 func (c iotController) GetInventoryDetails(context *gin.Context) {
 	var params iotResponsiesModules.QueryInventoryDetailParams
 	if err := context.ShouldBindJSON(&params); err != nil {
@@ -363,6 +421,10 @@ func (c iotController) GetInventoryDetails(context *gin.Context) {
 	}
 	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
 
+	// 每个“标签 + 资产”组合只显示最新一条；兼容修复前已经产生的重复数据。
+	latestRecordIDs := db.GormDB.Table("inventory_records").
+		Select("MAX(id) AS id").
+		Group("tag_code, asset_id")
 	query := db.GormDB.Table("inventory_records AS r").
 		Select(`
 			r.id, r.tag_code, r.asset_id, r.store_id, r.gateway_id,
@@ -370,6 +432,7 @@ func (c iotController) GetInventoryDetails(context *gin.Context) {
 			r.pc_value, r.additional_category, r.inventory_status, r.remark,
 			r.created_at, a.asset_code
 		`).
+		Joins("INNER JOIN (?) AS latest ON latest.id = r.id", latestRecordIDs).
 		Joins("LEFT JOIN asset AS a ON r.asset_id = a.asset_id")
 
 	if params.AssetCode != "" {
@@ -403,14 +466,26 @@ func (c iotController) GetInventoryDetails(context *gin.Context) {
 func (c iotController) GetInventoryStatusTrend(context *gin.Context) {
 	var trendItems []iotResponsiesModules.InventoryStatusTrendItem
 	query := `
+		WITH ranked_records AS (
+			SELECT
+				r.*,
+				DATE_FORMAT(r.inventory_time, '%Y-%m-%d %H:00') AS inventory_hour,
+				ROW_NUMBER() OVER (
+					PARTITION BY DATE_FORMAT(r.inventory_time, '%Y-%m-%d %H:00'), r.tag_code, COALESCE(r.asset_id, 0)
+					ORDER BY r.inventory_time DESC, r.id DESC
+				) AS row_num
+			FROM inventory_records r
+			WHERE r.inventory_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+			  AND r.inventory_time <= NOW()
+		)
 		SELECT
-			DATE_FORMAT(r.inventory_time, '%Y-%m-%d %H:00') AS time,
+			r.inventory_hour AS time,
 			r.inventory_status AS inventory_status,
 			IFNULL(a.asset_type, 0) AS asset_type,
 			COUNT(*) AS count
-		FROM inventory_records r
+		FROM ranked_records r
 		LEFT JOIN asset a ON r.asset_id = a.asset_id
-		WHERE r.inventory_time >= DATE_SUB(NOW(), INTERVAL 12 HOUR)
+		WHERE r.row_num = 1
 		GROUP BY time, inventory_status, asset_type
 		ORDER BY time ASC, inventory_status ASC, asset_type ASC
 	`

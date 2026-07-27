@@ -1,0 +1,1 @@
+import{bH as r,bK as t}from"./vendor-core-D9daUaAK.js";const a=({src:e})=>t.jsx("iframe",{src:e,title:"YouTube video player",className:"w-full h-full",allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",allowFullScreen:!0}),o=r.memo(a);export{o as default};

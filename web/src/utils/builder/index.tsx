@@ -15,7 +15,8 @@ const SystemDepartment = lazy(() => import('@/pages/System/Department'));
 const SystemMenu = lazy(() => import('@/pages/System/Menu'));
 const NotFond = lazy(() => import('@/pages/NotFond'));
 const Iframe = lazy(() => import('@/components/Iframe'));
-const Logs = lazy(() => import('@/pages/Monitor/Logs'));
+// 日志页面源码未包含在当前项目中，先使用统一的未找到页面，避免阻塞整个前端构建。
+const Logs = NotFond;
 const TimeTask = lazy(() => import('@/pages/Monitor/TimeTask'));
 const About = lazy(() => import('@/pages/About'));
 

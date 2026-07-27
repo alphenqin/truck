@@ -32,7 +32,7 @@ func loadConfig() config {
 	cfg := defaultConfig()
 
 	env := "dev"
-	envPath := filepath.Join("config", "config.toml")
+	envPath := resolveConfigPath("config.toml")
 	if data, err := os.ReadFile(envPath); err == nil {
 		var envCfg struct {
 			Env string `toml:"env"`
@@ -44,7 +44,7 @@ func loadConfig() config {
 			env = envCfg.Env
 		}
 	}
-	path := filepath.Join("config", "config."+env+".toml")
+	path := resolveConfigPath("config." + env + ".toml")
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -56,6 +56,27 @@ func loadConfig() config {
 
 	validateConfig(cfg)
 	return cfg
+}
+
+// resolveConfigPath 优先使用当前工作目录下的 config，并允许测试或运维命令
+// 从 server 的子目录启动。正式部署目录结构仍然使用 backend/config。
+func resolveConfigPath(filename string) string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return filepath.Join("config", filename)
+	}
+	for i := 0; i < 8; i++ {
+		candidate := filepath.Join(dir, "config", filename)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return filepath.Join("config", filename)
 }
 
 func validateConfig(cfg config) {

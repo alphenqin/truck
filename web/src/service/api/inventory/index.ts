@@ -10,12 +10,13 @@ export interface IQueryInventoryDetailParams {
 
 // 盘点详情响应数据接口
 export interface IInventoryDetailResponse {
+  id: number;
   assetId: number;
   assetCode: string;
   tagCode: string;
   batteryLevel?: string;
-  actionType: number;
-  actionTime: string; // ISO 字符串
+  inventoryStatus: number;
+  inventoryTime: string; // ISO 字符串
 }
 
 export interface IInventoryStatusTrendItem {
@@ -42,6 +43,14 @@ export const getInventoryDetailRequest = (params: IQueryInventoryDetailParams) =
   return request.post<AxiosResponse<IHasTotalResponse<IInventoryDetailResponse[]>>>({
     url: '/iot/inventory-detail/query',
     data: params,
+  });
+};
+
+// 批量删除盘点记录
+export const batchDeleteInventoryDetailRequest = (ids: number[]) => {
+  return request.delete<AxiosResponse<{ deleted: number }>>({
+    url: '/iot/inventory-detail/batch-delete',
+    data: ids,
   });
 };
 

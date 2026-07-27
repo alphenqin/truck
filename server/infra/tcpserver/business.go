@@ -4,49 +4,76 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/support/utils"
+	"gorm.io/gorm"
 )
 
-// --------------------
-// in 业务处理逻辑
-// --------------------
+const (
+	recordWorkerCount = 4
+	recordQueueSize   = 1024
+	tagDedupWindow    = 2 * time.Second
+)
+
+type gatewayInfo struct {
+	ID   int64
+	Type int
+}
+
+type tagObservation struct {
+	UID                string
+	PCValue            string
+	Battery            string
+	RSSI               int
+	Antenna            int
+	AdditionalCategory int
+	ObservedAt         time.Time
+	DeviceAddr         string
+	Gateway            gatewayInfo
+}
 
 var (
-	// 使用连接级缓冲处理粘包/半包
-	connBuffers     sync.Map // key: connKey(conn) -> *bytes.Buffer
-	// 维护 IP:Port -> 网关类型的映射 (int: 1=入库, 2=出库, 3=盘点)
-	gatewayTypeMap  sync.Map // key: deviceAddr (string) -> gatewayType (int)
+	connBuffers    sync.Map // key: connKey(conn) -> *bytes.Buffer
+	gatewayInfoMap sync.Map // key: IP:Port -> gatewayInfo
+
 	queueOnce       sync.Once
-	recordQueue     chan recordJob
+	recordQueue     chan tagObservation
 	recordQueueMu   sync.RWMutex
 	recordClosing   bool
 	recordWg        sync.WaitGroup
 	recordWorkersWg sync.WaitGroup
-	workerCount     = 4
-	queueSize       = 1024
+
+	dedupMu       sync.Mutex
+	lastTagReport = make(map[string]time.Time)
+	tagSyncMu     sync.Mutex
 )
 
-// SetGatewayType 动态设置网关地址对应的类型（供外部调用）
-func SetGatewayType(addr string, gatewayType int) {
-	gatewayTypeMap.Store(addr, gatewayType)
+func SetGatewayInfo(addr string, gatewayID int64, gatewayType int) {
+	gatewayInfoMap.Store(addr, gatewayInfo{ID: gatewayID, Type: gatewayType})
 }
 
-func getGatewayType(addr string) int {
-	if val, ok := gatewayTypeMap.Load(addr); ok {
-		return val.(int)
+func DeleteGatewayInfo(addr string) {
+	gatewayInfoMap.Delete(addr)
+}
+
+func getGatewayInfo(addr string) (gatewayInfo, bool) {
+	value, ok := gatewayInfoMap.Load(addr)
+	if !ok {
+		return gatewayInfo{}, false
 	}
-	return 0
+	info, ok := value.(gatewayInfo)
+	return info, ok
 }
 
 func handle(conn net.Conn, data []byte) {
 	key := connKey(conn)
-
 	bufAny, _ := connBuffers.LoadOrStore(key, &bytes.Buffer{})
 	buf := bufAny.(*bytes.Buffer)
 	buf.Write(data)
@@ -68,15 +95,18 @@ func cleanupConnBuffer(conn net.Conn) {
 	connBuffers.Delete(connKey(conn))
 }
 
-// 解析单帧；返回是否成功解析以及消耗的字节数
+// parseFrame 解析单帧。协议当前仅支持 1、10、18 字节数据区；遇到非法长度或
+// 校验失败时前移一个字节重新同步，避免一个坏包永久堵塞整条 TCP 字节流。
 func parseFrame(frameData []byte, deviceAddr string) (bool, int) {
 	if len(frameData) < 6 {
 		return false, 0
 	}
 
-	lenLow := int(frameData[4])
-	lenHigh := int(frameData[5])
-	dataLen := lenLow + lenHigh*256
+	dataLen := int(frameData[4]) + int(frameData[5])*256
+	if dataLen != 1 && dataLen != 10 && dataLen != 18 {
+		return true, 1
+	}
+
 	totalLen := 6 + dataLen + 1
 	if len(frameData) < totalLen {
 		return false, 0
@@ -84,87 +114,86 @@ func parseFrame(frameData []byte, deviceAddr string) (bool, int) {
 
 	data := frameData[6 : 6+dataLen]
 	check := frameData[6+dataLen]
-
 	var bcc byte
 	for _, b := range data {
 		bcc ^= b
 	}
 	if bcc != check {
-		return true, totalLen // 丢弃校验失败的帧
+		utils.Log.Warn("标签帧 BCC 校验失败", "device", deviceAddr)
+		return true, 1
 	}
 
 	switch dataLen {
 	case 1:
 		parseAckFrame(data, deviceAddr)
 	case 10:
-		parseNoTimeFrame(data, deviceAddr)
+		parseTagFrame(data, deviceAddr, false)
 	case 18:
-		parseWithTimeFrame(data, deviceAddr)
+		parseTagFrame(data, deviceAddr, true)
 	}
-
 	return true, totalLen
 }
 
 func parseAckFrame(data []byte, deviceAddr string) {
-	if len(data) < 1 {
-		return
-	}
-	status := data[0]
-	utils.Log.Info("收到设备确认帧", "device", deviceAddr, "status", status)
+	utils.Log.Info("收到设备确认帧", "device", deviceAddr, "status", data[0])
 }
 
-func parseNoTimeFrame(data []byte, deviceAddr string) {
-	if len(data) < 9 {
+func parseTagFrame(data []byte, deviceAddr string, hasDeviceTime bool) {
+	minimumLength := 10
+	if hasDeviceTime {
+		minimumLength = 18
+	}
+	if len(data) < minimumLength || data[0] == 0 {
 		return
 	}
-	tagDataLen := data[0]
-	if tagDataLen == 0 {
+
+	info, ok := getGatewayInfo(deviceAddr)
+	if !ok || info.Type < 1 || info.Type > 3 {
+		utils.Log.Warn("收到未登记网关的数据，已忽略", "device", deviceAddr)
 		return
 	}
 
-	rssi := int(data[1])
-	pcValue := fmt.Sprintf("%02X", data[2])
-	batteryLevel := data[3]
-	uid := hex.EncodeToString(data[4:8])
-	antennaNum := int(data[8])
-	
-	var additionalCategory byte
-	if len(data) >= 10 {
-		additionalCategory = data[9]
+	observedAt := time.Now()
+	if hasDeviceTime {
+		parsed, err := parseDeviceTime(data[9:17])
+		if err != nil {
+			utils.Log.Warn("设备时间无效，改用服务器当前时间", "device", deviceAddr, "error", err)
+		} else {
+			observedAt = parsed
+		}
 	}
 
-	batStr := fmt.Sprintf("%02X", batteryLevel)
+	observation := tagObservation{
+		UID:                strings.ToLower(hex.EncodeToString(data[4:8])),
+		RSSI:               int(int8(data[1])),
+		PCValue:            fmt.Sprintf("%02X", data[2]),
+		Battery:            fmt.Sprintf("%02X", data[3]),
+		Antenna:            int(data[8]),
+		AdditionalCategory: int(data[len(data)-1]),
+		ObservedAt:         observedAt,
+		DeviceAddr:         deviceAddr,
+		Gateway:            info,
+	}
 
-	printLine(uid, pcValue, batStr, rssi, antennaNum, int(additionalCategory), time.Now().Format("2006-01-02 15:04:05"), deviceAddr)
+	dedupKey := fmt.Sprintf("%s|%d|%s", deviceAddr, info.Type, observation.UID)
+	if !acceptTagReport(dedupKey, time.Now()) {
+		return
+	}
+
+	utils.Log.Info("收到标签", "gatewayId", info.ID, "gatewayType", info.Type,
+		"uid", observation.UID, "rssi", observation.RSSI, "antenna", observation.Antenna)
+	enqueueRecord(observation)
 }
 
-func parseWithTimeFrame(data []byte, deviceAddr string) {
-	if len(data) < 17 {
-		return
+func parseDeviceTime(data []byte) (time.Time, error) {
+	if len(data) != 8 {
+		return time.Time{}, errors.New("设备时间长度错误")
 	}
-	tagDataLen := data[0]
-	if tagDataLen == 0 {
-		return
+	for i := 0; i < 6; i++ {
+		if data[i]>>4 > 9 || data[i]&0x0f > 9 {
+			return time.Time{}, errors.New("设备时间不是有效 BCD")
+		}
 	}
-
-	rssi := int(data[1])
-	pcValue := fmt.Sprintf("%02X", data[2])
-	batteryLevel := data[3]
-	uid := hex.EncodeToString(data[4:8])
-	antennaNum := int(data[8])
-	_, readTime := parseTime(data[9:17])
-
-	var additionalCategory byte
-	if len(data) >= 18 {
-		additionalCategory = data[17]
-	}
-
-	batStr := fmt.Sprintf("%02X", batteryLevel)
-
-	printLine(uid, pcValue, batStr, rssi, antennaNum, int(additionalCategory), readTime, deviceAddr)
-}
-
-func parseTime(data []byte) (time.Time, string) {
 	year := 2000 + bcdToDec(data[0])
 	month := bcdToDec(data[1])
 	day := bcdToDec(data[2])
@@ -172,94 +201,74 @@ func parseTime(data []byte) (time.Time, string) {
 	minute := bcdToDec(data[4])
 	second := bcdToDec(data[5])
 	millisecond := int(data[6])*256 + int(data[7])
-	t := time.Date(year, time.Month(month), day, hour, minute, second, millisecond*1e6, time.Local)
-	return t, t.Format("2006-01-02 15:04:05")
+	if month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59 || millisecond > 999 {
+		return time.Time{}, errors.New("设备时间字段超出范围")
+	}
+	t := time.Date(year, time.Month(month), day, hour, minute, second, millisecond*int(time.Millisecond), time.Local)
+	if t.Year() != year || int(t.Month()) != month || t.Day() != day {
+		return time.Time{}, errors.New("设备日期无效")
+	}
+	return t, nil
 }
 
 func bcdToDec(b byte) int {
-	return int(b>>4)*10 + int(b&0x0F)
+	return int(b>>4)*10 + int(b&0x0f)
 }
 
-func printLine(uid, pcValue, batStr string, rssi, antenna, addCat int, ts, deviceAddr string) {
-	gwType := getGatewayType(deviceAddr)
-
-	switch gwType {
-	case 1: // 入库
-		fmt.Printf("[入库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
-			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-		enqueueRecord(uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-
-	case 2: // 出库
-		fmt.Printf("[出库设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
-			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-		enqueueRecord(uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-
-	case 3: // 盘点
-		fmt.Printf("[盘点设备] UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s Dev=%s\n",
-			uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-		enqueueRecord(uid, pcValue, batStr, rssi, antenna, addCat, ts, deviceAddr)
-
-	default:
-		// 如果没找到类型，打印警告
-		fmt.Printf("[未知网关类型 %d] 地址=%s UID=%s PC=%s Bat=%s RSSI=%d Ant=%d AddCat=%d Time=%s\n",
-			gwType, deviceAddr, uid, pcValue, batStr, rssi, antenna, addCat, ts)
+func acceptTagReport(key string, now time.Time) bool {
+	dedupMu.Lock()
+	defer dedupMu.Unlock()
+	if previous, ok := lastTagReport[key]; ok && now.Sub(previous) < tagDedupWindow {
+		return false
 	}
-}
-
-type recordJob struct {
-	uid                string
-	pcValue            string
-	batStr             string
-	rssi               int
-	antenna            int
-	additionalCategory int
-	ts                 string
-	deviceAddr         string
+	lastTagReport[key] = now
+	if len(lastTagReport) > 10000 {
+		cutoff := now.Add(-time.Minute)
+		for reportKey, reportedAt := range lastTagReport {
+			if reportedAt.Before(cutoff) {
+				delete(lastTagReport, reportKey)
+			}
+		}
+	}
+	return true
 }
 
 func ensureRecordWorkers() {
 	queueOnce.Do(func() {
-		recordQueue = make(chan recordJob, queueSize)
-		for i := 0; i < workerCount; i++ {
+		recordQueue = make(chan tagObservation, recordQueueSize)
+		for i := 0; i < recordWorkerCount; i++ {
 			recordWorkersWg.Add(1)
 			go recordWorker()
 		}
 	})
 }
 
-func enqueueRecord(uid, pcValue, batStr string, rssi, antenna, addCat int, ts, deviceAddr string) {
+func enqueueRecord(observation tagObservation) {
 	ensureRecordWorkers()
 	recordQueueMu.RLock()
 	if recordClosing {
 		recordQueueMu.RUnlock()
-		utils.Log.Warn("入库队列已关闭，丢弃记录", "uid", uid, "deviceAddr", deviceAddr)
+		utils.Log.Warn("标签记录队列已关闭，丢弃记录", "uid", observation.UID)
 		return
-	}
-	job := recordJob{
-		uid:                uid,
-		pcValue:            pcValue,
-		batStr:             batStr,
-		rssi:               rssi,
-		antenna:            antenna,
-		additionalCategory: addCat,
-		ts:                 ts,
-		deviceAddr:         deviceAddr,
 	}
 	recordWg.Add(1)
 	select {
-	case recordQueue <- job:
+	case recordQueue <- observation:
 		recordQueueMu.RUnlock()
 	default:
 		recordWg.Done()
 		recordQueueMu.RUnlock()
-		utils.Log.Warn("入库队列已满，丢弃记录", "uid", uid, "deviceAddr", deviceAddr)
+		utils.Log.Warn("标签记录队列已满，丢弃记录", "uid", observation.UID, "device", observation.DeviceAddr)
 	}
 }
 
 func recordWorker() {
 	defer recordWorkersWg.Done()
-	for job := range recordQueue {
-		saveRecordToDB(job)
+	for observation := range recordQueue {
+		if err := saveRecordToDB(observation); err != nil {
+			utils.Log.Error("保存标签记录失败", "error", err, "uid", observation.UID,
+				"gatewayId", observation.Gateway.ID, "gatewayType", observation.Gateway.Type)
+		}
 		recordWg.Done()
 	}
 }
@@ -280,92 +289,173 @@ func ShutdownRecordQueue() {
 	recordWorkersWg.Wait()
 }
 
-func saveRecordToDB(job recordJob) {
-	gwType := getGatewayType(job.deviceAddr)
+type assetContext struct {
+	AssetID sql.NullInt64 `gorm:"column:asset_id"`
+	StoreID sql.NullInt64 `gorm:"column:store_id"`
+	Status  sql.NullInt64 `gorm:"column:status"`
+}
 
-	// 解析时间字符串为 time.Time
-	t, err := time.Parse("2006-01-02 15:04:05", job.ts)
+func saveRecordToDB(observation tagObservation) error {
+	// 防止四个工作线程同时为同一个新 UID 创建重复标签。数据库升级脚本还会增加唯一索引。
+	tagSyncMu.Lock()
+	defer tagSyncMu.Unlock()
+
+	return db.GormDB.Transaction(func(tx *gorm.DB) error {
+		asset, err := syncTagAndResolveAsset(tx, observation)
+		if err != nil {
+			return err
+		}
+
+		assetID := nullableInt64(asset.AssetID)
+		storeID := nullableInt64(asset.StoreID)
+		status := 1
+		if asset.Status.Valid && asset.Status.Int64 >= 1 && asset.Status.Int64 <= 7 {
+			status = int(asset.Status.Int64)
+		}
+
+		switch observation.Gateway.Type {
+		case 1:
+			record := map[string]interface{}{
+				"tag_code": observation.UID, "asset_id": assetID, "action_type": 1,
+				"action_time": observation.ObservedAt, "store_to": storeID,
+			}
+			if err := tx.Table("io_records").Create(&record).Error; err != nil {
+				return fmt.Errorf("写入入库记录: %w", err)
+			}
+			if asset.AssetID.Valid {
+				if err := tx.Table("asset").Where("asset_id = ?", asset.AssetID.Int64).
+					Updates(map[string]interface{}{"status": 1, "updated_at": time.Now()}).Error; err != nil {
+					return fmt.Errorf("更新入库资产状态: %w", err)
+				}
+			}
+		case 2:
+			record := map[string]interface{}{
+				"tag_code": observation.UID, "asset_id": assetID, "action_type": 2,
+				"action_time": observation.ObservedAt, "store_from": storeID,
+			}
+			if err := tx.Table("io_records").Create(&record).Error; err != nil {
+				return fmt.Errorf("写入出库记录: %w", err)
+			}
+			if asset.AssetID.Valid {
+				if err := tx.Table("asset").Where("asset_id = ?", asset.AssetID.Int64).
+					Updates(map[string]interface{}{"status": 2, "updated_at": time.Now()}).Error; err != nil {
+					return fmt.Errorf("更新出库资产状态: %w", err)
+				}
+			}
+		case 3:
+			record := map[string]interface{}{
+				"tag_code": observation.UID, "asset_id": assetID, "store_id": storeID,
+				"gateway_id": observation.Gateway.ID, "inventory_time": observation.ObservedAt,
+				"rssi": observation.RSSI, "antenna_num": observation.Antenna,
+				"battery_level": observation.Battery, "pc_value": observation.PCValue,
+				"additional_category": observation.AdditionalCategory,
+				"inventory_status":    status,
+			}
+
+			// 资产与标签的组合在盘点表中保持唯一。网关再次扫描到同一组合时只更新
+			// 原记录的时间和读数；解除绑定后改绑到其他资产，才会形成新的组合。
+			type existingInventory struct {
+				ID int64 `gorm:"column:id"`
+			}
+			var existing existingInventory
+			existingQuery := tx.Table("inventory_records").Select("id").Where("tag_code = ?", observation.UID)
+			if asset.AssetID.Valid {
+				existingQuery = existingQuery.Where("asset_id = ?", asset.AssetID.Int64)
+			} else {
+				existingQuery = existingQuery.Where("asset_id IS NULL")
+			}
+			err := existingQuery.Order("id DESC").Take(&existing).Error
+			switch {
+			case err == nil:
+				// 顺便清理修复前遗留的同组合重复行，使已经再次扫描过的组合在数据库中也只剩一条。
+				if err := tx.Exec(
+					"DELETE FROM inventory_records WHERE id <> ? AND tag_code = ? AND asset_id <=> ?",
+					existing.ID, observation.UID, assetID,
+				).Error; err != nil {
+					return fmt.Errorf("清理重复盘点记录: %w", err)
+				}
+				if err := tx.Table("inventory_records").Where("id = ?", existing.ID).Updates(record).Error; err != nil {
+					return fmt.Errorf("更新盘点记录: %w", err)
+				}
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				record["created_at"] = time.Now()
+				if err := tx.Table("inventory_records").Create(&record).Error; err != nil {
+					return fmt.Errorf("写入盘点记录: %w", err)
+				}
+			default:
+				return fmt.Errorf("查询重复盘点记录: %w", err)
+			}
+		default:
+			return fmt.Errorf("不支持的网关类型: %d", observation.Gateway.Type)
+		}
+
+		if observation.Gateway.ID > 0 {
+			monitor := map[string]interface{}{
+				"asset_id": assetID, "gateway_id": observation.Gateway.ID, "detection_time": observation.ObservedAt,
+			}
+			if err := tx.Table("monitors").Create(&monitor).Error; err != nil {
+				return fmt.Errorf("写入网关监控记录: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
+func syncTagAndResolveAsset(tx *gorm.DB, observation tagObservation) (assetContext, error) {
+	type tagRow struct {
+		ID int64 `gorm:"column:id"`
+	}
+	var tag tagRow
+	err := tx.Table("rfid_tags").Select("id").Where("tag_code = ?", observation.UID).Take(&tag).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		created := map[string]interface{}{
+			"tag_code": observation.UID, "status": 1, "report_time": observation.ObservedAt,
+			"electricity": observation.Battery, "heartbeat": tagHeartbeat(observation),
+		}
+		if err := tx.Table("rfid_tags").Create(&created).Error; err != nil {
+			return assetContext{}, fmt.Errorf("自动创建标签: %w", err)
+		}
+		if err := tx.Table("rfid_tags").Select("id").Where("tag_code = ?", observation.UID).Take(&tag).Error; err != nil {
+			return assetContext{}, fmt.Errorf("读取新标签: %w", err)
+		}
+	} else if err != nil {
+		return assetContext{}, fmt.Errorf("查询标签: %w", err)
+	} else {
+		updates := map[string]interface{}{
+			"status": 1, "report_time": observation.ObservedAt,
+			"electricity": observation.Battery, "heartbeat": tagHeartbeat(observation),
+		}
+		if err := tx.Table("rfid_tags").Where("id = ?", tag.ID).Updates(updates).Error; err != nil {
+			return assetContext{}, fmt.Errorf("更新标签状态: %w", err)
+		}
+	}
+
+	var asset assetContext
+	err = tx.Table("asset_tags AS at").
+		Select("a.asset_id, a.store_id, a.status").
+		Joins("JOIN asset AS a ON a.asset_id = at.asset_id").
+		Where("at.tag_id = ?", tag.ID).
+		Take(&asset).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return assetContext{}, nil
+	}
 	if err != nil {
-		t = time.Now()
+		return assetContext{}, fmt.Errorf("查询标签绑定资产: %w", err)
 	}
-	assetId := resolveAssetIdByTagCode(job.uid)
-
-	switch gwType {
-	case 1: // 入库
-		record := map[string]interface{}{
-			"tag_code":    job.uid,
-			"asset_id":    assetId,
-			"action_type": 1,
-			"action_time": &t,
-		}
-		if err := db.GormDB.Table("io_records").Create(&record).Error; err != nil {
-			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", job.uid, "actionType", 1)
-		} else {
-			utils.Log.Info("成功写入入库记录", "assetId", assetId, "tagCode", job.uid)
-		}
-
-	case 2: // 出库
-		record := map[string]interface{}{
-			"tag_code":    job.uid,
-			"asset_id":    assetId,
-			"action_type": 2,
-			"action_time": &t,
-		}
-		if err := db.GormDB.Table("io_records").Create(&record).Error; err != nil {
-			utils.Log.Error("写入IoRecord失败", "error", err, "uid", job.uid, "tagCode", job.uid, "actionType", 2)
-		} else {
-			utils.Log.Info("成功写入出库记录", "assetId", assetId, "tagCode", job.uid)
-		}
-
-	case 3: // 盘点
-		inventoryRecord := map[string]interface{}{
-			"tag_code":            job.uid,
-			"asset_id":            assetId,
-			"inventory_time":      t,
-			"rssi":                job.rssi,
-			"antenna_num":         job.antenna,
-			"battery_level":       job.batStr,
-			"pc_value":            job.pcValue,
-			"additional_category": job.additionalCategory,
-			"inventory_status":    1, // 默认正常
-			"created_at":          time.Now(),
-		}
-		if err := db.GormDB.Table("inventory_records").Create(&inventoryRecord).Error; err != nil {
-			utils.Log.Error("写入InventoryRecord失败", "error", err, "uid", job.uid, "tagCode", job.uid)
-		} else {
-			utils.Log.Info("成功写入盘点记录", "assetId", assetId, "tagCode", job.uid)
-		}
-
-	default:
-		return
-	}
+	return asset, nil
 }
 
-func resolveAssetIdByTagCode(tagCode string) interface{} {
-	var assetId sql.NullInt64
-	if err := db.GormDB.Table("rfid_tags").
-		Select("asset_tags.asset_id").
-		Joins("JOIN asset_tags ON asset_tags.tag_id = rfid_tags.id").
-		Where("rfid_tags.tag_code = ?", tagCode).
-		Limit(1).
-		Scan(&assetId).Error; err != nil {
-		utils.Log.Warn("查询资产关联失败", "error", err, "tagCode", tagCode)
+func tagHeartbeat(observation tagObservation) string {
+	return fmt.Sprintf("gateway=%d;rssi=%d;antenna=%d", observation.Gateway.ID, observation.RSSI, observation.Antenna)
+}
+
+func nullableInt64(value sql.NullInt64) interface{} {
+	if !value.Valid {
 		return nil
 	}
-	if !assetId.Valid {
-		return nil
-	}
-	return assetId.Int64
+	return value.Int64
 }
 
-// --------------------
-// 其他端口占位
-// --------------------
-
-func handle9100(conn net.Conn, data []byte) {
-	// TODO: 在这里实现 0.0.0.0:9100 的协议解析 / 入库 / 回 ACK
-}
-
-func handle9200(conn net.Conn, data []byte) {
-	// TODO: 在这里实现 127.0.0.1:9200 的协议解析 / 入库 / 回 ACK
-}
+// 其他端口占位。
+func handle9100(conn net.Conn, data []byte) {}
+func handle9200(conn net.Conn, data []byte) {}

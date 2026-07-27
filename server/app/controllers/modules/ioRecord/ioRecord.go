@@ -49,7 +49,7 @@ func (c *ioRecordController) GetIoRecords(ctx *gin.Context) {
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -61,7 +61,7 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		Limit(params.Limit).
 		Scan(&ioRecords).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -77,7 +77,7 @@ func (c *ioRecordController) AddBuzzer(context *gin.Context) {
 	var buzzer types.Buzzer
 	if err := context.ShouldBindJSON(&buzzer); err != nil {
 		utils.Log.Warn("请求参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	if err := db.GormDB.
@@ -85,7 +85,7 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 		Create(&buzzer).
 		Error; err != nil {
 		utils.Log.Error("新增buzzer失败", "error", err)
-utils.Response.ServerError(context, "新增失败，请稍后重试")
+		utils.Response.ServerError(context, "新增失败，请稍后重试")
 		return
 	}
 	utils.Response.SuccessNoData(context)
@@ -96,7 +96,7 @@ func (c *ioRecordController) DelBuzzers(context *gin.Context) {
 	err := context.ShouldBind(&ids)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 	// 服务层
@@ -130,7 +130,7 @@ func (c *ioRecordController) UpdateBuzzer(ctx *gin.Context) {
 		Where("buzzer_id = ?", buzzer.BuzzerId).
 		Updates(&buzzer).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -162,7 +162,7 @@ func (c *ioRecordController) GetBuzzer(ctx *gin.Context) {
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -174,7 +174,7 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		Scan(&buzzers).Error
 	if err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -196,7 +196,7 @@ func (c *ioRecordController) GetPanel(ctx *gin.Context) {
 		Where("action_time BETWEEN ? AND ?", start, now).
 		Find(&records).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -366,11 +366,14 @@ func (c *ioRecordController) GetFlowStats(ctx *gin.Context) {
 
 func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 	type StayItem struct {
-		Asset    string  `json:"asset"`
-		Location string  `json:"location"`
-		Type     string  `json:"type"`
-		Start    float64 `json:"startTime"`
-		End      float64 `json:"endTime"`
+		Asset      string  `json:"asset"`
+		Location   string  `json:"location"`
+		Type       string  `json:"type"`
+		Start      float64 `json:"startTime"`
+		End        float64 `json:"endTime"`
+		StartLabel string  `json:"startLabel"`
+		EndLabel   string  `json:"endLabel"`
+		Ongoing    bool    `json:"ongoing"`
 	}
 
 	hours := int64(24)
@@ -405,53 +408,74 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 	start := end.Add(-time.Duration(hours) * time.Hour)
 
 	type row struct {
-		AssetID    int64     `gorm:"column:asset_id"`
-		AssetCode  string    `gorm:"column:asset_code"`
-		AssetType  int       `gorm:"column:asset_type"`
-		StartTime  time.Time `gorm:"column:start_time"`
-		EndTime    time.Time `gorm:"column:end_time"`
-		StoreID    int64     `gorm:"column:store_id"`
-		StoreName  string    `gorm:"column:store_name"`
+		AssetID   int64     `gorm:"column:asset_id"`
+		AssetCode string    `gorm:"column:asset_code"`
+		TypeName  string    `gorm:"column:type_name"`
+		StartTime time.Time `gorm:"column:start_time"`
+		EndTime   time.Time `gorm:"column:end_time"`
+		StoreID   int64     `gorm:"column:store_id"`
+		StoreName string    `gorm:"column:store_name"`
+		Ongoing   bool      `gorm:"column:ongoing"`
 	}
 
 	var rows []row
 	baseSQL := `
-		SELECT
-			r.asset_id,
-			a.asset_code,
-			a.asset_type,
-			r.action_time AS start_time,
-			r.next_action_time AS end_time,
-			COALESCE(r.store_to, r.store_from) AS store_id,
-			s.store_name
-		FROM (
+		WITH ordered_records AS (
+			SELECT
+				id,
+				asset_id,
+				action_type,
+				action_time,
+				store_to,
+				store_from,
+				LAG(action_type) OVER (PARTITION BY asset_id ORDER BY action_time, id) AS previous_action_type
+			FROM io_records
+			WHERE asset_id IS NOT NULL
+			  AND action_time IS NOT NULL
+			  AND action_type IN (1, 2)
+		),
+		state_changes AS (
+			SELECT id, asset_id, action_type, action_time, store_to, store_from
+			FROM ordered_records
+			WHERE previous_action_type IS NULL OR previous_action_type <> action_type
+		),
+		stay_periods AS (
 			SELECT
 				asset_id,
 				action_type,
 				action_time,
 				store_to,
 				store_from,
-				LEAD(action_type) OVER (PARTITION BY asset_id ORDER BY action_time) AS next_action_type,
-				LEAD(action_time) OVER (PARTITION BY asset_id ORDER BY action_time) AS next_action_time
-			FROM io_records
-			WHERE action_time IS NOT NULL
-		) r
-		LEFT JOIN asset a ON a.asset_id = r.asset_id
-		LEFT JOIN stores s ON s.store_id = COALESCE(r.store_to, r.store_from)
-		WHERE r.action_type = 1
-		  AND r.next_action_type = 2
-		  AND r.next_action_time IS NOT NULL
-		  AND r.action_time < ?
-		  AND r.next_action_time > ?
+				LEAD(action_type) OVER (PARTITION BY asset_id ORDER BY action_time, id) AS next_action_type,
+				LEAD(action_time) OVER (PARTITION BY asset_id ORDER BY action_time, id) AS next_action_time
+			FROM state_changes
+		)
+		SELECT
+			p.asset_id,
+			a.asset_code,
+			COALESCE(t.type_name, '未知') AS type_name,
+			p.action_time AS start_time,
+			COALESCE(p.next_action_time, ?) AS end_time,
+			COALESCE(p.store_to, p.store_from, a.store_id) AS store_id,
+			s.store_name,
+			(p.next_action_time IS NULL) AS ongoing
+		FROM stay_periods p
+		LEFT JOIN asset a ON a.asset_id = p.asset_id
+		LEFT JOIN asset_types t ON t.type_id = a.asset_type
+		LEFT JOIN stores s ON s.store_id = COALESCE(p.store_to, p.store_from, a.store_id)
+		WHERE p.action_type = 1
+		  AND (p.next_action_type = 2 OR p.next_action_type IS NULL)
+		  AND p.action_time < ?
+		  AND COALESCE(p.next_action_time, ?) > ?
 	`
 
 	var err error
 	if assetCode != "" {
-		baseSQL += " AND a.asset_code = ? ORDER BY r.action_time DESC LIMIT ?"
-		err = db.GormDB.Raw(baseSQL, end, start, assetCode, limit).Scan(&rows).Error
+		baseSQL += " AND a.asset_code = ? ORDER BY p.action_time DESC LIMIT ?"
+		err = db.GormDB.Raw(baseSQL, end, end, end, start, assetCode, limit).Scan(&rows).Error
 	} else {
-		baseSQL += " ORDER BY r.action_time DESC LIMIT ?"
-		err = db.GormDB.Raw(baseSQL, end, start, limit).Scan(&rows).Error
+		baseSQL += " ORDER BY p.action_time DESC LIMIT ?"
+		err = db.GormDB.Raw(baseSQL, end, end, end, start, limit).Scan(&rows).Error
 	}
 	if err != nil {
 		utils.Log.Error("查询资产停留分布失败", "error", err)
@@ -475,19 +499,15 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 		startHour := overlapStart.Sub(start).Hours()
 		endHour := overlapEnd.Sub(start).Hours()
 
-		typeLabel := "未知"
-		if r.AssetType == 1 {
-			typeLabel = "工装车"
-		} else if r.AssetType == 0 {
-			typeLabel = "牵引车"
+		typeLabel := strings.TrimSpace(r.TypeName)
+		if typeLabel == "" {
+			typeLabel = "未知"
 		}
 
 		assetLabel := r.AssetCode
 		if strings.TrimSpace(assetLabel) == "" {
 			assetLabel = fmt.Sprintf("资产-%d", r.AssetID)
 		}
-		assetLabel = fmt.Sprintf("%s-%s", typeLabel, assetLabel)
-
 		location := r.StoreName
 		if strings.TrimSpace(location) == "" {
 			if r.StoreID > 0 {
@@ -498,11 +518,14 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 		}
 
 		items = append(items, StayItem{
-			Asset:    assetLabel,
-			Location: location,
-			Type:     typeLabel,
-			Start:    startHour,
-			End:      endHour,
+			Asset:      assetLabel,
+			Location:   location,
+			Type:       typeLabel,
+			Start:      startHour,
+			End:        endHour,
+			StartLabel: overlapStart.Format("01-02 15:04"),
+			EndLabel:   overlapEnd.Format("01-02 15:04"),
+			Ongoing:    r.Ongoing,
 		})
 	}
 
@@ -545,7 +568,7 @@ func (c *ioRecordController) GetFlows(ctx *gin.Context) {
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -557,7 +580,7 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		Offset(params.Offset).
 		Scan(&flowVOs).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 

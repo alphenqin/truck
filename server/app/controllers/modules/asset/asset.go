@@ -32,7 +32,7 @@ func (a *assetController) AddAsset(context *gin.Context) {
 	err := context.ShouldBind(&params)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 
@@ -40,7 +40,7 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 	var count int64
 	if err := db.GormDB.Table("asset").Where("asset_code = ?", params.AssetCode).Count(&count).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(context, "操作失败，请稍后重试")
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	if count > 0 {
@@ -69,7 +69,7 @@ utils.Response.ServerError(context, "操作失败，请稍后重试")
 	if err != nil {
 		tx.Rollback()
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(context, "操作失败，请稍后重试")
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 
@@ -164,7 +164,7 @@ func (a *assetController) GetAssets(ctx *gin.Context) {
 		Offset(params.Offset).
 		Scan(&assets).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -181,7 +181,7 @@ func (a *assetController) DelAsset(context *gin.Context) {
 	err := context.ShouldBind(&ids)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 
@@ -229,7 +229,7 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 	if err != nil {
 		tx.Rollback()
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(context, "操作失败，请稍后重试")
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	if err := tx.Commit().Error; err != nil {
@@ -254,7 +254,7 @@ func (a *assetController) UpdateAsset(context *gin.Context) {
 	err := context.ShouldBind(&params)
 	if err != nil {
 		utils.Log.Warn("参数绑定失败", "error", err)
-utils.Response.ParameterTypeError(context, "参数格式错误")
+		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
 
@@ -264,7 +264,7 @@ utils.Response.ParameterTypeError(context, "参数格式错误")
 		Where("asset_code = ? AND asset_id != ?", params.AssetCode, params.AssetId).
 		Count(&count).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(context, "操作失败，请稍后重试")
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	if count > 0 {
@@ -288,7 +288,7 @@ utils.Response.ServerError(context, "操作失败，请稍后重试")
 	}).Error; err != nil {
 		tx.Rollback()
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(context, "操作失败，请稍后重试")
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 
@@ -356,7 +356,7 @@ func (a *assetController) GetStatus(ctx *gin.Context) {
 
 	if err != nil {
 		utils.Log.Error("查询资产状态统计失败", "error", err)
-utils.Response.ServerError(ctx, "查询失败，请稍后重试")
+		utils.Response.ServerError(ctx, "查询失败，请稍后重试")
 		return
 	}
 	assetStatusStatisticsVO.List = result
@@ -717,7 +717,7 @@ func (a *assetController) UpdateType(ctx *gin.Context) {
 		Where("asset_id = ?", params.AssetId).
 		Update("status", params.Status).Error; err != nil {
 		utils.Log.Error("状态更新失败", "error", err)
-utils.Response.ServerError(ctx, "更新失败，请稍后重试")
+		utils.Response.ServerError(ctx, "更新失败，请稍后重试")
 		return
 	}
 
@@ -897,7 +897,7 @@ func (a *assetController) QueryLost(ctx *gin.Context) {
 	// 总数
 	if err := query.Count(&total).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -908,7 +908,7 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		Offset(params.Offset).
 		Scan(&list).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1004,7 +1004,7 @@ func (a *assetController) GetTrack(ctx *gin.Context) {
 	var total int64
 	var records []types.MonitorRecordVO
 
-	dbQuery := db.GormDB.Table("monitor AS m").
+	dbQuery := db.GormDB.Table("monitors AS m").
 		Select("m.monitor_id, m.asset_id, a.asset_code, m.gateway_id, g.gateway_name, DATE_FORMAT(m.detection_time, '%Y-%m-%d %H:%i:%s') as detection_time").
 		Joins("LEFT JOIN asset AS a ON m.asset_id = a.asset_id").
 		Joins("LEFT JOIN gateways AS g ON m.gateway_id = g.id").
@@ -1018,7 +1018,7 @@ func (a *assetController) GetTrack(ctx *gin.Context) {
 	// 计算总数
 	if err := dbQuery.Count(&total).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1029,7 +1029,7 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		Offset(params.Offset).
 		Scan(&records).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1052,7 +1052,7 @@ func (a *assetController) GetLocation(ctx *gin.Context) {
 	}
 
 	var monitor types.MonitorRecordVO
-	query := db.GormDB.Table("monitor AS m").
+	query := db.GormDB.Table("monitors AS m").
 		Select("m.monitor_id, m.asset_id, a.asset_code, m.gateway_id, g.gateway_name, DATE_FORMAT(m.detection_time, '%Y-%m-%d %H:%i:%s') as detection_time").
 		Joins("LEFT JOIN asset AS a ON m.asset_id = a.asset_id").
 		Joins("LEFT JOIN gateways AS g ON m.gateway_id = g.id")
@@ -1070,7 +1070,7 @@ func (a *assetController) GetLocation(ctx *gin.Context) {
 			utils.Response.Success(ctx, nil) // 没查到就返回 null
 		} else {
 			utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+			utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		}
 		return
 	}
@@ -1314,7 +1314,7 @@ func (a *assetController) QueryFlow(ctx *gin.Context) {
 	var total int64
 	if err := dbQuery.Count(&total).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1325,7 +1325,7 @@ utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		Offset(params.Offset).
 		Scan(&list).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1357,7 +1357,7 @@ func (a *assetController) HandleException(ctx *gin.Context) {
 			"update_time":    time.Now(),
 		}).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1385,7 +1385,7 @@ func (a *assetController) BatchHandleException(ctx *gin.Context) {
 			"update_time":    time.Now(),
 		}).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 
@@ -1427,7 +1427,7 @@ func (a *assetController) ExportException(ctx *gin.Context) {
 	var list []types.ExceptionRecord
 	if err := dbQuery.Order("e.detection_time DESC").Find(&list).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
-utils.Response.ServerError(ctx, "操作失败，请稍后重试")
+		utils.Response.ServerError(ctx, "操作失败，请稍后重试")
 		return
 	}
 

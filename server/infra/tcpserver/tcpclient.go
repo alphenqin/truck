@@ -2,8 +2,10 @@ package tcpserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -12,18 +14,49 @@ import (
 	"github.com/Xi-Yuer/cms/support/utils"
 )
 
+type gatewayClient struct {
+	id     string
+	addr   string
+	cancel context.CancelFunc
+
+	mu   sync.Mutex
+	conn net.Conn
+}
+
+func (c *gatewayClient) setConn(conn net.Conn) {
+	c.mu.Lock()
+	c.conn = conn
+	c.mu.Unlock()
+}
+
+func (c *gatewayClient) clearConn(conn net.Conn) {
+	c.mu.Lock()
+	if c.conn == conn {
+		c.conn = nil
+	}
+	c.mu.Unlock()
+}
+
+func (c *gatewayClient) stop() {
+	c.cancel()
+	c.mu.Lock()
+	if c.conn != nil {
+		_ = c.conn.Close()
+		c.conn = nil
+	}
+	c.mu.Unlock()
+}
+
 var (
-	// 简单的去重/管理映射，防止短时间内对同一地址重复发起连接任务
-	// key: address (string) -> value: bool (true)
-	activeConnections sync.Map
+	gatewayClientsMu sync.Mutex
+	gatewayClients   = make(map[string]*gatewayClient)
 )
 
-// StartClients 主动连接远端设备（设备作为服务器），支持多个地址，逗号分隔
+// StartClients 从数据库加载全部启用网关。设备作为 TCP 服务端，本程序主动连接。
 func StartClients() {
 	var gateways []types.Gateway
-	// Assuming status 1 is enabled
 	if err := db.GormDB.Table("gateways").Where("status = ?", 1).Find(&gateways).Error; err != nil {
-		utils.Log.Error("Failed to load gateways from DB", err)
+		utils.Log.Error("从数据库加载网关失败", "error", err)
 		return
 	}
 
@@ -32,63 +65,144 @@ func StartClients() {
 	}
 }
 
-// ConnectGateway 对外暴露，允许动态触发连接
+// ConnectGateway 使某个网关的运行连接与数据库配置保持一致。
+// 同一网关修改 IP/端口时会先停止旧连接；禁用状态会停止已有连接。
 func ConnectGateway(gw types.Gateway) {
-	if gw.IpAddress == "" || gw.Port == 0 {
-		return
-	}
-	// 只有启用状态才连接
-	if gw.Status != nil && *gw.Status != 1 {
+	clientID := gatewayClientID(gw)
+	if gw.Status == nil || *gw.Status != 1 || gw.IpAddress == "" || gw.Port <= 0 {
+		StopGateway(gw.Id)
 		return
 	}
 
 	addr := fmt.Sprintf("%s:%d", gw.IpAddress, gw.Port)
-	
-	// 简单去重：如果该地址已经在连接循环中，暂不重复启动
-	// 注意：这里仅防止启动时的重复，并不能处理“修改IP后旧连接自动断开”的复杂逻辑
-	// 如果IP变了，新IP会启动新任务；旧IP的任务会因为连不上或超时而重试（需人工重启或等待TCP超时）
-	if _, loaded := activeConnections.LoadOrStore(addr, true); loaded {
-		utils.Log.Info("该地址已在连接任务中，跳过启动", "addr", addr)
-		// 更新类型映射，确保即使不重启连接，类型变更也能生效
-		SetGatewayType(addr, gw.GatewayType)
+	gatewayID, _ := strconv.ParseInt(gw.Id, 10, 64)
+
+	gatewayClientsMu.Lock()
+	if current, ok := gatewayClients[clientID]; ok && current.addr == addr {
+		SetGatewayInfo(addr, gatewayID, gw.GatewayType)
+		gatewayClientsMu.Unlock()
 		return
 	}
 
-	// 将网关地址与类型绑定
-	SetGatewayType(addr, gw.GatewayType)
-	go connectLoop(addr)
+	var previous *gatewayClient
+	if current, ok := gatewayClients[clientID]; ok {
+		previous = current
+		delete(gatewayClients, clientID)
+	}
+	for id, current := range gatewayClients {
+		if current.addr == addr && id != clientID {
+			gatewayClientsMu.Unlock()
+			if previous != nil {
+				previous.stop()
+				DeleteGatewayInfo(previous.addr)
+			}
+			utils.Log.Warn("多个网关配置了相同地址，跳过重复连接", "gatewayId", gw.Id, "addr", addr)
+			return
+		}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	client := &gatewayClient{id: clientID, addr: addr, cancel: cancel}
+	gatewayClients[clientID] = client
+	SetGatewayInfo(addr, gatewayID, gw.GatewayType)
+	gatewayClientsMu.Unlock()
+
+	if previous != nil {
+		previous.stop()
+		DeleteGatewayInfo(previous.addr)
+	}
+	go connectLoop(ctx, client)
 }
 
-func connectLoop(addr string) {
-	backoff := time.Second
-	maxBackoff := 30 * time.Second
+func gatewayClientID(gw types.Gateway) string {
+	if gw.Id != "" {
+		return "id:" + gw.Id
+	}
+	return fmt.Sprintf("addr:%s:%d", gw.IpAddress, gw.Port)
+}
 
-	defer activeConnections.Delete(addr) // 如果循环退出（虽然目前是死循环），清除标记
+// StopGateway 停止指定数据库网关 ID 对应的连接和重连任务。
+func StopGateway(gatewayID string) {
+	if gatewayID == "" {
+		return
+	}
+	clientID := "id:" + gatewayID
+	gatewayClientsMu.Lock()
+	client := gatewayClients[clientID]
+	delete(gatewayClients, clientID)
+	gatewayClientsMu.Unlock()
+	if client != nil {
+		client.stop()
+		DeleteGatewayInfo(client.addr)
+	}
+}
+
+// ShutdownClients 停止全部连接，供进程优雅退出使用。
+func ShutdownClients() {
+	gatewayClientsMu.Lock()
+	clients := make([]*gatewayClient, 0, len(gatewayClients))
+	for id, client := range gatewayClients {
+		clients = append(clients, client)
+		delete(gatewayClients, id)
+	}
+	gatewayClientsMu.Unlock()
+
+	for _, client := range clients {
+		client.stop()
+		DeleteGatewayInfo(client.addr)
+	}
+}
+
+func connectLoop(ctx context.Context, client *gatewayClient) {
+	backoff := time.Second
+	const maxBackoff = 30 * time.Second
+	dialer := net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
 
 	for {
-		conn, err := net.Dial("tcp", addr)
+		conn, err := dialer.DialContext(ctx, "tcp", client.addr)
 		if err != nil {
-			utils.Log.Warn("TCP 客户端连接失败", "addr", addr, "error", err)
-			time.Sleep(backoff)
-			if backoff < maxBackoff {
-				backoff *= 2
-				if backoff > maxBackoff {
-					backoff = maxBackoff
-				}
+			if ctx.Err() != nil {
+				return
+			}
+			utils.Log.Warn("TCP 客户端连接失败", "addr", client.addr, "error", err)
+			if !waitForRetry(ctx, backoff) {
+				return
+			}
+			backoff *= 2
+			if backoff > maxBackoff {
+				backoff = maxBackoff
 			}
 			continue
 		}
 
-		utils.Log.Info("TCP 客户端已连接", "addr", addr)
-		handleClientConn(conn, addr)
+		client.setConn(conn)
+		utils.Log.Info("TCP 客户端已连接", "addr", client.addr)
+		handleClientConn(conn, client.addr)
+		client.clearConn(conn)
 		_ = conn.Close()
-		utils.Log.Warn("TCP 客户端连接断开，将重连", "addr", addr)
-		time.Sleep(time.Second)
+		if ctx.Err() != nil {
+			return
+		}
+		utils.Log.Warn("TCP 客户端连接断开，将重连", "addr", client.addr)
+		if !waitForRetry(ctx, time.Second) {
+			return
+		}
 		backoff = time.Second
 	}
 }
 
-// 读取远端设备数据并复用业务解析（与 handle 一致的粘包处理）
+func waitForRetry(ctx context.Context, delay time.Duration) bool {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
+}
+
+// handleClientConn 按连接维护缓冲区，支持 TCP 半包和粘包。
 func handleClientConn(conn net.Conn, deviceAddr string) {
 	var buf bytes.Buffer
 	readBuf := make([]byte, 4096)

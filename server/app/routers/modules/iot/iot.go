@@ -36,6 +36,8 @@ func IotAuthRoutes(r *gin.RouterGroup) {
 
 	groupInventoryDetail := r.Group("/iot/inventory-detail")
 	{
+		// 批量删除盘点记录
+		groupInventoryDetail.DELETE("/batch-delete", controllers.IotController.BatchDeleteInventoryDetails)
 		// 查 - 盘点详情
 		groupInventoryDetail.POST("/query", controllers.IotController.GetInventoryDetails)
 	}

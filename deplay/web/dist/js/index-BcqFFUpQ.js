@@ -1,0 +1,1 @@
+import{r as e}from"./route-login-D0lXF8-d.js";const n=t=>e.post({url:"/iot/inventory-detail/query",data:t}),a=t=>e.delete({url:"/iot/inventory-detail/batch-delete",data:t}),o=()=>e.get({url:"/iot/inventory-records/status-trend"});export{o as a,a as b,n as g};

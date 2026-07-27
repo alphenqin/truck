@@ -46,6 +46,7 @@ const BaseType = lazy(() => import('@/pages/base/type/index.tsx'));
 const BaseLine = lazy(() => import('@/pages/base/line/index.tsx'));
 const BaseArg = lazy(() => import('@/pages/base/arg/index.tsx'));
 const BaseNotice = lazy(() => import('@/pages/base/notice/index.tsx'));
+const BaseGroup = lazy(() => import('@/pages/base/group/index.tsx'));
 
 // iot
 const IotGateway = lazy(() => import('@/pages/Iot/Gateway/index.tsx'));
@@ -88,6 +89,7 @@ const pagesMap: Record<string, React.ReactNode | null> = {
   '/base/line': <BaseLine/>,
   '/base/arg': <BaseArg/>,
   '/base/notice': <BaseNotice/>,
+  '/base/group': <BaseGroup/>,
 
   // iot
   '/iot/gateway': <IotGateway/>,

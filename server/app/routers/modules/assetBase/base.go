@@ -6,6 +6,15 @@ import (
 )
 
 func AssetBaseRoutes(r *gin.RouterGroup) {
+	// 班组信息
+	groupBaseGroup := r.Group("/base/group")
+	{
+		groupBaseGroup.POST("", controllers.AssetBaseController.AddGroup)
+		groupBaseGroup.DELETE("/batch-delete", controllers.AssetBaseController.DelGroups)
+		groupBaseGroup.PATCH("/update", controllers.AssetBaseController.UpdateGroup)
+		groupBaseGroup.POST("/query", controllers.AssetBaseController.GetGroups)
+	}
+
 	// 资产部门
 	groupBaseDepartment := r.Group("/base/department")
 	{

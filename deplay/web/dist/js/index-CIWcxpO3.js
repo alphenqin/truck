@@ -1,0 +1,1 @@
+import{r as t}from"./route-login-D0lXF8-d.js";const r=e=>t.post({url:"/base/type/query",data:e}),p=e=>t.post({url:"/base/type",data:e}),u=(e,s)=>t.patch({url:"/base/type/update",data:{...s,typeId:e}}),o=e=>t.delete({url:"/base/type/batch-delete",data:e}),d=e=>t.post({url:"/base/type/export",data:{ids:e},responseType:"blob"});export{p as c,o as d,d as e,r as g,u};

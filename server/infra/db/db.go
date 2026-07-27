@@ -55,5 +55,8 @@ func InitDB() error {
 	}
 
 	utils.Log.Info("GORM 数据库连接成功")
+	if err := ensureGroupInfoMenu(GormDB); err != nil {
+		return fmt.Errorf("初始化班组信息菜单失败: %w", err)
+	}
 	return nil
 }

@@ -464,6 +464,16 @@ func (c iotController) GetInventoryDetails(context *gin.Context) {
 }
 
 func (c iotController) GetInventoryStatusTrend(context *gin.Context) {
+	var storeID int64
+	if rawStoreID := strings.TrimSpace(context.Query("storeId")); rawStoreID != "" {
+		parsedStoreID, err := strconv.ParseInt(rawStoreID, 10, 64)
+		if err != nil || parsedStoreID <= 0 {
+			utils.Response.ParameterTypeError(context, "场库ID无效")
+			return
+		}
+		storeID = parsedStoreID
+	}
+
 	var trendItems []iotResponsiesModules.InventoryStatusTrendItem
 	query := `
 		WITH ranked_records AS (
@@ -486,11 +496,17 @@ func (c iotController) GetInventoryStatusTrend(context *gin.Context) {
 		FROM ranked_records r
 		LEFT JOIN asset a ON r.asset_id = a.asset_id
 		WHERE r.row_num = 1
+		  AND (? = 0 OR EXISTS (
+			SELECT 1
+			FROM asset_groups ag
+			INNER JOIN group_stores gs ON gs.group_id = ag.group_id
+			WHERE ag.asset_id = r.asset_id AND gs.store_id = ?
+		  ))
 		GROUP BY time, inventory_status, asset_type
 		ORDER BY time ASC, inventory_status ASC, asset_type ASC
 	`
 
-	if err := db.GormDB.Raw(query).Scan(&trendItems).Error; err != nil {
+	if err := db.GormDB.Raw(query, storeID, storeID).Scan(&trendItems).Error; err != nil {
 		utils.Log.Error("查询盘点状态趋势失败", "error", err)
 		utils.Response.ServerError(context, "查询失败，请稍后重试")
 		return

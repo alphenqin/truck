@@ -54,9 +54,10 @@ export const batchDeleteInventoryDetailRequest = (ids: number[]) => {
   });
 };
 
-// 获取近24小时资产状态趋势
-export const getInventoryStatusTrend24hRequest = () => {
+// 获取近24小时资产状态趋势；不传场库时统计全部场库。
+export const getInventoryStatusTrend24hRequest = (storeId?: number) => {
   return request.get<AxiosResponse<{ list: IInventoryStatusTrendItem[] }>>({
     url: '/iot/inventory-records/status-trend',
+    params: storeId ? { storeId } : undefined,
   });
 };

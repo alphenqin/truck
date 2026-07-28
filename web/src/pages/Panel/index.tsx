@@ -1,10 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Row, Col, Card, Modal, Button, Input, InputNumber } from 'antd';
+import { Row, Col, Card, Modal, Button, Input, InputNumber, Select } from 'antd';
 import { FullscreenOutlined } from '@ant-design/icons';
 import { Column, Bar, Line, Pie } from '@ant-design/plots';
 import dayjs from 'dayjs';
 import { getInventoryStatusTrend24hRequest, IInventoryStatusTrendItem } from '@/service/api/inventory';
-import { getAssetStatusStatisticsRequest, getInStorageDistributionRequest, getLostStatsRequest } from '@/service/api/asset';
+import {
+  getAssetStatusStatisticsRequest,
+  getInStorageDistributionRequest,
+  getLostStatsRequest,
+  getStoreOptionsRequest,
+  IStoreOption,
+} from '@/service/api/asset';
 import { getIoRecordFlowStatsRequest, actionTypeMap, getAssetStayRequest } from '@/service/api/ioRecord';
 import './index.css';
 
@@ -58,6 +64,9 @@ const PanelPage: React.FC = () => {
   const [searchTermAssetStay, setSearchTermAssetStay] = useState('');
   const [assetStatusTrendData, setAssetStatusTrendData] = useState<{ time: string; statusType: string; value: number }[]>([]);
   const [assetStatusTrendLoading, setAssetStatusTrendLoading] = useState(false);
+  const [trendStoreId, setTrendStoreId] = useState<number>();
+  const [storeOptions, setStoreOptions] = useState<IStoreOption[]>([]);
+  const [storeOptionsLoading, setStoreOptionsLoading] = useState(false);
   const [assetStatusData, setAssetStatusData] = useState<{ status: string; count: number }[]>(emptyAssetStatusData());
   const [assetStatusLoading, setAssetStatusLoading] = useState(false);
   const [inStorageData, setInStorageData] = useState<{ store: string; count: number }[]>([]);
@@ -78,10 +87,11 @@ const PanelPage: React.FC = () => {
   }[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchTrend = async () => {
       setAssetStatusTrendLoading(true);
       try {
-        const res: any = await getInventoryStatusTrend24hRequest();
+        const res: any = await getInventoryStatusTrend24hRequest(trendStoreId);
         const list = (res?.data?.list || []) as IInventoryStatusTrendItem[];
         const now = dayjs();
         const timeKeys: string[] = [];
@@ -105,12 +115,28 @@ const PanelPage: React.FC = () => {
             value: countMap.get(`${time}|${status}`) || 0,
           }))
         );
-        setAssetStatusTrendData(data);
+        if (!cancelled) setAssetStatusTrendData(data);
       } finally {
-        setAssetStatusTrendLoading(false);
+        if (!cancelled) setAssetStatusTrendLoading(false);
       }
     };
     fetchTrend();
+    return () => {
+      cancelled = true;
+    };
+  }, [trendStoreId]);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      setStoreOptionsLoading(true);
+      try {
+        const res: any = await getStoreOptionsRequest();
+        setStoreOptions(Array.isArray(res?.data) ? res.data : []);
+      } finally {
+        setStoreOptionsLoading(false);
+      }
+    };
+    fetchStores();
   }, []);
 
   useEffect(() => {
@@ -475,7 +501,7 @@ const PanelPage: React.FC = () => {
   };
 
   // 渲染每个图表卡片的辅助函数
-  const renderChartCard = (title: string, config: any, type: string, showSearch: 'assetStay' | 'circulation' | false = false) => (
+  const renderChartCard = (title: string, config: any, type: string, showSearch: 'assetStay' | 'circulation' | 'statusTrend' | false = false) => (
     <Card className="panel-card" styles={{ body: { padding: 16 } }}>
       <div className="panel-card-header">
         <div className="panel-card-title">{title}</div>
@@ -509,6 +535,22 @@ const PanelPage: React.FC = () => {
                 查询
               </Button>
             </>
+          )}
+          {showSearch === 'statusTrend' && (
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="全部场库"
+              value={trendStoreId}
+              loading={storeOptionsLoading}
+              options={storeOptions.map((store) => ({
+                label: store.storeName,
+                value: store.storeId,
+              }))}
+              onChange={(value) => setTrendStoreId(value)}
+              className="panel-store-select"
+            />
           )}
           <Button
             type="text"
@@ -558,7 +600,8 @@ const PanelPage: React.FC = () => {
           {renderChartCard(
             `资产状态趋势${assetStatusTrendLoading ? '（加载中）' : ''}`,
             assetStatusTrendConfig,
-            'Line'
+            'Line',
+            'statusTrend'
           )}
         </Col>
         <Col xs={24} md={8}>

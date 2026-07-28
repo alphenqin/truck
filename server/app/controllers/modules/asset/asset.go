@@ -377,10 +377,10 @@ func (a *assetController) GetInStorageDistribution(ctx *gin.Context) {
 	var result []InStorageItem
 	err := db.GormDB.
 		Table("asset AS a").
-		Select("COALESCE(gs.store_id, a.store_id, 0) AS store_id, COALESCE(s.store_name, '未分配') AS store_name, COUNT(*) AS count").
+		Select("COALESCE(gs.store_id, 0) AS store_id, COALESCE(s.store_name, '未分配') AS store_name, COUNT(*) AS count").
 		Joins("LEFT JOIN asset_groups ag ON ag.asset_id = a.asset_id").
 		Joins("LEFT JOIN group_stores gs ON gs.group_id = ag.group_id").
-		Joins("LEFT JOIN stores s ON s.store_id = COALESCE(gs.store_id, a.store_id)").
+		Joins("LEFT JOIN stores s ON s.store_id = gs.store_id").
 		Where("a.status IN ?", []int{1, 4}).
 		Group("store_id, store_name").
 		Scan(&result).Error

@@ -1,1 +1,0 @@
-import{r as t}from"./route-login-D0lXF8-d.js";const s=e=>t.post({url:"/sl/garden/query",data:e}),a=e=>t.post({url:"/sl/garden",data:e}),d=e=>t.delete({url:"/sl/garden/batch-delete",data:e}),n=e=>t.patch({url:"/sl/garden/update",data:e}),u=e=>t.post({url:"/sl/garden/export",data:{ids:e},responseType:"blob"});export{a as c,d,u as e,s as g,n as u};

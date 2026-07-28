@@ -29,6 +29,11 @@ export interface ILostStatsResponse {
   list: ILostStatsItem[];
 }
 
+export interface IStoreOption {
+  storeId: number;
+  storeName: string;
+}
+
 export const getAssetStatusStatisticsRequest = () => {
   return request.get<AxiosResponse<IAssetStatusStatisticsResponse>>({
     url: '/asset/status',
@@ -45,5 +50,11 @@ export const getLostStatsRequest = (hours = 24) => {
   return request.get<AxiosResponse<ILostStatsResponse>>({
     url: '/asset/exception/lost/stats',
     params: { hours },
+  });
+};
+
+export const getStoreOptionsRequest = () => {
+  return request.get<AxiosResponse<IStoreOption[]>>({
+    url: '/sl/store/map',
   });
 };

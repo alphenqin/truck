@@ -1,1 +1,0 @@
-import{r as e}from"./route-login-D3x4Ssp4.js";const n=t=>e.post({url:"/iot/inventory-detail/query",data:t}),a=t=>e.delete({url:"/iot/inventory-detail/batch-delete",data:t}),o=t=>e.get({url:"/iot/inventory-records/status-trend",params:t?{storeId:t}:void 0});export{o as a,a as b,n as g};

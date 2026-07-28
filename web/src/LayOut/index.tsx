@@ -96,7 +96,7 @@ const Main: FC = () => {
             preview={false}
             className='tran-fast'
           />
-          <span className='brand-text'>工装车管理系统</span>
+          <span className='brand-text'>工装车智能管理平台</span>
         </div>
 
         {/* 左侧菜单内容 */}

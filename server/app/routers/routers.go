@@ -16,6 +16,7 @@ import (
 	systemDepartmentRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/systemDepartment"
 	timeTaskRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/timeTask"
 	usersRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/users"
+	operationLogRouterModules "github.com/Xi-Yuer/cms/app/routers/modules/operationLog"
 	"github.com/Xi-Yuer/cms/config"
 	"github.com/gin-gonic/gin"
 )
@@ -26,6 +27,9 @@ func SetUpRouters() *gin.Engine {
 	// 创建一个新的 Gin 引擎实例
 	r := gin.New()
 
+	// 配置信任代理：部署在 nginx 后，从 X-Forwarded-For 取真实客户端 IP
+	_ = r.SetTrustedProxies([]string{"127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"})
+
 	// 创建一个路由组 v1，并为该组应用中间件
 	v1 := r.Group(
 		config.Config.APP.BASEURL,        // 基础 URL
@@ -33,6 +37,7 @@ func SetUpRouters() *gin.Engine {
 		middlewares.AuthMiddleWareModule, // 认证中间件
 		middlewares.AuthMethodMiddleWare, // 认证方法中间件
 		middlewares.SessionMiddleWareModule(config.Config.APP.SESSIONSECRET), // 会话中间件
+		middlewares.OperationLogMiddleWare, // 操作日志记录中间件
 	)
 
 	{
@@ -59,6 +64,7 @@ func SetUpRouters() *gin.Engine {
 		assetBaseRouterModules.AssetBaseRoutes(v1)
 		iotRouterModules.IotAuthRoutes(v1)
 		analysisRouterModules.AnalysisRoutes(v1)
+		operationLogRouterModules.UseOperationLogRoutes(v1)
 
 	}
 

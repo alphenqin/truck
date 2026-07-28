@@ -15,6 +15,7 @@ import (
 	systemDepartmentControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/systemDepartment"
 	timeTaskControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/timeTask"
 	userControllersModules "github.com/Xi-Yuer/cms/app/controllers/modules/users"
+	operationLogControllerModules "github.com/Xi-Yuer/cms/app/controllers/modules/operationLog"
 )
 
 // UserController 用户管理控制器，处理用户的增删改查等操作
@@ -54,3 +55,6 @@ var AssetBaseController = assetBaseControllersModules.AssetBaseController
 var IotController = iotControllersModules.IotController
 
 var AnalysisController = analysisControllersModules.AnalysisController
+
+// OperationLogController 操作日志控制器，记录和查询用户操作日志
+var OperationLogController = operationLogControllerModules.OperationLogController

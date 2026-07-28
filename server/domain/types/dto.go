@@ -14,6 +14,7 @@ import (
 	baseRespModules "github.com/Xi-Yuer/cms/domain/types/modules/base"
 	ioRecordRespModules "github.com/Xi-Yuer/cms/domain/types/modules/ioRecord"
 	iotRespModules "github.com/Xi-Yuer/cms/domain/types/modules/iot"
+	operationLogResponsivesModules "github.com/Xi-Yuer/cms/domain/types/modules/operationLog"
 	siteLibraryRespModules "github.com/Xi-Yuer/cms/domain/types/modules/siteLibrary"
 )
 
@@ -198,3 +199,7 @@ type RfidTag = iotRespModules.RfidTag
 type RfidTagDTO = iotRespModules.RfidTagDTO
 type QueryRfidTagsParams = iotRespModules.QueryRfidTagsParams
 type InventoryRecord = iotRespModules.InventoryRecord
+
+// 操作日志
+type OperationLog = operationLogResponsivesModules.OperationLog
+type QueryOperationLogsParams = operationLogResponsivesModules.QueryOperationLogsParams

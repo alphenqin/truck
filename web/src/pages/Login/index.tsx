@@ -79,7 +79,7 @@ const Login: FC = () => {
                 <div className='h-11 w-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center'>
                   <img src={Logo} alt='logo' className='h-7 w-7' />
                 </div>
-                <span className='text-lg font-bold tracking-wide'>工装车管理系统</span>
+                <span className='text-lg font-bold tracking-wide'>工装车智能管理平台</span>
               </div>
               
               <div className='relative space-y-4'>
@@ -87,7 +87,7 @@ const Login: FC = () => {
                   轻量、清晰、<br/>可控
                 </p>
                 <p className='text-base text-white/75 leading-relaxed max-w-[280px]'>
-                  统一车辆、资产与权限管理，打造简洁一致的操作体验
+                  融合 RFID 感知、资产流转与场库管理，让每辆工装车全程可视
                 </p>
               </div>
               

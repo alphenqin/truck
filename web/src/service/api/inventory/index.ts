@@ -26,6 +26,11 @@ export interface IInventoryStatusTrendItem {
   count: number;
 }
 
+export interface IInventoryStatusTrendResponse {
+  list: IInventoryStatusTrendItem[];
+  currentHour: string;
+}
+
 // 带总数的响应数据接口
 export interface IHasTotalResponse<T> {
   total: number;
@@ -56,7 +61,7 @@ export const batchDeleteInventoryDetailRequest = (ids: number[]) => {
 
 // 获取近24小时资产状态趋势；不传场库时统计全部场库。
 export const getInventoryStatusTrend24hRequest = (storeId?: number) => {
-  return request.get<AxiosResponse<{ list: IInventoryStatusTrendItem[] }>>({
+  return request.get<AxiosResponse<IInventoryStatusTrendResponse>>({
     url: '/iot/inventory-records/status-trend',
     params: storeId ? { storeId } : undefined,
   });

@@ -511,8 +511,18 @@ func (c iotController) GetInventoryStatusTrend(context *gin.Context) {
 		utils.Response.ServerError(context, "查询失败，请稍后重试")
 		return
 	}
+	type databaseClock struct {
+		CurrentHour string `gorm:"column:current_hour"`
+	}
+	var clock databaseClock
+	if err := db.GormDB.Raw("SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:00') AS current_hour").Scan(&clock).Error; err != nil {
+		utils.Log.Error("查询数据库当前时间失败", "error", err)
+		utils.Response.ServerError(context, "查询失败，请稍后重试")
+		return
+	}
 
 	utils.Response.Success(context, gin.H{
-		"list": trendItems,
+		"list":        trendItems,
+		"currentHour": clock.CurrentHour,
 	})
 }

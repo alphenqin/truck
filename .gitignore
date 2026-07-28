@@ -89,3 +89,4 @@ node_modules
 
 # Docker 镜像文件
 *.tar
+deplay/

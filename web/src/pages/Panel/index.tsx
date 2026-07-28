@@ -93,7 +93,8 @@ const PanelPage: React.FC = () => {
       try {
         const res: any = await getInventoryStatusTrend24hRequest(trendStoreId);
         const list = (res?.data?.list || []) as IInventoryStatusTrendItem[];
-        const now = dayjs();
+        const databaseHour = dayjs(res?.data?.currentHour);
+        const now = databaseHour.isValid() ? databaseHour : dayjs();
         const timeKeys: string[] = [];
         const timeLabelMap = new Map<string, string>();
         for (let i = 23; i >= 0; i -= 1) {

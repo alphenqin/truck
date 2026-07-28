@@ -146,9 +146,15 @@ const PanelPage: React.FC = () => {
       try {
         const res: any = await getAssetStatusStatisticsRequest();
         const list = res?.data?.list || res?.data?.data?.list || [];
-        const data = list.map((item: { status: number; count: number }) => ({
-          status: inventoryStatusMap[item.status] || String(item.status),
-          count: Number(item.count || 0),
+        // 接口仅返回有数据的状态分组，这里以全状态骨架为底合并，
+        // 保证 7 种状态始终展示（缺数据补 0），柱子数量与顺序稳定。
+        const countMap = new Map<number, number>();
+        list.forEach((item: { status: number; count: number }) => {
+          countMap.set(item.status, Number(item.count || 0));
+        });
+        const data = Object.entries(inventoryStatusMap).map(([key, label]) => ({
+          status: label,
+          count: countMap.get(Number(key)) || 0,
         }));
         setAssetStatusData(data);
       } finally {
@@ -254,10 +260,16 @@ const PanelPage: React.FC = () => {
     data: assetStatusData,
     xField: 'status',
     yField: 'count',
+    colorField: 'status',
     style: {
       inset: 5,
     },
-    color: '#2563eb',
+    scale: {
+      color: {
+        domain: statusColorDomain,
+        range: statusColorRange,
+      },
+    },
     xAxis: {
       title: null,
       label: { autoRotate: false },

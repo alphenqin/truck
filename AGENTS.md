@@ -1,1 +1,1 @@
-数据库为cms,用户名root 密码123456数据在docker中的mysql8容器内
+1.数据库为cms,用户名root 密码123456数据在docker中的mysql8容器内

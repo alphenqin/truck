@@ -8,21 +8,21 @@
 2. 选择并安装一个 Web 服务器：Nginx for Windows 或 IIS。
 3. 如需在 Win10 本机生成授权或重新编译，再安装 Go 1.23.5 与 Node.js + pnpm。
 
-## 二、在 macOS 上打包 deplay 目录
+## 二、在 macOS 上打包 deploy 目录
 
-在项目根目录执行以下步骤，把部署所需文件集中到 `deplay/`。
+在项目根目录执行以下步骤，把部署所需文件集中到 `deploy/`。
 
 ### 1) 创建目录结构
 
 ```bash
-mkdir -p deplay/backend/config deplay/sql deplay/web
+mkdir -p deploy/backend/config deploy/sql deploy/web
 ```
 
 ### 2) 后端跨平台编译（macOS -> Windows）
 
 ```bash
 cd /path/to/project/server
-GOOS=windows GOARCH=amd64 go build -o ../deplay/backend/cms-server.exe .
+GOOS=windows GOARCH=amd64 go build -o ../deploy/backend/cms-server.exe .
 ```
 
 如果 Win10 是 ARM 机器，将 `GOARCH=amd64` 改为 `GOARCH=arm64`。
@@ -31,9 +31,9 @@ GOOS=windows GOARCH=amd64 go build -o ../deplay/backend/cms-server.exe .
 
 ```bash
 cd /path/to/project
-cp server/config/config.toml server/config/config.prod.toml deplay/backend/config/
-cp server/sql/cms.sql deplay/sql/
-cp web/nginx.conf deplay/web/
+cp server/config/config.toml server/config/config.prod.toml deploy/backend/config/
+cp server/sql/cms.sql deploy/sql/
+cp web/nginx.conf deploy/web/
 ```
 
 ### 4) 前端构建并打包
@@ -42,13 +42,13 @@ cp web/nginx.conf deplay/web/
 cd /path/to/project/web
 npm install
 npm run build
-cp -R dist ../deplay/web/dist
+cp -R dist ../deploy/web/dist
 ```
 
-### 5) deplay 目录结构
+### 5) deploy 目录结构
 
 ```
-deplay/
+deploy/
 ├── backend/
 │   ├── cms-server.exe
 │   └── config/
@@ -61,37 +61,35 @@ deplay/
     └── nginx.conf
 ```
 
-## 三、拷贝 deplay 到 Win10 并部署
+## 三、拷贝 deploy 到 Win10 并初始化数据库
 
-将 `deplay/` 整个目录拷贝到 Win10 服务器（示例路径：`C:\truck\deplay`）。
-
-### 1) 数据库初始化
+将 `deploy/` 整个目录拷贝到 Win10 服务器（示例路径：`C:\truck\deploy`）。
 
 1. 创建数据库（示例库名 `cms`）。
-2. 导入初始化脚本：`deplay/sql/cms.sql`。
+2. 导入初始化脚本：`deploy/sql/cms.sql`。
 
 示例：
 
 ```powershell
-mysql -u root -p -e "CREATE DATABASE cms DEFAULT CHARSET utf8mb4;"
-mysql -u root -p cms < C:\truck\deplay\sql\cms.sql
+mysql -u root -p -e "CREATE DATABASE cms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p cms < C:\truck\deploy\sql\cms.sql
 ```
 
 ## 四、后端配置
 
-1. 设置运行环境：`deplay/backend/config/config.toml`
+1. 设置运行环境：`deploy/backend/config/config.toml`
 
 ```toml
 env = "prod"
 ```
 
-2. 修改 `deplay/backend/config/config.prod.toml`（关键项）：
+2. 修改 `deploy/backend/config/config.prod.toml`（关键项）：
 
 ```toml
 [app]
 port = ":8081"
 baseurl = "/cms"
-tcp_enable = false
+domain = "localhost"
 
 [db]
 user = "root"
@@ -101,7 +99,7 @@ name = "cms"
 port = "3306"
 
 [license]
-path = "C:\\truck\\deplay\\backend\\license.json"
+path = "C:\\truck\\deploy\\backend\\license.json"
 secret = "YOUR_SECRET"
 ```
 
@@ -118,19 +116,19 @@ secret = "YOUR_SECRET"
 getmac /v /fo list
 ```
 
-2. 在 macOS 上生成授权文件：
+2. 在 macOS 上生成授权文件（`--mac` 支持逗号分隔多个 MAC）：
 
 ```bash
 cd /path/to/project/server/support/tools
 go run gen_license.go --mac "AA-BB-CC-DD-EE-FF" --days 30 --secret "YOUR_SECRET"
 ```
 
-3. 将生成的 `license.json` 放到 `license.path` 指定位置（建议放在 `C:\truck\deplay\backend\license.json`）。
+3. 将生成的 `license.json` 放到 `license.path` 指定位置（建议放在 `C:\truck\deploy\backend\license.json`）。
 
 ## 六、启动后端
 
 ```powershell
-cd C:\truck\deplay\backend
+cd C:\truck\deploy\backend
 .\cms-server.exe
 ```
 
@@ -140,8 +138,8 @@ cd C:\truck\deplay\backend
 
 ### 方案 A：Nginx（推荐）
 
-1. 将 `deplay/web/dist` 拷贝到 Nginx 的静态目录（如 `C:\nginx\html`）。
-2. 参考 `deplay/web/nginx.conf`，配置 `/cms` 反向代理到后端：
+1. 将 `deploy/web/dist` 拷贝到 Nginx 的静态目录（如 `C:\nginx\html`）。
+2. 参考 `deploy/web/nginx.conf`，配置 `/cms` 反向代理到后端：
 
 ```nginx
 server {
@@ -164,9 +162,15 @@ server {
 }
 ```
 
+停止 Nginx：
+
+```powershell
+taskkill /f /im nginx.exe
+```
+
 ### 方案 B：IIS
 
-1. 将 `deplay/web/dist` 作为站点根目录。
+1. 将 `deploy/web/dist` 作为站点根目录。
 2. 配置 URL Rewrite（或 ARR）把 `/cms` 转发到 `http://127.0.0.1:8081/cms/`。
 
 ## 八、验证
@@ -174,28 +178,26 @@ server {
 1. 浏览器访问：`http://服务器IP/`。
 2. 登录与接口请求正常（请求路径应为 `/cms` 前缀）。
 
-## 九、常见问题
+## 九、数据库维护
+
+在 Win10 上对 `cms` 数据库做导出 / 重建 / 导入：
+
+```powershell
+# 导出
+mysqldump -u root -p cms > "D:\backup\cms.sql"
+
+# 删除
+mysql -u root -p -e "DROP DATABASE IF EXISTS cms;"
+
+# 创建
+mysql -u root -p -e "CREATE DATABASE cms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 导入
+mysql -u root -p cms < "D:\backup\cms.sql"
+```
+
+## 十、常见问题
 
 - 前端请求 404：检查 `baseurl` 与前端 `VITE_APP_BASE_URL` 是否一致。
 - 授权失败：确认 `license.secret` 与生成授权时的 `--secret` 一致，且 `license.json` 路径正确。
 - 数据库连接失败：检查 `db.host`、端口、防火墙与账号权限。
-
-
-
-
-
-把 mysql的cms数据库导出覆盖到 server/sql/cms.sql
-
-mysqladmin -u root -p drop cms
-
-mysqladmin -u root -p create cms
-mysql -u root -p cms < cms.sql
-
-
-
-docker exec wms-mysql mysqldump -uroot -p123456 wms> wms.sql
-
-getmac /v /fo list
-go run ./support/tools/gen_license.go --mac "D4-3D-7E-5B-A5-F5,CA-18-C5-79-2A-90" --days 90 --secret "YOUR_SECRET" 
-
-taskkill /f /im nginx.exe

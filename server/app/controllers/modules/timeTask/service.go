@@ -2,6 +2,7 @@ package timeTaskControllerModules
 
 import (
 	"errors"
+	assetControllersModules "github.com/Xi-Yuer/cms/app/controllers/modules/asset"
 	"github.com/Xi-Yuer/cms/domain/types"
 	"github.com/Xi-Yuer/cms/support/utils"
 	"strconv"
@@ -60,6 +61,15 @@ var tasks = []timeTask{
 	//	CanEdit:     false,
 	//	TaskFunc:    repositories.LogsRepository.DeleteLogRecords,
 	//},
+	{
+		TaskID:      utils.GenID(),
+		TaskName:    "资产状态检测（每小时触发，判定疑似丢失/呆滞）",
+		Cron:        "0 0 * * * ?",
+		Status:      true,
+		LastRunTime: time.Now(),
+		CanEdit:     false,
+		TaskFunc:    assetControllersModules.RunStatusDetection,
+	},
 }
 
 // 在程序初始化时注册所有静态任务

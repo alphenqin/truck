@@ -4,6 +4,7 @@ import (
 	"github.com/Xi-Yuer/cms/app/routers"
 	"github.com/Xi-Yuer/cms/config"
 	"github.com/Xi-Yuer/cms/infra/db"
+	repositories "github.com/Xi-Yuer/cms/infra/repositories/modules"
 	"github.com/Xi-Yuer/cms/infra/tcpserver"
 	"github.com/Xi-Yuer/cms/support/utils"
 )
@@ -12,6 +13,11 @@ func Start() {
 	if err := db.InitDB(); err != nil {
 		utils.Log.Panic(err)
 		return
+	}
+
+	// 幂等播种内置业务参数（疑似丢失/呆滞阈值等）
+	if err := repositories.AssetBaseRepository.EnsureBuiltinArgs(); err != nil {
+		utils.Log.Error("初始化内置业务参数失败", "error", err)
 	}
 
 	r := routers.SetUpRouters()

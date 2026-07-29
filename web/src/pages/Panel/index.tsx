@@ -85,6 +85,8 @@ const PanelPage: React.FC = () => {
     endLabel: string;
     ongoing: boolean;
   }[]>([]);
+  // 停留分布查询窗口的起始时间（用于把 X 轴小时偏移格式化为时钟时间）
+  const [assetStayWindowStart, setAssetStayWindowStart] = useState<dayjs.Dayjs | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,6 +196,8 @@ const PanelPage: React.FC = () => {
     const fetchAssetStay = async () => {
       const res: any = await getAssetStayRequest(assetStayHours, 200, searchTermAssetStay || undefined);
       const list = res?.data?.list || res?.data?.data?.list || [];
+      const windowStart = res?.data?.startTime || res?.data?.data?.startTime;
+      setAssetStayWindowStart(windowStart ? dayjs(windowStart) : null);
       setAssetStayData(
         list.map((item: {
           asset: string;
@@ -315,51 +319,86 @@ const PanelPage: React.FC = () => {
     height: 220,
   }), [inStorageData]);
 
-  // 过滤后的资产停留分布数据
-  const filteredAssetStayData = useMemo(() => (
-    assetStayData
+  // 过滤后的资产停留分布数据：按首次入库时间升序，让停留越早的资产排在越上面
+  const sortedAssetStayData = useMemo(() => (
+    [...assetStayData].sort((a, b) => a.startTime - b.startTime || a.asset.localeCompare(b.asset))
   ), [assetStayData]);
 
-  // "资产停留分布" Bar 图表配置
-  const assetStayBarConfig = useMemo(() => ({
-    data: filteredAssetStayData,
-    xField: 'asset',
-    yField: ['startTime', 'endTime'],
-    colorField: 'location',
-    style: {
-      inset: 5,
-    },
-    xAxis: {
-      title: null,
-      label: { autoRotate: false },
-    },
-    yAxis: {
-      title: null,
-      label: { autoRotate: true },
-      min: 0,
-      max: assetStayHours,
-    },
-    label: false,
-    tooltip: {
-      items: [
-        (datum: {
-          asset: string;
-          location: string;
-          type: string;
-          startLabel: string;
-          endLabel: string;
-          ongoing: boolean;
-        }) => {
-          return {
-            name: `${datum.asset} (${datum.type})`,
-            value: `${datum.location}：${datum.startLabel} - ${datum.endLabel}${datum.ongoing ? '（仍在库）' : ''}`,
-          };
+  // 资产停留分布的场库配色（场库数量不固定，提供一组协调的色板循环使用）
+  const stayLocationPalette = ['#2563eb', '#16a34a', '#f59e0b', '#9333ea', '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4f46e5', '#0d9488'];
+
+  // "资产停留分布" 甘特式时间条配置（横轴=时间，纵轴=资产，彩色条=在场库的停留时段）
+  const assetStayBarConfig = useMemo(() => {
+    const paletteDomain = Array.from(new Set(sortedAssetStayData.map((d) => d.location)));
+    const paletteRange = paletteDomain.map((_, i) => stayLocationPalette[i % stayLocationPalette.length]);
+    // 行数自适应：资产越多图越高，避免挤成一团
+    const height = Math.max(240, paletteDomain.length === 0 ? 240 : Math.min(560, 36 * sortedAssetStayData.length + 60));
+    const fmtHour = (v: number) => {
+      if (!assetStayWindowStart) return `${v}h`;
+      const t = assetStayWindowStart.add(v, 'hour');
+      const label = t.format('HH:mm');
+      return label;
+    };
+    return {
+      data: sortedAssetStayData,
+      xField: 'asset',
+      yField: ['startTime', 'endTime'],
+      colorField: 'location',
+      scale: {
+        color: {
+          domain: paletteDomain,
+          range: paletteRange,
         },
-      ],
-    },
-    legend: false,
-    height: 220,
-  }), [filteredAssetStayData]);
+        y: { min: 0, max: assetStayHours },
+      },
+      style: {
+        radius: 4,
+        inset: 4,
+      },
+      coordinate: { transform: [{ type: 'transpose' }] },
+      axis: {
+        x: {
+          title: null,
+          labelAutoRotate: false,
+          labelAutoEllipsis: true,
+          labelSpacing: 4,
+        },
+        y: {
+          title: '时间',
+          labelFormatter: (v: number) => fmtHour(Number(v)),
+        },
+      },
+      label: false,
+      tooltip: {
+        items: [
+          (datum: {
+            asset: string;
+            location: string;
+            type: string;
+            startTime: number;
+            endTime: number;
+            startLabel: string;
+            endLabel: string;
+            ongoing: boolean;
+          }) => {
+            const hours = Math.max(0, Number(datum.endTime || 0) - Number(datum.startTime || 0));
+            return {
+              name: datum.location,
+              value: `${datum.startLabel} - ${datum.endLabel}（停留 ${hours.toFixed(1)}h${datum.ongoing ? '，仍在库' : ''}）`,
+            };
+          },
+        ],
+      },
+      legend: {
+        color: {
+          position: 'top-right',
+          layout: { justifyContent: 'flex-end' },
+          itemMarker: 'square',
+        },
+      },
+      height,
+    };
+  }, [sortedAssetStayData, assetStayWindowStart]);
 
   // "疑似丢失统计" Column 图表配置
   const lostStatsColumnConfig = useMemo(() => ({

@@ -3,6 +3,7 @@ package assetBaseControllersModules
 import (
 	"strings"
 
+	"github.com/Xi-Yuer/cms/domain/constant"
 	"github.com/Xi-Yuer/cms/domain/types"
 	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/support/utils"
@@ -405,6 +406,19 @@ func (a *baseController) DelArg(context *gin.Context) {
 		utils.Response.ParameterTypeError(context, "参数格式错误")
 		return
 	}
+	// 内置业务参数禁止删除
+	args, err := AssetBaseService.GetArgsByIDs(ids)
+	if err != nil {
+		utils.Log.Error("查询参数失败", "error", err, "ids", ids)
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
+		return
+	}
+	for _, arg := range args {
+		if constant.IsBuiltinArgKey(arg.ArgKey) {
+			utils.Response.ParameterError(context, "内置参数不可删除")
+			return
+		}
+	}
 	if err := AssetBaseService.DeleteArgs(ids); err != nil {
 		utils.Log.Error("删除参数失败", "error", err, "ids", ids)
 		utils.Response.ServerError(context, "操作失败，请稍后重试")
@@ -431,6 +445,17 @@ func (a *baseController) UpdateArg(context *gin.Context) {
 		"arg_key":   arg.ArgKey,
 		"arg_name":  arg.ArgName,
 		"arg_value": arg.ArgValue,
+	}
+
+	// 内置参数仅允许修改 arg_value，键名与名称固定
+	existing, err := AssetBaseService.GetArgsByIDs([]int64{arg.Id})
+	if err != nil || len(existing) == 0 {
+		utils.Log.Error("查询参数失败", "error", err, "id", arg.Id)
+		utils.Response.ServerError(context, "操作失败，请稍后重试")
+		return
+	}
+	if constant.IsBuiltinArgKey(existing[0].ArgKey) {
+		updates = map[string]interface{}{"arg_value": arg.ArgValue}
 	}
 
 	if err := AssetBaseService.UpdateArg(arg.Id, updates); err != nil {

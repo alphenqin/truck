@@ -1,6 +1,7 @@
 package assetBaseRepositoryModules
 
 import (
+	"github.com/Xi-Yuer/cms/domain/constant"
 	"github.com/Xi-Yuer/cms/domain/types"
 	"github.com/Xi-Yuer/cms/infra/db"
 )
@@ -133,6 +134,42 @@ func (r *assetBaseRepository) QueryArgs(params *types.QueryArgsParams) ([]types.
 		return nil, 0, err
 	}
 	return list, total, nil
+}
+
+// GetArgByKey 按 arg_key 取单条业务参数。
+func (r *assetBaseRepository) GetArgByKey(key string) (types.Arg, error) {
+	var arg types.Arg
+	if err := db.GormDB.Table("args").Where("arg_key = ?", key).First(&arg).Error; err != nil {
+		return types.Arg{}, err
+	}
+	return arg, nil
+}
+
+// GetArgsByIDs 按 id 批量取业务参数，供删除前校验内置参数用。
+func (r *assetBaseRepository) GetArgsByIDs(ids []int64) ([]types.Arg, error) {
+	var list []types.Arg
+	if err := db.GormDB.Table("args").Where("id IN ?", ids).Find(&list).Error; err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+// EnsureBuiltinArgs 幂等播种内置业务参数：arg_key 不存在则插入，已存在则保持不变（不覆盖值）。
+func (r *assetBaseRepository) EnsureBuiltinArgs() error {
+	for _, b := range constant.BuiltinArgs {
+		var count int64
+		if err := db.GormDB.Table("args").Where("arg_key = ?", b.Key).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			continue
+		}
+		arg := types.Arg{ArgKey: b.Key, ArgName: b.Name, ArgValue: b.Value}
+		if err := db.GormDB.Table("args").Create(&arg).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *assetBaseRepository) CreateAlarmRule(rule *types.AlarmRule) error {

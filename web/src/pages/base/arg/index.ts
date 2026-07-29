@@ -37,6 +37,12 @@ export interface IUpdateArgsParams {
   argValue: string;
 }
 
+// 内置参数键：固定不可删、键名/名称不可改，仅允许修改参数值
+export const BUILTIN_ARG_KEYS = ['lost_timeout', 'idle_timeout'];
+
+// 判断是否为内置参数行
+export const isBuiltinArg = (argKey: string) => BUILTIN_ARG_KEYS.includes(argKey);
+
 // 获取参数列表
 export const getArgsRequest = (params: IQueryArgsParams) => {
   return request.post<AxiosResponse<IHasTotalResponse<IArgsResponse[]>>>({

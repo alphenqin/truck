@@ -1,5 +1,5 @@
 import { Key, ReactNode, useEffect, useState } from 'react';
-import { Button, Input, TableProps, Modal } from 'antd';
+import { Button, Input, TableProps, Modal, Tag } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import {
   createArgsRequest,
@@ -10,6 +10,7 @@ import {
   IArgsResponse,
   IUpdateArgsParams,
   updateArgsRequest,
+  isBuiltinArg,
 } from './index.ts';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { useForm } from 'antd/es/form/Form';
@@ -25,6 +26,8 @@ export const useArgsPageHooks = () => {
   const [currentEditArgs, setCurrentEditArgs] = useState<IArgsResponse>();
   const [isEdit, setIsEdit] = useState(false);
   const [editArgsModalOpen, setEditArgsModalOpen] = useState(false);
+  // 当前编辑行是否为内置参数（内置参数仅允许改值）
+  const [editingBuiltin, setEditingBuiltin] = useState(false);
   const searchConfig: { label: string; name: keyof IQueryArgsParams; component: ReactNode }[] = [
     {
       label: '参数键',
@@ -47,6 +50,7 @@ export const useArgsPageHooks = () => {
     onNewRecordFn: () => {
       formRef.resetFields();
       setIsEdit(false);
+      setEditingBuiltin(false);
       setEditArgsModalOpen(true);
     },
     formItems: searchConfig,
@@ -89,6 +93,7 @@ export const useArgsPageHooks = () => {
   const editArgsAction = async (row: IArgsResponse) => {
     setCurrentEditArgs(row);
     setIsEdit(true);
+    setEditingBuiltin(isBuiltinArg(row.argKey));
     setEditArgsModalOpen(true);
   };
 
@@ -114,6 +119,14 @@ export const useArgsPageHooks = () => {
       title: '参数键',
       dataIndex: 'argKey',
       key: 'argKey',
+      render: (text: string) =>
+        isBuiltinArg(text) ? (
+          <span>
+            {text} <Tag color='blue'>内置</Tag>
+          </span>
+        ) : (
+          text
+        ),
     },
     {
       title: '参数名称',
@@ -133,9 +146,11 @@ export const useArgsPageHooks = () => {
         return (
           <div className='gap-2 flex text-[#5bb4ef] items-center cursor-pointer justify-center'>
             <span onClick={() => editArgsAction(row)}>编辑</span>
-            <span className='text-red-500' onClick={() => deleteArgsAction(row.id)}>
-              删除
-            </span>
+            {!isBuiltinArg(row.argKey) && (
+              <span className='text-red-500' onClick={() => deleteArgsAction(row.id)}>
+                删除
+              </span>
+            )}
           </div>
         );
       },
@@ -160,6 +175,7 @@ export const useArgsPageHooks = () => {
     limit,
     loading,
     isEdit,
+    editingBuiltin,
     formRef,
     editArgsModalOpen,
     setPage,

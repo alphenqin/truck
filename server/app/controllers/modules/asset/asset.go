@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Xi-Yuer/cms/domain/constant"
 	"github.com/Xi-Yuer/cms/domain/types"
 	"github.com/Xi-Yuer/cms/infra/db"
 	"github.com/Xi-Yuer/cms/support/utils"
@@ -876,7 +877,7 @@ func (a *assetController) QueryLost(ctx *gin.Context) {
 	}
 	hours := params.Hours
 	if hours <= 0 {
-		hours = 24
+		hours = int64(getArgInt(constant.ArgKeyLostTimeout, 24))
 	}
 	timeThreshold := time.Now().Add(-time.Duration(hours) * time.Hour)
 
@@ -931,7 +932,7 @@ func (a *assetController) QueryLostStats(ctx *gin.Context) {
 		List []LostStatsItem `json:"list"`
 	}
 
-	hours := int64(24)
+	hours := int64(getArgInt(constant.ArgKeyLostTimeout, 24))
 	if hoursStr := strings.TrimSpace(ctx.Query("hours")); hoursStr != "" {
 		parsed, err := strconv.ParseInt(hoursStr, 10, 64)
 		if err != nil || parsed <= 0 {

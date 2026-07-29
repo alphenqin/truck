@@ -1,7 +1,7 @@
 import React, { FC, memo } from 'react';
 import { useArgsPageHooks } from './hooks.tsx'
 import { Form, Input, Modal, Pagination, Table } from 'antd';
-import { IUpdateArgsParams } from './index.ts';
+import { IUpdateArgsParams, isBuiltinArg } from './index.ts';
 
 const ArgsPage: FC = () => {
   const {
@@ -12,6 +12,7 @@ const ArgsPage: FC = () => {
     limit,
     loading,
     isEdit,
+    editingBuiltin,
     formRef,
     editArgsModalOpen,
     setPage,
@@ -27,6 +28,9 @@ const ArgsPage: FC = () => {
         dataSource={list}
         rowSelection={
         {
+          getCheckboxProps: (record: IUpdateArgsParams) => ({
+            disabled: isBuiltinArg(record.argKey as string),
+          }),
           onChange: (selectedRowKeys: React.Key[]) => {
             setSelected(selectedRowKeys);
           },
@@ -47,10 +51,10 @@ const ArgsPage: FC = () => {
       <Modal open={editArgsModalOpen} title={isEdit ? '编辑' : '新增'} onOk={onFinish} onCancel={() => setEditArgsModalOpen(false)}>
         <Form form={formRef} autoComplete='off' labelAlign='left' id='editFormRef'>
           <Form.Item<IUpdateArgsParams> name='argKey' label='参数键' rules={[{ required: true }]}>
-            <Input />
+            <Input disabled={editingBuiltin} />
           </Form.Item>
           <Form.Item<IUpdateArgsParams> name='argName' label='参数名称' rules={[{ required: true }]}>
-            <Input />
+            <Input disabled={editingBuiltin} />
           </Form.Item>
           <Form.Item<IUpdateArgsParams> name='argValue' label='参数值' rules={[{ required: true }]}>
             <Input />

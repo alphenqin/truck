@@ -73,6 +73,14 @@ func (s *assetBaseService) QueryArgs(params *types.QueryArgsParams) ([]types.Arg
 	return repositories.AssetBaseRepository.QueryArgs(params)
 }
 
+func (s *assetBaseService) GetArgByKey(key string) (types.Arg, error) {
+	return repositories.AssetBaseRepository.GetArgByKey(key)
+}
+
+func (s *assetBaseService) GetArgsByIDs(ids []int64) ([]types.Arg, error) {
+	return repositories.AssetBaseRepository.GetArgsByIDs(ids)
+}
+
 func (s *assetBaseService) CreateAlarmRule(rule *types.AlarmRule) error {
 	return repositories.AssetBaseRepository.CreateAlarmRule(rule)
 }

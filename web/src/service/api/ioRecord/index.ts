@@ -110,6 +110,9 @@ export interface IAssetStayItem {
   type: string;
   startTime: number;
   endTime: number;
+  startLabel: string;
+  endLabel: string;
+  ongoing: boolean;
 }
 
 export interface IAssetStayResponse {
@@ -118,10 +121,10 @@ export interface IAssetStayResponse {
   list: IAssetStayItem[];
 }
 
-export const getAssetStayRequest = (hours = 24, limit = 200, assetCode?: string) => {
+export const getAssetStayRequest = (assetCode?: string) => {
   return request.get<AxiosResponse<IAssetStayResponse>>({
     url: '/io-record/stay',
-    params: { hours, limit, assetCode },
+    params: { assetCode },
   });
 };
 

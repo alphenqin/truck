@@ -19,8 +19,6 @@ const emptyAssetStatusData = () =>
     status,
     count: 0,
   }));
-const assetStayHours = 24;
-
 const buildEmptyLostStats = (hours = 24) =>
   Array.from({ length: hours }, (_, idx) => ({ time: `${hours - idx}h`, count: 0 }));
 
@@ -46,6 +44,19 @@ const statusColorMap: Record<string, string> = {
 const statusColorDomain = Object.keys(statusColorMap);
 const statusColorRange = statusColorDomain.map((key) => statusColorMap[key]);
 
+// 生成整数刻度，避免纵坐标出现 0.5、1.5 这类小数。
+// 在 [start, end] 区间内取不超过 count 个的整数刻度，步长至少为 1。
+const integerTicks = (start: number, end: number, count: number) => {
+  const lo = Math.ceil(Math.min(start, end));
+  const hi = Math.floor(Math.max(start, end));
+  if (lo > hi) return [lo];
+  const span = hi - lo + 1;
+  const step = Math.max(1, Math.ceil(span / Math.max(1, count)));
+  const ticks: number[] = [];
+  for (let v = lo; v <= hi; v += step) ticks.push(v);
+  if (ticks[ticks.length - 1] !== hi) ticks.push(hi);
+  return ticks;
+};
 
 const buildEmptyCirculation = () => ([
   { type: '入库', count: 0 },
@@ -194,7 +205,7 @@ const PanelPage: React.FC = () => {
     };
 
     const fetchAssetStay = async () => {
-      const res: any = await getAssetStayRequest(assetStayHours, 200, searchTermAssetStay || undefined);
+      const res: any = await getAssetStayRequest(searchTermAssetStay || undefined);
       const list = res?.data?.list || res?.data?.data?.list || [];
       const windowStart = res?.data?.startTime || res?.data?.data?.startTime;
       setAssetStayWindowStart(windowStart ? dayjs(windowStart) : null);
@@ -273,14 +284,18 @@ const PanelPage: React.FC = () => {
         domain: statusColorDomain,
         range: statusColorRange,
       },
+      y: { domainMin: 0 },
     },
-    xAxis: {
-      title: null,
-      label: { autoRotate: false },
-    },
-    yAxis: {
-      title: null,
-      min: 0,
+    axis: {
+      x: {
+        title: null,
+        labelAutoRotate: false,
+      },
+      y: {
+        title: null,
+        labelFormatter: (value: number) => value.toFixed(0),
+        tickMethod: (start: number, end: number, count: number) => integerTicks(start, end, count),
+      },
     },
     label: false,
     tooltip: {
@@ -331,13 +346,24 @@ const PanelPage: React.FC = () => {
   const assetStayBarConfig = useMemo(() => {
     const paletteDomain = Array.from(new Set(sortedAssetStayData.map((d) => d.location)));
     const paletteRange = paletteDomain.map((_, i) => stayLocationPalette[i % stayLocationPalette.length]);
-    // 行数自适应：资产越多图越高，避免挤成一团
-    const height = Math.max(240, paletteDomain.length === 0 ? 240 : Math.min(560, 36 * sortedAssetStayData.length + 60));
+    const assetCount = new Set(sortedAssetStayData.map((d) => d.asset)).size;
+    const maxEndTime = Math.max(1, ...sortedAssetStayData.map((d) => d.endTime));
+    // 行数自适应：资产越多图越高，避免资产编号和停留文字被挤压。
+    const height = Math.max(240, 40 * assetCount + 80);
     const fmtHour = (v: number) => {
       if (!assetStayWindowStart) return `${v}h`;
       const t = assetStayWindowStart.add(v, 'hour');
-      const label = t.format('HH:mm');
+      const label = t.format('MM-DD HH:mm');
       return label;
+    };
+    const fmtDuration = (hours: number) => {
+      const totalMinutes = Math.max(0, Math.round(hours * 60));
+      const days = Math.floor(totalMinutes / 1440);
+      const remainingHours = Math.floor((totalMinutes % 1440) / 60);
+      const minutes = totalMinutes % 60;
+      return [days > 0 ? `${days}天` : '', remainingHours > 0 ? `${remainingHours}小时` : '', `${minutes}分钟`]
+        .filter(Boolean)
+        .join('');
     };
     return {
       data: sortedAssetStayData,
@@ -349,7 +375,7 @@ const PanelPage: React.FC = () => {
           domain: paletteDomain,
           range: paletteRange,
         },
-        y: { min: 0, max: assetStayHours },
+        y: { domainMin: 0, domainMax: maxEndTime },
       },
       style: {
         radius: 4,
@@ -360,7 +386,8 @@ const PanelPage: React.FC = () => {
         x: {
           title: null,
           labelAutoRotate: false,
-          labelAutoEllipsis: true,
+          labelAutoHide: false,
+          labelAutoEllipsis: false,
           labelSpacing: 4,
         },
         y: {
@@ -381,10 +408,10 @@ const PanelPage: React.FC = () => {
             endLabel: string;
             ongoing: boolean;
           }) => {
-            const hours = Math.max(0, Number(datum.endTime || 0) - Number(datum.startTime || 0));
+            const hours = Math.max(0, Number(datum.endTime) - Number(datum.startTime));
             return {
-              name: datum.location,
-              value: `${datum.startLabel} - ${datum.endLabel}（停留 ${hours.toFixed(1)}h${datum.ongoing ? '，仍在库' : ''}）`,
+              name: `${datum.asset} / ${datum.location}`,
+              value: `${datum.startLabel} 至 当前 ${datum.endLabel}（已停留 ${fmtDuration(hours)}）`,
             };
           },
         ],
@@ -405,15 +432,18 @@ const PanelPage: React.FC = () => {
     data: lostStatsData,
     xField: 'time', // X轴为时间间隔
     yField: 'count', // Y轴为数量
+    scale: {
+      y: { domainMin: 0 },
+    },
     axis: {
       x: {
         title: null,
-        label: { autoRotate: false }, // 不自动旋转，保持水平
+        labelAutoRotate: false, // 不自动旋转，保持水平
       },
       y: {
         title: null,
         labelFormatter: (value: number) => value.toFixed(0),
-        min: 0,
+        tickMethod: (start: number, end: number, count: number) => integerTicks(start, end, count),
       },
     },
     style: {
@@ -446,6 +476,7 @@ const PanelPage: React.FC = () => {
         domain: statusColorDomain,
         range: statusColorRange,
       },
+      y: { domainMin: 0 },
     },
     point: {
       shapeField: 'circle',
@@ -464,13 +495,16 @@ const PanelPage: React.FC = () => {
     style: {
       lineWidth: 2, // 线宽
     },
-    xAxis: {
-      title: null,
-      label: { autoRotate: false },
-    },
-    yAxis: {
-      title: null,
-      min: 0,
+    axis: {
+      x: {
+        title: null,
+        labelAutoRotate: false,
+      },
+      y: {
+        title: null,
+        labelFormatter: (value: number) => value.toFixed(0),
+        tickMethod: (start: number, end: number, count: number) => integerTicks(start, end, count),
+      },
     },
     label: false,
     legend: {
@@ -491,14 +525,19 @@ const PanelPage: React.FC = () => {
       radiusTopRight: 10,
       inset: 5,
     },
-    xAxis: {
-      title: null,
-      label: { autoRotate: false },
+    scale: {
+      y: { domainMin: 0 },
     },
-    yAxis: {
-      title: null,
-      labelFormatter: (value: number) => value.toFixed(0),
-      min: 0,
+    axis: {
+      x: {
+        title: null,
+        labelAutoRotate: false,
+      },
+      y: {
+        title: null,
+        labelFormatter: (value: number) => value.toFixed(0),
+        tickMethod: (start: number, end: number, count: number) => integerTicks(start, end, count),
+      },
     },
     label: false,
     tooltip: {

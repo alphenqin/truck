@@ -376,20 +376,7 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 		Ongoing    bool    `json:"ongoing"`
 	}
 
-	hours := int64(24)
-	if hoursStr := strings.TrimSpace(ctx.Query("hours")); hoursStr != "" {
-		parsed, err := strconv.ParseInt(hoursStr, 10, 64)
-		if err != nil || parsed <= 0 {
-			utils.Response.ParameterTypeError(ctx, "hours格式错误")
-			return
-		}
-		hours = parsed
-	}
-	if hours > 168 {
-		hours = 168
-	}
-
-	limit := int64(200)
+	limit := int64(0)
 	if limitStr := strings.TrimSpace(ctx.Query("limit")); limitStr != "" {
 		parsed, err := strconv.ParseInt(limitStr, 10, 64)
 		if err != nil || parsed <= 0 {
@@ -398,21 +385,19 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 		}
 		limit = parsed
 	}
-	if limit > 1000 {
-		limit = 1000
+	if limit > 10000 {
+		limit = 10000
 	}
 
 	assetCode := strings.TrimSpace(ctx.Query("assetCode"))
 
 	end := time.Now()
-	start := end.Add(-time.Duration(hours) * time.Hour)
 
 	type row struct {
 		AssetID   int64     `gorm:"column:asset_id"`
 		AssetCode string    `gorm:"column:asset_code"`
 		TypeName  string    `gorm:"column:type_name"`
 		StartTime time.Time `gorm:"column:start_time"`
-		EndTime   time.Time `gorm:"column:end_time"`
 		StoreID   int64     `gorm:"column:store_id"`
 		StoreName string    `gorm:"column:store_name"`
 		Ongoing   bool      `gorm:"column:ongoing"`
@@ -439,65 +424,62 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 			FROM ordered_records
 			WHERE previous_action_type IS NULL OR previous_action_type <> action_type
 		),
-		stay_periods AS (
+		latest_states AS (
 			SELECT
-				asset_id,
-				action_type,
-				action_time,
-				store_to,
-				store_from,
-				LEAD(action_type) OVER (PARTITION BY asset_id ORDER BY action_time, id) AS next_action_type,
-				LEAD(action_time) OVER (PARTITION BY asset_id ORDER BY action_time, id) AS next_action_time
+				id, asset_id, action_type, action_time, store_to, store_from,
+				ROW_NUMBER() OVER (PARTITION BY asset_id ORDER BY action_time DESC, id DESC) AS state_rank
 			FROM state_changes
 		)
 		SELECT
-			p.asset_id,
+			a.asset_id,
 			a.asset_code,
 			COALESCE(t.type_name, '未知') AS type_name,
-			p.action_time AS start_time,
-			COALESCE(p.next_action_time, ?) AS end_time,
-			COALESCE(p.store_to, p.store_from, a.store_id) AS store_id,
+			COALESCE(p.action_time, a.created_at) AS start_time,
+			COALESCE(p.store_to, a.store_id) AS store_id,
 			s.store_name,
-			(p.next_action_time IS NULL) AS ongoing
-		FROM stay_periods p
-		LEFT JOIN asset a ON a.asset_id = p.asset_id
+			TRUE AS ongoing
+		FROM asset a
+		LEFT JOIN latest_states p ON p.asset_id = a.asset_id AND p.state_rank = 1
 		LEFT JOIN asset_types t ON t.type_id = a.asset_type
-		LEFT JOIN stores s ON s.store_id = COALESCE(p.store_to, p.store_from, a.store_id)
-		WHERE p.action_type = 1
-		  AND (p.next_action_type = 2 OR p.next_action_type IS NULL)
-		  AND p.action_time < ?
-		  AND COALESCE(p.next_action_time, ?) > ?
+		LEFT JOIN stores s ON s.store_id = COALESCE(p.store_to, a.store_id)
+		WHERE COALESCE(p.action_time, a.created_at) IS NOT NULL
+		  AND (
+			p.action_type = 1
+			OR (p.asset_id IS NULL AND a.status IN (1, 3, 4, 6))
+		  )
 	`
 
-	var err error
+	queryArgs := make([]any, 0, 2)
 	if assetCode != "" {
-		baseSQL += " AND a.asset_code = ? ORDER BY p.action_time DESC LIMIT ?"
-		err = db.GormDB.Raw(baseSQL, end, end, end, start, assetCode, limit).Scan(&rows).Error
-	} else {
-		baseSQL += " ORDER BY p.action_time DESC LIMIT ?"
-		err = db.GormDB.Raw(baseSQL, end, end, end, start, limit).Scan(&rows).Error
+		baseSQL += " AND a.asset_code = ?"
+		queryArgs = append(queryArgs, assetCode)
 	}
+	baseSQL += " ORDER BY start_time ASC"
+	if limit > 0 {
+		baseSQL += " LIMIT ?"
+		queryArgs = append(queryArgs, limit)
+	}
+	err := db.GormDB.Raw(baseSQL, queryArgs...).Scan(&rows).Error
 	if err != nil {
 		utils.Log.Error("查询资产停留分布失败", "error", err)
 		utils.Response.ServerError(ctx, "查询失败，请稍后重试")
 		return
 	}
 
+	chartStart := end
+	for _, r := range rows {
+		if r.StartTime.Before(chartStart) {
+			chartStart = r.StartTime
+		}
+	}
+
 	items := make([]StayItem, 0, len(rows))
 	for _, r := range rows {
-		overlapStart := r.StartTime
-		if overlapStart.Before(start) {
-			overlapStart = start
-		}
-		overlapEnd := r.EndTime
-		if overlapEnd.After(end) {
-			overlapEnd = end
-		}
-		if !overlapEnd.After(overlapStart) {
+		if !end.After(r.StartTime) {
 			continue
 		}
-		startHour := overlapStart.Sub(start).Hours()
-		endHour := overlapEnd.Sub(start).Hours()
+		startHour := r.StartTime.Sub(chartStart).Hours()
+		endHour := end.Sub(chartStart).Hours()
 
 		typeLabel := strings.TrimSpace(r.TypeName)
 		if typeLabel == "" {
@@ -523,14 +505,14 @@ func (c *ioRecordController) GetAssetStay(ctx *gin.Context) {
 			Type:       typeLabel,
 			Start:      startHour,
 			End:        endHour,
-			StartLabel: overlapStart.Format("01-02 15:04"),
-			EndLabel:   overlapEnd.Format("01-02 15:04"),
+			StartLabel: r.StartTime.Format("2006-01-02 15:04:05"),
+			EndLabel:   end.Format("2006-01-02 15:04:05"),
 			Ongoing:    r.Ongoing,
 		})
 	}
 
 	utils.Response.Success(ctx, gin.H{
-		"startTime": start.Format("2006-01-02 15:04:05"),
+		"startTime": chartStart.Format("2006-01-02 15:04:05"),
 		"endTime":   end.Format("2006-01-02 15:04:05"),
 		"list":      items,
 	})

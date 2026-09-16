@@ -4,6 +4,7 @@ import { AxiosResponse } from 'axios';
 export interface IQueryAssetBindParams {
   assetCode?: string;
   tagCode?: string;
+  assetType?: number;
   limit: number;
   offset: number;
 }
@@ -12,6 +13,7 @@ export interface IAssetBindResponse {
   id: number;
   assetId: number;
   assetCode: string;
+  assetType: number;
   tagId: number;
   tagCode: string;
 }
@@ -24,11 +26,13 @@ export interface IHasTotalResponse<T> {
 export interface ICreateAssetBindParams {
   assetCode: string;
   tagCode: string;
+  assetType?: number;
 }
 
 export interface IUpdateAssetBindParams {
   assetCode: string;
   tagCode: string;
+  assetType?: number;
 }
 
 export const getAssetBindRequest = (params: IQueryAssetBindParams) => {

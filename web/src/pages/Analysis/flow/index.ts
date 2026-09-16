@@ -28,10 +28,13 @@ export const operationTypeMap: Record<number, string> = {
 export interface IAssetOperationRecordRes {
   assetId: number;
   assetCode: string;
+  tagCode: string;
   actionType: number;
   actionTime: string;
   storeTo: number; // 目标仓库
   storeFrom: number; // 起始仓库
+  storeToName: string; // 目标仓库名称
+  storeFromName: string; // 起始仓库名称
 }
 
 // 分页参数接口
@@ -45,19 +48,19 @@ export interface IHasTotalResponse<T> {
      total: number;
      list: T;
    }
-   
+
 // 查询参数接口
 export interface IGetAssetOperationRecordsParams extends IPage {
-     assetCode: string;
+     assetCode?: string;
+     tagCode?: string;
      startTime: string;
      endTime: string;
 }
 
-// 获取工装车出入库记录
+// 获取工装车出入库记录（支持按资产编码或标签码查询）
 export const getAssetOperationRecords = (params: IGetAssetOperationRecordsParams) => {
      return request.post<AxiosResponse<IHasTotalResponse<IAssetOperationRecordRes[]>>>({
        url: '/io-record/flow',
        data: params,
      });
    };
-

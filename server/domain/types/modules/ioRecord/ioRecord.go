@@ -41,6 +41,7 @@ type QueryBuzzersParams struct {
 
 type QueryFlowParams struct {
 	AssetCode string `json:"assetCode"`
+	TagCode   string `json:"tagCode"`
 	StartTime string `json:"startTime"` // e.g. "2025-06-01 00:00:00"
 	EndTime   string `json:"endTime"`
 
@@ -49,10 +50,13 @@ type QueryFlowParams struct {
 }
 
 type FlowVO struct {
-	AssetId    int64      `json:"assetId"`
-	AssetCode  string     `json:"assetCode"`
-	ActionType int        `json:"actionType"` // 1: 入库，2: 出库
-	ActionTime *time.Time `json:"actionTime"`
-	StoreTo    int64      `json:"storeTo"`
-	StoreFrom  int64      `json:"storeFrom"`
+	AssetId       int64      `json:"assetId"`
+	AssetCode     string     `json:"assetCode"`
+	TagCode       string     `json:"tagCode"`
+	ActionType    int        `json:"actionType"` // 1: 入库，2: 出库
+	ActionTime    *time.Time `json:"actionTime"`
+	StoreTo       int64      `json:"storeTo"`
+	StoreFrom     int64      `json:"storeFrom"`
+	StoreToName   string     `json:"storeToName"`
+	StoreFromName string     `json:"storeFromName"`
 }

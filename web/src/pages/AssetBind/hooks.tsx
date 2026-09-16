@@ -1,8 +1,9 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { Button, Form, Input, Modal, TableProps, Upload, message } from 'antd';
+import { Button, Form, Input, Modal, Select, TableProps, Upload, message } from 'antd';
 import type { UploadProps } from 'antd';
 import { useSearchFrom } from '@/hooks/useSearchForm.tsx';
 import { createAssetBindRequest, deleteAssetBindRequest, getAssetBindRequest, IAssetBindResponse, IQueryAssetBindParams, batchDeleteAssetBindRequest, updateAssetBindRequest, importAssetBindRequest, IAssetBindImportFail } from '@/service/api/assetBind';
+import { getAssetTypesRequest, IAssetTypesResponse } from '@/pages/base/type/index.ts';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 
@@ -19,8 +20,23 @@ export const useAssetBindPageHooks = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [editingRow, setEditingRow] = useState<IAssetBindResponse | null>(null);
   const [importLoading, setImportLoading] = useState(false);
+  const [assetTypeOptions, setAssetTypeOptions] = useState<{ label: string; value: number }[]>([]);
+  const [assetTypeLabelMap, setAssetTypeLabelMap] = useState<Record<number, string>>({});
   const [formRef] = Form.useForm();
   const [editFormRef] = Form.useForm();
+
+  // 获取资产类型（不同类型下资产编码可重复，绑定时用于定位资产）
+  useEffect(() => {
+    getAssetTypesRequest({ limit: 999, offset: 0 }).then((res) => {
+      const typeList = (res.data?.list || []) as IAssetTypesResponse[];
+      setAssetTypeOptions(typeList.map((item) => ({ label: item.typeName, value: item.typeId })));
+      const map: Record<number, string> = {};
+      typeList.forEach((item) => {
+        map[item.typeId] = item.typeName;
+      });
+      setAssetTypeLabelMap(map);
+    });
+  }, []);
 
   const searchConfig: { label: string; name: keyof IQueryAssetBindParams; component: ReactNode }[] = [
     {
@@ -72,6 +88,7 @@ export const useAssetBindPageHooks = () => {
     editFormRef.setFieldsValue({
       assetCode: row.assetCode,
       tagCode: row.tagCode,
+      assetType: row.assetType || undefined,
     });
     setEditOpen(true);
   };
@@ -129,8 +146,8 @@ export const useAssetBindPageHooks = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const headers = ['资产编码', '资产名称', '标签号', '所属仓库'];
-    const example = ['001~999', 'Dolly车', '12345678', '12#'];
+    const headers = ['资产编码', '资产名称', '标签号', '所属仓库', '资产类型'];
+    const example = ['001~999', 'Dolly车', '12345678', '12#', 'Dolly车'];
     const rows = [headers, example];
     const worksheet = XLSX.utils.aoa_to_sheet(rows);
     rows.forEach((row, rIndex) => {
@@ -191,6 +208,12 @@ export const useAssetBindPageHooks = () => {
 
   const columns: TableProps<IAssetBindResponse>['columns'] = [
     { title: '资产编码', dataIndex: 'assetCode', key: 'assetCode' },
+    {
+      title: '资产类型',
+      dataIndex: 'assetType',
+      key: 'assetType',
+      render: (type: number) => assetTypeLabelMap[type] || '-',
+    },
     { title: '标签编码', dataIndex: 'tagCode', key: 'tagCode' },
     {
       title: '操作',
@@ -258,5 +281,6 @@ export const useAssetBindPageHooks = () => {
     selectedRowKeys,
     setSelectedRowKeys,
     handleBatchDelete,
+    assetTypeOptions,
   };
 };

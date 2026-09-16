@@ -230,6 +230,18 @@ func (c iotController) AddTag(context *gin.Context) {
 		return
 	}
 
+	// 标签码有唯一索引（网关上报时会自动注册标签），先做存在性检查给出明确提示
+	var tagCount int64
+	if err := db.GormDB.Table("rfid_tags").Where("tag_code = ?", rfidTag.TagCode).Count(&tagCount).Error; err != nil {
+		utils.Log.Error("查询标签失败", "error", err, "tagCode", rfidTag.TagCode)
+		utils.Response.ServerError(context, "添加失败，请稍后重试")
+		return
+	}
+	if tagCount > 0 {
+		utils.Response.ParameterTypeError(context, "标签码已存在")
+		return
+	}
+
 	insertData := map[string]interface{}{
 		"tag_code":    rfidTag.TagCode,
 		"electricity": rfidTag.Electricity,
@@ -255,6 +267,10 @@ func (c iotController) AddTag(context *gin.Context) {
 	}
 
 	if err := db.GormDB.Table("rfid_tags").Create(insertData).Error; err != nil {
+		if strings.Contains(err.Error(), "1062") || strings.Contains(err.Error(), "Duplicate entry") {
+			utils.Response.ParameterTypeError(context, "标签码已存在")
+			return
+		}
 		utils.Log.Error("添加标签失败", "error", err, "tag", rfidTag)
 		utils.Response.ServerError(context, "添加失败，请稍后重试")
 		return
@@ -294,6 +310,20 @@ func (c iotController) UpdateTag(context *gin.Context) {
 
 	if rfidTag.Id == "" {
 		utils.Response.ParameterTypeError(context, "参数格式错误")
+		return
+	}
+
+	// 标签码唯一：改名时检查是否与其他标签冲突
+	var dupCount int64
+	if err := db.GormDB.Table("rfid_tags").
+		Where("tag_code = ? AND id <> ?", rfidTag.TagCode, rfidTag.Id).
+		Count(&dupCount).Error; err != nil {
+		utils.Log.Error("查询标签失败", "error", err, "tagId", rfidTag.Id)
+		utils.Response.ServerError(context, "更新失败，请稍后重试")
+		return
+	}
+	if dupCount > 0 {
+		utils.Response.ParameterTypeError(context, "标签码已存在")
 		return
 	}
 

@@ -37,15 +37,15 @@ func (a *assetController) AddAsset(context *gin.Context) {
 		return
 	}
 
-	// 检查 assetCode 是否已存在
+	// 检查同类型下 assetCode 是否已存在（不同类型允许相同编号）
 	var count int64
-	if err := db.GormDB.Table("asset").Where("asset_code = ?", params.AssetCode).Count(&count).Error; err != nil {
+	if err := db.GormDB.Table("asset").Where("asset_code = ? AND asset_type = ?", params.AssetCode, params.AssetType).Count(&count).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
 		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	if count > 0 {
-		utils.Response.ParameterTypeError(context, "资产编码已存在")
+		utils.Response.ParameterTypeError(context, "该类型下资产编码已存在")
 		return
 	}
 
@@ -259,17 +259,17 @@ func (a *assetController) UpdateAsset(context *gin.Context) {
 		return
 	}
 
-	// 检查 assetCode 是否已存在(排除自身)
+	// 检查同类型下 assetCode 是否已存在(排除自身；不同类型允许相同编号)
 	var count int64
 	if err := db.GormDB.Table("asset").
-		Where("asset_code = ? AND asset_id != ?", params.AssetCode, params.AssetId).
+		Where("asset_code = ? AND asset_type = ? AND asset_id != ?", params.AssetCode, params.AssetType, params.AssetId).
 		Count(&count).Error; err != nil {
 		utils.Log.Error("操作失败", "error", err)
 		utils.Response.ServerError(context, "操作失败，请稍后重试")
 		return
 	}
 	if count > 0 {
-		utils.Response.ParameterTypeError(context, "资产编码已存在")
+		utils.Response.ParameterTypeError(context, "该类型下资产编码已存在")
 		return
 	}
 
@@ -403,7 +403,7 @@ func (a *assetController) GetAssetBinds(ctx *gin.Context) {
 	params.Limit, params.Offset = utils.Pagination.ValidatePagination(params.Limit, params.Offset)
 
 	query := db.GormDB.Table("asset_tags AS at").
-		Select("at.id, at.asset_id, a.asset_code, at.tag_id, t.tag_code").
+		Select("at.id, at.asset_id, a.asset_code, a.asset_type, at.tag_id, t.tag_code").
 		Joins("LEFT JOIN asset AS a ON a.asset_id = at.asset_id").
 		Joins("LEFT JOIN rfid_tags AS t ON t.id = at.tag_id")
 
@@ -412,6 +412,9 @@ func (a *assetController) GetAssetBinds(ctx *gin.Context) {
 	}
 	if params.TagCode != "" {
 		query = query.Where("t.tag_code LIKE ?", "%"+params.TagCode+"%")
+	}
+	if params.AssetType != nil && *params.AssetType > 0 {
+		query = query.Where("a.asset_type = ?", *params.AssetType)
 	}
 
 	var total int64
@@ -434,6 +437,23 @@ func (a *assetController) GetAssetBinds(ctx *gin.Context) {
 	})
 }
 
+// resolveAssetByCode 按资产编码（可选加资产类型）定位资产。
+// 不同类型下允许相同编号：若同编码存在多个资产且未指定类型，返回错误提示选择类型。
+func resolveAssetByCode(db *gorm.DB, assetCode string, assetType *int) (int64, string) {
+	query := db.Table("asset").Where("asset_code = ?", assetCode)
+	if assetType != nil && *assetType > 0 {
+		query = query.Where("asset_type = ?", *assetType)
+	}
+	var assetIds []int64
+	if err := query.Pluck("asset_id", &assetIds).Error; err != nil || len(assetIds) == 0 {
+		return 0, "资产不存在"
+	}
+	if len(assetIds) > 1 {
+		return 0, "该资产编码存在于多个类型下，请选择资产类型"
+	}
+	return assetIds[0], ""
+}
+
 func (a *assetController) CreateAssetBind(ctx *gin.Context) {
 	var params types.AssetBindCreateParams
 	if err := ctx.ShouldBindJSON(&params); err != nil {
@@ -445,9 +465,9 @@ func (a *assetController) CreateAssetBind(ctx *gin.Context) {
 		return
 	}
 
-	var assetId int64
-	if err := db.GormDB.Table("asset").Select("asset_id").Where("asset_code = ?", params.AssetCode).Scan(&assetId).Error; err != nil || assetId == 0 {
-		utils.Response.ParameterTypeError(ctx, "资产不存在")
+	assetId, resolveErr := resolveAssetByCode(db.GormDB, params.AssetCode, params.AssetType)
+	if resolveErr != "" {
+		utils.Response.ParameterTypeError(ctx, resolveErr)
 		return
 	}
 
@@ -508,9 +528,9 @@ func (a *assetController) UpdateAssetBind(ctx *gin.Context) {
 		return
 	}
 
-	var assetId int64
-	if err := db.GormDB.Table("asset").Select("asset_id").Where("asset_code = ?", params.AssetCode).Scan(&assetId).Error; err != nil || assetId == 0 {
-		utils.Response.ParameterTypeError(ctx, "资产不存在")
+	assetId, resolveErr := resolveAssetByCode(db.GormDB, params.AssetCode, params.AssetType)
+	if resolveErr != "" {
+		utils.Response.ParameterTypeError(ctx, resolveErr)
 		return
 	}
 
@@ -649,6 +669,7 @@ func (a *assetController) ImportAssetBind(ctx *gin.Context) {
 		assetCode := normalizeCell(row, 0)
 		tagCode := normalizeCell(row, 2)
 		storeName := normalizeCell(row, 3)
+		typeName := normalizeCell(row, 4)
 
 		if assetCode == "" || tagCode == "" {
 			result.Failures = append(result.Failures, assetBindImportFail{
@@ -673,7 +694,7 @@ func (a *assetController) ImportAssetBind(ctx *gin.Context) {
 			continue
 		}
 
-		if err := importAssetBindRow(tx, assetCode, tagCode, storeName); err != nil {
+		if err := importAssetBindRow(tx, assetCode, tagCode, storeName, typeName); err != nil {
 			tx.Rollback()
 			result.Failures = append(result.Failures, assetBindImportFail{
 				Row:       rowIndex + 1,
@@ -738,7 +759,7 @@ func (a *assetController) UpdateType(ctx *gin.Context) {
 	utils.Response.SuccessNoData(ctx)
 }
 
-func importAssetBindRow(tx *gorm.DB, assetCode, tagCode, storeName string) error {
+func importAssetBindRow(tx *gorm.DB, assetCode, tagCode, storeName, typeName string) error {
 	var storeId int64
 	if storeName != "" {
 		var store types.Store
@@ -757,17 +778,45 @@ func importAssetBindRow(tx *gorm.DB, assetCode, tagCode, storeName string) error
 		storeId = store.StoreId
 	}
 
+	// 资产类型：不同类型下允许相同编号，导入时按类型名称（可空）定位或创建资产
+	var assetTypeId int
+	if typeName != "" {
+		if err := tx.Table("asset_types").Select("type_id").Where("type_name = ?", typeName).Scan(&assetTypeId).Error; err != nil {
+			return errors.New("查询资产类型失败")
+		}
+		if assetTypeId == 0 {
+			return errors.New("资产类型不存在：" + typeName)
+		}
+	}
+
 	var assetId int64
-	if err := tx.Table("asset").Select("asset_id").Where("asset_code = ?", assetCode).Scan(&assetId).Error; err != nil {
+	assetQuery := tx.Table("asset").Select("asset_id").Where("asset_code = ?", assetCode)
+	if assetTypeId > 0 {
+		assetQuery = assetQuery.Where("asset_type = ?", assetTypeId)
+	}
+	if err := assetQuery.Scan(&assetId).Error; err != nil {
 		return errors.New("查询资产失败")
 	}
 	now := time.Now()
 	if assetId == 0 {
+		// 未指定类型时，若同编号已存在于多个类型下，不能确定归属，报错提示
+		if assetTypeId == 0 {
+			var dupCount int64
+			if err := tx.Table("asset").Where("asset_code = ?", assetCode).Count(&dupCount).Error; err != nil {
+				return errors.New("查询资产失败")
+			}
+			if dupCount > 0 {
+				return errors.New("该资产编码存在于多个类型下，模板中请补充资产类型")
+			}
+		}
 		insert := map[string]interface{}{
 			"asset_code": assetCode,
 			"status":     1,
 			"created_at": now,
 			"updated_at": now,
+		}
+		if assetTypeId > 0 {
+			insert["asset_type"] = assetTypeId
 		}
 		if storeName != "" {
 			insert["store_id"] = storeId
@@ -775,7 +824,11 @@ func importAssetBindRow(tx *gorm.DB, assetCode, tagCode, storeName string) error
 		if err := tx.Table("asset").Create(insert).Error; err != nil {
 			return errors.New("创建资产失败")
 		}
-		if err := tx.Table("asset").Select("asset_id").Where("asset_code = ?", assetCode).Scan(&assetId).Error; err != nil {
+		reQuery := tx.Table("asset").Select("asset_id").Where("asset_code = ?", assetCode)
+		if assetTypeId > 0 {
+			reQuery = reQuery.Where("asset_type = ?", assetTypeId)
+		}
+		if err := reQuery.Scan(&assetId).Error; err != nil {
 			return errors.New("获取资产ID失败")
 		}
 	} else if storeName != "" {

@@ -534,16 +534,37 @@ func (c *ioRecordController) GetFlows(ctx *gin.Context) {
 		return
 	}
 
+	params.AssetCode = strings.TrimSpace(params.AssetCode)
+	params.TagCode = strings.TrimSpace(params.TagCode)
+
 	// 构建查询
 	query := db.GormDB.Table("io_records AS r").
 		Select(`
-			r.asset_id, a.asset_code, a.asset_type, r.action_type, r.action_time, r.store_to, r.store_from
+			r.asset_id, a.asset_code, r.tag_code, r.action_type, r.action_time,
+			r.store_to, r.store_from,
+			store_to_t.store_name AS store_to_name,
+			store_from_t.store_name AS store_from_name
 		`).
 		Joins("LEFT JOIN asset AS a ON r.asset_id = a.asset_id").
+		Joins("LEFT JOIN stores AS store_to_t ON store_to_t.store_id = r.store_to").
+		Joins("LEFT JOIN stores AS store_from_t ON store_from_t.store_id = r.store_from").
 		Where("r.action_time BETWEEN ? AND ?", startTime, endTime)
 
 	if params.AssetCode != "" {
 		query = query.Where("a.asset_code = ?", params.AssetCode)
+	}
+	if params.TagCode != "" {
+		// 标签码优先按记录中保存的 tag_code 匹配；
+		// 同时兼容早期记录未回填 tag_code 的情况，通过资产绑定关系（rfid_tags + asset_tags）定位资产。
+		query = query.Where(`
+			r.tag_code = ?
+			OR r.asset_id IN (
+				SELECT at2.asset_id
+				FROM rfid_tags rt
+				JOIN asset_tags at2 ON at2.tag_id = rt.id
+				WHERE rt.tag_code = ?
+			)
+		`, params.TagCode, params.TagCode)
 	}
 
 	// 获取总数

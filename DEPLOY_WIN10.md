@@ -1,94 +1,67 @@
 # Win10 服务器部署（不使用 Docker）
 
-本文给出在 Win10 服务器上部署本项目的完整步骤（后端 Go + Gin，前端 Vite）。
+部署分四步：**打包 → 初始化数据库 → 配置并启动后端 → 部署前端与反向代理**。
 
-## 一、准备环境
+## 一、环境准备（Win10 服务器）
 
-1. 安装 MySQL 8.x。
-2. 选择并安装一个 Web 服务器：Nginx for Windows 或 IIS。
-3. 如需在 Win10 本机生成授权或重新编译，再安装 Go 1.23.5 与 Node.js + pnpm。
+1. MySQL 8.x（本地安装）
+2. Nginx for Windows（推荐）或 IIS
+3. 打包机需要 Go 1.23+ 与 Node.js + pnpm（Win10 本机重编译时才需要）
 
-## 二、在 macOS 上打包 deploy 目录
-
-在项目根目录执行以下步骤，把部署所需文件集中到 `deploy/`。
-
-### 1) 创建目录结构
+## 二、打包 deploy 目录（在开发机执行）
 
 ```bash
+# 1. 目录结构
 mkdir -p deploy/backend/config deploy/sql deploy/web
-```
 
-### 2) 后端跨平台编译（macOS -> Windows）
-
-```bash
-cd /path/to/project/server
+# 2. 后端跨平台编译（开发机 -> Windows exe；ARM 机器把 GOARCH 改为 arm64）
+cd server
 GOOS=windows GOARCH=amd64 go build -o ../deploy/backend/cms-server.exe .
-```
 
-如果 Win10 是 ARM 机器，将 `GOARCH=amd64` 改为 `GOARCH=arm64`。
-
-### 3) 拷贝配置与数据库脚本
-
-```bash
-cd /path/to/project
+# 3. 拷贝配置与数据库脚本
+cd ..
 cp server/config/config.toml server/config/config.prod.toml deploy/backend/config/
 cp server/sql/cms.sql deploy/sql/
 cp web/nginx.conf deploy/web/
-```
 
-### 4) 前端构建并打包
-
-```bash
-cd /path/to/project/web
-npm install
-npm run build
+# 4. 前端构建
+cd web
+npm install && npm run build
 cp -R dist ../deploy/web/dist
 ```
 
-### 5) deploy 目录结构
+产物结构：
 
 ```
 deploy/
 ├── backend/
 │   ├── cms-server.exe
-│   └── config/
-│       ├── config.toml
-│       └── config.prod.toml
-├── sql/
-│   └── cms.sql
+│   └── config/          # config.toml + config.prod.toml
+├── sql/cms.sql
 └── web/
     ├── dist/
     └── nginx.conf
 ```
 
-## 三、拷贝 deploy 到 Win10 并初始化数据库
+## 三、初始化数据库
 
-将 `deploy/` 整个目录拷贝到 Win10 服务器（示例路径：`C:\truck\deploy`）。
+将 `deploy/` 拷贝到服务器（示例路径 `C:\truck\deploy`），导入初始化脚本：
 
-1. 创建数据库（示例库名 `cms`）。
-2. 导入初始化脚本：`deploy/sql/cms.sql`。
-
-示例：
-
-```powershell
+```bat
 mysql -u root -p -e "CREATE DATABASE cms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -p cms < C:\truck\deploy\sql\cms.sql
 ```
 
-## 四、后端配置
+## 四、后端配置与启动
 
-1. 设置运行环境：`deploy/backend/config/config.toml`
+1. `deploy/backend/config/config.toml` 设置 `env = "prod"`。
 
-```toml
-env = "prod"
-```
-
-2. 修改 `deploy/backend/config/config.prod.toml`（关键项）：
+2. 修改 `deploy/backend/config/config.prod.toml` 关键项：
 
 ```toml
 [app]
 port = ":8081"
-baseurl = "/cms"
+baseurl = "/cms"          # 需与前端 VITE_APP_BASE_URL 一致
 domain = "localhost"
 
 [db]
@@ -99,47 +72,37 @@ name = "cms"
 port = "3306"
 
 [license]
-path = "C:\\truck\\deploy\\backend\\license.json"
+path = "C:\\truck\\deploy\\backend\\license.json"   # 建议绝对路径
 secret = "YOUR_SECRET"
 ```
 
-说明：
-- `db.*` 填实际数据库连接信息。
-- `baseurl` 默认 `/cms`，需与前端一致。
-- `license.path` 建议使用绝对路径。
-
-## 五、生成授权文件（license.json）
-
-1. 获取服务器 MAC 地址：
+3. 生成授权文件 license.json：
 
 ```powershell
+# Win10 上获取 MAC（多个 MAC 用逗号分隔）
 getmac /v /fo list
 ```
 
-2. 在 macOS 上生成授权文件（`--mac` 支持逗号分隔多个 MAC）：
-
 ```bash
-cd /path/to/project/server/support/tools
+# 开发机上生成，把 license.json 放到 license.path 指定位置
+cd server/support/tools
 go run gen_license.go --mac "AA-BB-CC-DD-EE-FF" --days 30 --secret "YOUR_SECRET"
 ```
 
-3. 将生成的 `license.json` 放到 `license.path` 指定位置（建议放在 `C:\truck\deploy\backend\license.json`）。
-
-## 六、启动后端
+4. 启动后端：
 
 ```powershell
 cd C:\truck\deploy\backend
 .\cms-server.exe
 ```
 
-端口默认 `8081`（可在配置中修改）。如启用 TCP（`tcp_enable = true`），还需要放行 `tcp_addr` 端口。
+端口默认 `8081`；如 `tcp_enable = true`，还需放行 `tcp_addr` 端口。
 
-## 七、部署前端与反向代理
+## 五、前端与反向代理
 
 ### 方案 A：Nginx（推荐）
 
-1. 将 `deploy/web/dist` 拷贝到 Nginx 的静态目录（如 `C:\nginx\html`）。
-2. 参考 `deploy/web/nginx.conf`，配置 `/cms` 反向代理到后端：
+`deploy/web/dist` 拷贝到 Nginx 静态目录（如 `C:\nginx\html`），配置 `/cms` 反代到后端：
 
 ```nginx
 server {
@@ -162,41 +125,50 @@ server {
 }
 ```
 
-停止 Nginx：
-
-```powershell
-taskkill /f /im nginx.exe
-```
+停止 Nginx：`taskkill /f /im nginx.exe`
 
 ### 方案 B：IIS
 
-1. 将 `deploy/web/dist` 作为站点根目录。
-2. 配置 URL Rewrite（或 ARR）把 `/cms` 转发到 `http://127.0.0.1:8081/cms/`。
+`deploy/web/dist` 作为站点根目录，用 URL Rewrite（或 ARR）把 `/cms` 转发到 `http://127.0.0.1:8081/cms/`。
 
-## 八、验证
+## 六、验证
 
-1. 浏览器访问：`http://服务器IP/`。
-2. 登录与接口请求正常（请求路径应为 `/cms` 前缀）。
+浏览器访问 `http://服务器IP/`，登录并确认接口请求带 `/cms` 前缀且正常返回。
 
-## 九、数据库维护
-
-在 Win10 上对 `cms` 数据库做导出 / 重建 / 导入：
+## 七、数据库维护
 
 ```powershell
 # 导出
 mysqldump -u root -p cms > "D:\backup\cms.sql"
 
-# 删除
+# 重建
 mysql -u root -p -e "DROP DATABASE IF EXISTS cms;"
-
-# 创建
 mysql -u root -p -e "CREATE DATABASE cms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# 导入
 mysql -u root -p cms < "D:\backup\cms.sql"
 ```
 
-## 十、常见问题
+## 八、存量库升级：允许不同类型下重复的资产编码
+
+业务规则：同一资产编码在不同资产类型下允许重复（如 Dolly车 和 双层平板车 都可以有编号 001），只有"同编码 + 同类型"才算重复。
+
+**1. 改数据库**（在 Win10 的 cmd 中执行，先备份数据）：
+
+```bat
+mysql -u root -p cms -e "ALTER TABLE asset DROP INDEX uniq_asset_code, ADD UNIQUE KEY uniq_asset_code_type (asset_code, asset_type);"
+```
+
+说明：
+- 原索引 `uniq_asset_code` 只按 `asset_code` 判重；新索引 `uniq_asset_code_type` 按 `(asset_code, asset_type)` 判重。
+- 若 `asset` 表已存在"同编码同类型"的重复数据，ALTER 会失败，先清理重复数据再执行。
+- 验证索引：
+
+```bat
+mysql -u root -p cms -e "SHOW INDEX FROM asset WHERE Key_name = 'uniq_asset_code_type';"
+```
+
+**2. 换应用版本**：部署包含本次修改的后端（新增/编辑资产、资产绑定、Excel 导入均按"编码 + 类型"判重）和前端（资产绑定页面及导入模板增加"资产类型"字段），重新按第二章打包部署。
+
+## 九、常见问题
 
 - 前端请求 404：检查 `baseurl` 与前端 `VITE_APP_BASE_URL` 是否一致。
 - 授权失败：确认 `license.secret` 与生成授权时的 `--secret` 一致，且 `license.json` 路径正确。

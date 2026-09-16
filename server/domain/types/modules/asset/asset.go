@@ -45,6 +45,7 @@ type AssetTag struct {
 type AssetBindQueryParams struct {
 	AssetCode string `json:"assetCode"`
 	TagCode   string `json:"tagCode"`
+	AssetType *int   `json:"assetType"` // 资产类型：不同类型下编号可重复
 	Limit     int    `json:"limit"`
 	Offset    int    `json:"offset"`
 }
@@ -53,6 +54,7 @@ type AssetBindResponse struct {
 	ID        int64  `json:"id"`
 	AssetId   int64  `json:"assetId"`
 	AssetCode string `json:"assetCode"`
+	AssetType int    `json:"assetType"`
 	TagId     int64  `json:"tagId"`
 	TagCode   string `json:"tagCode"`
 }
@@ -60,11 +62,13 @@ type AssetBindResponse struct {
 type AssetBindCreateParams struct {
 	AssetCode string `json:"assetCode"`
 	TagCode   string `json:"tagCode"`
+	AssetType *int   `json:"assetType"` // 资产类型：不同类型下编号可重复，用于定位唯一资产
 }
 
 type AssetBindUpdateParams struct {
 	AssetCode string `json:"assetCode"`
 	TagCode   string `json:"tagCode"`
+	AssetType *int   `json:"assetType"` // 资产类型：不同类型下编号可重复，用于定位唯一资产
 }
 
 type UpdateAssetStatusParams struct {

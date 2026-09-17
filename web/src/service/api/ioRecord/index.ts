@@ -97,10 +97,10 @@ export interface IFlowStatsResponse {
   list: IFlowStatsItem[];
 }
 
-export const getIoRecordFlowStatsRequest = (hours = 24) => {
+export const getIoRecordFlowStatsRequest = (hours = 24, assetCode?: string) => {
   return request.get<AxiosResponse<IFlowStatsResponse>>({
     url: '/io-record/flow/stats',
-    params: { hours },
+    params: { hours, assetCode },
   });
 };
 

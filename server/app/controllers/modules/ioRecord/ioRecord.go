@@ -331,16 +331,23 @@ func (c *ioRecordController) GetFlowStats(ctx *gin.Context) {
 	end := time.Now()
 	start := end.Add(-time.Duration(hours) * time.Hour)
 
+	assetCode := strings.TrimSpace(ctx.Query("assetCode"))
+
 	type row struct {
 		ActionType int   `gorm:"column:action_type"`
 		Count      int64 `gorm:"column:count"`
 	}
 	var rows []row
-	if err := db.GormDB.
-		Table("io_records").
-		Select("action_type, COUNT(*) AS count").
-		Where("action_time >= ? AND action_time <= ? AND action_type IN ?", start, end, []int{1, 2}).
-		Group("action_type").
+	query := db.GormDB.
+		Table("io_records AS r").
+		Select("r.action_type, COUNT(*) AS count").
+		Joins("LEFT JOIN asset AS a ON a.asset_id = r.asset_id").
+		Where("r.action_time >= ? AND r.action_time <= ? AND r.action_type IN ?", start, end, []int{1, 2})
+	if assetCode != "" {
+		query = query.Where("a.asset_code = ?", assetCode)
+	}
+	if err := query.
+		Group("r.action_type").
 		Scan(&rows).Error; err != nil {
 		utils.Log.Error("查询流转统计失败", "error", err)
 		utils.Response.ServerError(ctx, "查询失败，请稍后重试")

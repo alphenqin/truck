@@ -86,6 +86,7 @@ const PanelPage: React.FC = () => {
   const [circulationAnalysisData, setCirculationAnalysisData] = useState<{ type: string; count: number }[]>(buildEmptyCirculation());
   const [circulationHoursInput, setCirculationHoursInput] = useState<number>(24);
   const [circulationHours, setCirculationHours] = useState<number>(24);
+  const [circulationAssetCode, setCirculationAssetCode] = useState('');
   const [assetStayData, setAssetStayData] = useState<{
     asset: string;
     location: string;
@@ -240,7 +241,7 @@ const PanelPage: React.FC = () => {
 
   useEffect(() => {
     const fetchCirculation = async () => {
-      const res: any = await getIoRecordFlowStatsRequest(circulationHours);
+      const res: any = await getIoRecordFlowStatsRequest(circulationHours, circulationAssetCode || undefined);
       const list = res?.data?.list || res?.data?.data?.list || [];
       if (!list.length) {
         setCirculationAnalysisData(buildEmptyCirculation());
@@ -258,7 +259,7 @@ const PanelPage: React.FC = () => {
     };
 
     fetchCirculation();
-  }, [circulationHours]);
+  }, [circulationHours, circulationAssetCode]);
 
   // KPI 统计
   const kpiStats = useMemo(() => {
@@ -610,6 +611,15 @@ const PanelPage: React.FC = () => {
           )}
           {showSearch === 'circulation' && (
             <>
+              <Input.Search
+                placeholder="资产编号"
+                onSearch={(value) => setCirculationAssetCode(value.trim())}
+                onChange={(e) => {
+                  if (!e.target.value) setCirculationAssetCode('');
+                }}
+                className="panel-search"
+                allowClear
+              />
               <InputNumber
                 min={1}
                 max={168}
